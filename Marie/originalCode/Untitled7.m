@@ -1,0 +1,3 @@
+[time, WF, TGlim1WFs, Scale] = MultiChanWF(AllUnitStruct, .003, 1000, [0 1100], TimeGridA, TimeGridB, 162, MEH_chanMap, 'k', 0, 1, NaN);
+[time, WF, TGlim1WFs, Scale] = MultiChanWF(AllUnitStruct, .003, 1000, [1100 3366], TimeGridA, TimeGridB, 162, MEH_chanMap, 'r', 0, 1, Scale);
+[time, WF, TGlim1WFs, Scale] = MultiChanWF(AllUnitStruct, .003, 1000, [4500 inf], TimeGridA, TimeGridB, 162, MEH_chanMap, 'm', 0, 1, Scale);
