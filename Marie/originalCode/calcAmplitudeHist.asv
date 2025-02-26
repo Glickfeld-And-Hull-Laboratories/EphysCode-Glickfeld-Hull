@@ -1,0 +1,30 @@
+function calcAmplitudeHist (unit, struct)
+
+
+index = find([struct.unitID] == unit); %find unit of interest
+title1 = [struct(index).unitID]
+
+amplitudes = struct(index).amplitudes;
+timestamps = struct(index).timestamps;
+
+h = histogram(amplitudes);
+Values = h.Values;
+BinEdges = h.BinEdges(1:(end-1));    %drop last BinEdge to loose right edge of last bin
+
+maxValues = max(Values);
+AdjValues = (Values/maxValues)*timestamps(end)*.2 + timestamps(end) + .01*timestamps(end); %Normalize histogram to size of scatterplot
+
+figure
+barh(BinEdges, AdjValues);
+hold on
+area([timestamps(1), timestamps(end)], [max(amplitudes)+1, max(amplitudes)+1], 'FaceColor', [1 1 1], 'LineStyle', 'none');
+scatter(timestamps, amplitudes);
+%hold on
+%plot((AdjValues),BinEdges);
+
+ylim([min(amplitudes)-1, max(amplitudes)+1]);
+xlim([timestamps(1)-5, max(AdjValues) + 5]);
+title(['Unit ' num2str(title1) ' amplitude over time']);
+FormatFigure
+
+end

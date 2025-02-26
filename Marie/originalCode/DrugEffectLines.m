@@ -1,0 +1,10 @@
+figure
+t= tiledlayout('flow');
+for n = 1:length(AllCSdepthOrder)
+unit = AllCSdepthOrder(n);
+nexttile
+fr = FRstruct(unit, AllUnitStruct, 10);
+xline(1860, 'm');
+channel = ChannelFind(unit, AllUnitStruct);
+title(['unit ' num2str(unit) ' on ch ' num2str(channel)]);
+end
