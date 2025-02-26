@@ -1,0 +1,24 @@
+DrugLinesStruct(1).Name
+TimeGridA_sane = TimeGridA(TimeGridA <DrugLinesStruct(1).time);
+for n = 1:length(TimeGridA_sane)
+SaneSpikeMask{n} = [TimeGridA(n)_sane TimeGridB(n)];
+end
+SaneSpikeMask = SaneSpikeMask.';
+
+fid=fopen('ForJson','w');
+fprintf(fid, '%s',  '"units": ');
+fprintf(fid, '%s', jsonencode([SummaryStruct_MF_long_laser.unit]));
+fprintf(fid, '%s', [',' newline '      "ss": ']);
+fprintf(fid, '%s', jsonencode([SS_CS.SS]));
+fprintf(fid, '%s', [',' newline '      "cs": ']);
+fprintf(fid, '%s', jsonencode([SS_CS.CS]));
+fprintf(fid, '%s', [',' newline '      "DE": ']);
+fprintf(fid, '%s', jsonencode(DE));
+fprintf(fid, '%s', [',' newline '      "sane_times": ']);
+for n = 1:length(TimeGridA)
+SaneSpikeMask{n} = [TimeGridA(n) TimeGridB(n)];
+end
+SaneSpikeMask = SaneSpikeMask.';
+fprintf(fid, '%s', jsonencode(SaneSpikeMask));
+fprintf(fid, '%s', [',' newline '    },']);
+
