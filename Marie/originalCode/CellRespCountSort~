@@ -1,0 +1,44 @@
+for n = 1:length(SumSt)
+[meanLine, stdevLine] = StDevLine([SumSt(n).EpochsOnsetFirstAfterTone_N], [SumSt(n).EpochsOnsetFirstAfterTone_edges],-.5);
+index = find([SumSt(n).EpochsOnsetFirstAfterTone_N] > (meanLine+STDEV*stdevLine), 1);
+SumSt(n).FirstExcitation_EpochsOnsetFirstAfterTone = SumSt(n).EpochsOnsetFirstAfterTone_edges(index);
+if isempty(SumSt(n).EpochsOnsetFirstAfterTone_edges(index))
+SumSt(n).FirstExcitation_EpochsOnsetFirstAfterTone = NaN;
+end
+index = find([SumSt(n).EpochsOnsetFirstAfterTone_N] < (meanLine-STDEV*stdevLine), 1);
+SumSt(n).FirstInhibiton_EpochsOnsetFirstAfterTone = SumSt(n).EpochsOnsetFirstAfterTone_edges(index);
+if isempty(SumSt(n).EpochsOnsetFirstAfterTone_edges(index))
+SumSt(n).FirstInhibiton_EpochsOnsetFirstAfterTone = NaN;
+end
+end
+Conditioned = SumSt([SumSt.TrainBoo] == 1);
+Naive = SumSt([SumSt.TrainBoo] == 0);
+
+
+%%%%%%%%
+countTotal = 0;
+countCombo = 0;
+CountExcit = 0;
+CountInhib = 0;
+
+for n = 1:length(Conditioned)
+    if strcmp({Conditioned(n).CellType}, 'CS')
+    if strcmp({Conditioned(n).BrainReg}, 'Crus2')
+        countTotal = countTotal + 1;
+        if (Conditioned(n).FirstExcitation_EpochsOnsetFirstAfterTone)<1 & (Conditioned(n).FirstInhibiton_EpochsOnsetFirstAfterTone)<1
+            countCombo = countCombo + 1;
+            CS_Conditioned_combo(countCombo) = Conditioned(n);
+        elseif (Conditioned(n).FirstExcitation_EpochsOnsetFirstAfterTone) <1
+            CountExcit = CountExcit + 1;
+            CS_Conditioned_Excit(CountExcit) = Conditioned(n);
+        elseif (Conditioned(n).FirstInhibiton_EpochsOnsetFirstAfterTone)<1
+            CountInhib = CountInhib + 1;
+            CS_Conditioned_Inhib(CountInhib) = Conditioned(n);
+        end
+    end
+    end
+end
+pie([(countTotal - sum([countCombo CountExcit CountInhib]))/countTotal countCombo/countTotal CountExcit/countTotal CountInhib/countTotal]);
+%legend({'no change', 'combo', 'excited', 'inhibited'})
+FigureWrap('CS EpochsOnsetFirstAfterTone Conditioned', 'CS_EpochsOnsetFirstAfterTone_Conditioned', NaN, NaN, NaN, NaN);
+    

@@ -1,0 +1,20 @@
+function AlignedWaveforms = AlignWaveforms(Waveforms, AlignMode, AlignI, m)
+figure
+plot(Waveforms)
+Right = 20;
+Left = 5;
+if AlignMode ==1
+    Waveforms = -(Waveforms);
+end
+counter = 1
+ for n = 1:size(Waveforms,2)
+    [MiniMum, I] = min(Waveforms(AlignI-Left:AlignI+Right,n))
+    if MiniMum > %-1000000000%-.001183;
+        shift = (I-AlignI);
+        localminindex = I + AlignI-Left-1;
+        AlignedWaveforms(:,counter) = Waveforms(localminindex-30:localminindex+60,n);
+        counter = counter+1;
+    end
+ end 
+end
+

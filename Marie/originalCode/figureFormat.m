@@ -1,0 +1,11 @@
+box off;
+%xline(0,'b');
+title('Response to Laser');
+ylabel('Hz');
+xlabel('seconds');
+%ylim([-.0002 .00015]);
+ax = gca; 
+ax.TickDir = 'out';
+ax.FontName = 'Arial';
+ax.FontSize = 24;
+ax.TitleFontSizeMultiplier = 1.3;

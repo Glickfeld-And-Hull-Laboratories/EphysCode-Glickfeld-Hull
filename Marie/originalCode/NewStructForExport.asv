@@ -1,0 +1,24 @@
+function NewStruct = NewStructForExport(unitList, TimeGridA, TimeGridB, struct, filename, LaserStimAdj, TimeLim)
+
+for i = 1:length(unitList)
+    unit = unitList(i);
+unitIN = find([struct.unitID] == unit);
+channel = struct(unitIN).channel;
+channel = channel; 
+NewStruct(i) = struct(unitIN);
+end
+
+for k = 1:length(unitList)
+    unit = unitList(k);
+unitIN = find([struct.unitID] == unit);
+channel = struct(unitIN).channel;
+channel = channel; 
+BaselineTS = StimBlankUnitFinder(unit, TimeGridA, TimeGridB, struct);
+NewStruct(k).BaselineTS = BaselineTS;
+[time, Waveforms, SampleTS] = SampleWaveformsStimNaN(BaselineTS, .01, 100, TimeLim, unit, channel);
+k
+NewStruct(k).AvgWvF = avgeWaveforms(Waveforms);
+NewStruct(k).filename = filename
+NewStruct(k).TimeLim = TimeLim;
+NewStruct(k).LaserStimAdj = LaserStimAdj;
+end

@@ -1,0 +1,8 @@
+SummaryStruct_CS_long = SumStMaker([SS_CS.CS], 'CSpause', 'expert', [], 'baselineACGWFlong', NaN, TimeGridB, AllUnitStruct, AllUnitStruct_Phyllum, LaserStimAdj(1), LaserStimAdj, MEH_chanMap, DrugLinesStruct);
+SummaryStruct_SS_long = SumStMaker([SS_CS.SS], 'SSpause', 'expert', [], 'baselineACGWFlong', NaN, TimeGridB, AllUnitStruct, AllUnitStruct_Phyllum, LaserStimAdj(1), LaserStimAdj, MEH_chanMap, DrugLinesStruct);
+SummaryStruct_MLI_long_ccg = SumStMaker([SS_MLI.MLI], 'MLI', 'expert', 'ccg', 'baselineACGWFlong', NaN, TimeGridB, AllUnitStruct, AllUnitStruct_Phyllum, LaserStimAdj(1), LaserStimAdj, MEH_chanMap, DrugLinesStruct);
+SummaryStruct_MLI_long_layer = SumStMaker(MLI_layerOnly, 'MLI', 'expert', 'layer', 'baselineACGWFlong', NaN, TimeGridB, AllUnitStruct, AllUnitStruct_Phyllum, LaserStimAdj(1), LaserStimAdj, MEH_chanMap, DrugLinesStruct);
+SummaryStruct_Golgi_long_DE = SumStMaker(DEhandID, 'Golgi', 'expert', 'DE', 'baselineACGWFlong', NaN, TimeGridB, AllUnitStruct, AllUnitStruct_Phyllum, LaserStimAdj(1), LaserStimAdj, MEH_chanMap, DrugLinesStruct);
+SummaryStruct_Golgi_long_expert = SumStMaker(expert_Golgi_notDEhandID, 'Golgi', 'expert', 'layer', 'baselineACGWFlong', NaN, TimeGridB, AllUnitStruct, AllUnitStruct_Phyllum, LaserStimAdj(1), LaserStimAdj, MEH_chanMap, DrugLinesStruct);
+SummaryStruct_MF_long_laser = SumStMaker(MFhandID, 'MF', 'laser', [], 'baselineACGWFlong', NaN, TimeGridB, AllUnitStruct, AllUnitStruct_Phyllum, LaserStimAdj(1), LaserStimAdj, MEH_chanMap, DrugLinesStruct);
+SummaryStruct_MF_long_expert = SumStMaker(MF_expert, 'MF', 'expert', [], 'baselineACGWFlong', NaN, TimeGridB, AllUnitStruct, AllUnitStruct_Phyllum, LaserStimAdj(1), LaserStimAdj, MEH_chanMap, DrugLinesStruct);

@@ -1,0 +1,65 @@
+function FRate = FRstructTimeGridTimeLimit(TimeGridA,TimeGridB, TimeLim, struct, unit, color, plotboo)
+
+n = find([struct.unitID] == unit) %% n changes to index in struct pointing to specified unit
+TS2 = struct(n).timestamps;  %% Make vector, TimeStamps2, that has timestamps from unit.
+
+title_ = [struct(n).unitID];
+title_ = num2str(title_);
+titleTr_ = inputname(1);
+title_ = strcat(['Hz over time is' titleTr_ 'TG']);
+title_ = strcat([title_ 'TG']);
+
+
+TS2 = TS2(TS2 < TimeLim(2)); %time limit timestamps
+TS2 = TS2(TS2 > TimeLim(1));
+
+if ~isnan(TimeGridA)
+TimeGridWindow = TimeGridB(1)-TimeGridA(1);         % Will Remake time grid within time limits
+
+TimeGridB = TimeGridB((TimeGridB < TimeLim(2)) & (TimeGridB > TimeLim(1)));
+TimeGridA = TimeGridB - TimeGridWindow;
+if (TimeGridB(1)-TimeGridWindow)< TimeLim(1)
+    TimeGridA(1) = TimeLim(1);
+end
+
+TS2 = TimeGridUnit(TimeGridA, TimeGridB, TS2);
+end
+
+TimeTotal = 0;
+AllSpikes = 0;
+
+FR = zeros(length(TimeGridB),1);
+if ~isnan(TimeGridA)
+for f = 1:length(FR)
+    TSWin = (TS2(TS2 > TimeGridA(f) & TS2 < TimeGridB(f)));
+    AllSpikes = AllSpikes + length(TSWin);
+    FR(f) = length(TS2(TS2 > TimeGridA(f) & TS2 < TimeGridB(f))) /(TimeGridB(f)-TimeGridA(f));
+    TimeTotal = TimeTotal + (TimeGridB(f)-TimeGridA(f));
+    timegrid = [TimeGridA(f) TimeGridB(f)];
+    if length(TSWin) ~= 0
+    tester = length(TSWin);
+    tester2 = (TimeGridB(f)-TimeGridA(f));
+    end
+end
+else
+    AllSpikes = length(TS2);
+    TimeTotal = TS2(end)-TS2(1);
+end
+
+FRate = AllSpikes/TimeTotal;
+
+if plotboo == 1
+%plot(clusts);
+%figure;
+bar (FR, 1, color);
+%histogram (TS2, 'Binwidth', bwidth, 'Facecolor', [0 0 0], 'Linestyle', 'none', 'FaceAlpha',1, 'Normalization', 'countdensity')
+box off;
+ax = gca; 
+ax.TickDir = 'out';
+ax.FontName = 'Calibri'; 'FixedWidth';
+ax.FontSize = 18;
+
+%title(title_);
+title([num2str(unit),   ' Hz over time TG']);
+end
+end

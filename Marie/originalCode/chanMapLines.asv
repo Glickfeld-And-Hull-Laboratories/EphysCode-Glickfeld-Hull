@@ -1,0 +1,11 @@
+unitchan = 100;
+chanindex = unitchan + 1;
+counter = 1
+for n = 1:40
+    delta = n - 20;
+    if (((unitchan + delta) > 1) && ((unitchan + delta) < length(rez.ycoords)))
+channelmap(n,1) = unitchan + delta;
+channelmap(n,2) = rez.xcoords(chanindex + delta) - rez.xcoords(chanindex);
+channelmap(n,3) = rez.ycoords(chanindex + delta) - rez.ycoords(chanindex);
+    end
+end
