@@ -39,7 +39,7 @@ b = 2; % What stimulus presentation block to use for RandDirFourPhase analysis?
 
 %%
 
-[avg_resp_dir, resp_ind_dir] = getResponses(resp, base);
+[avg_resp_dir, resp_ind_dir, DSI_ind, p_dir] = getResponses(resp, base);
 
 figure;
     depth_all   = -2000 + [goodUnitStruct.depth];
