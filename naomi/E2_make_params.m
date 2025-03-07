@@ -1,3 +1,4 @@
+
 % function E2_make_params(rec_date,varargin)
 %%% This code creates a couple of parameters potentially important for analysis.
 %%% This includes reading and outputting the spike data from Kilosort

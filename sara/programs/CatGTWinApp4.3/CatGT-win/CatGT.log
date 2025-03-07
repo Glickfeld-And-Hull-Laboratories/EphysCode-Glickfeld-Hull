@@ -1,0 +1,657 @@
+[Thd 40944 CPU 2 7/10/24 11:00:56.021] Unknown option or wrong param count for option '-SY=0,384,6,500'.
+[Thd 40944 CPU 1 7/10/24 11:00:56.021] 
+[Thd 20800 CPU 3 7/10/24 11:06:58.836] Unknown option or wrong param count for option '-SY=0,384,6,500'.
+[Thd 20800 CPU 1 7/10/24 11:06:58.836] 
+[Thd 37592 CPU 3 7/10/24 11:24:44.597] Unknown option or wrong param count for option '-xd=2'.
+[Thd 37592 CPU 6 7/10/24 11:24:44.609] 
+[Thd 31264 CPU 1 7/10/24 11:26:59.459] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=1697_240628_day17_Npx -g=0 -t=0 -ni -prb=0 -xd=2,0,384,2,20 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3Tester
+[Thd 31264 CPU 1 7/10/24 11:27:17.257] 
+[Thd 9464 CPU 1 7/10/24 11:28:06.412] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=1697_240628_day17_Npx -g=0 -t=0 -ni -prb=0 -xd=2,0,384,3,20 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3Tester
+[Thd 9464 CPU 1 7/10/24 11:28:23.030] 
+[Thd 37588 CPU 1 7/10/24 11:28:51.522] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=1697_240628_day17_Npx -g=0 -t=0 -ni -prb=0 -xd=2,0,385,3,20 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3Tester
+[Thd 37588 CPU 1 7/10/24 11:29:08.082] 
+[Thd 34256 CPU 1 7/10/24 11:29:26.774] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=1697_240628_day17_Npx -g=0 -t=0 -ni -prb=0 -xd=2,0,385,0,20 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3Tester
+[Thd 34256 CPU 1 7/10/24 11:29:43.321] 
+[Thd 19904 CPU 1 7/10/24 11:32:18.046] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=1697_240628_day17_Npx -g=0 -t=0 -ni -prb=0 -xd=2,0,385,0,20 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3Testera
+[Thd 19904 CPU 1 7/10/24 11:32:34.588] 
+[Thd 7396 CPU 1 7/10/24 11:35:38.551] Unknown option or wrong param count for option '-xd=2'.
+[Thd 7396 CPU 1 7/10/24 11:35:38.551] 
+[Thd 19904 CPU 1 7/10/24 11:36:07.068] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=1697_240628_day17_Npx -g=0 -t=0 -ni -prb=0 -xd=2,0,385,1,20 -xd=2,0,385,2,20 -xd=2,0,385,3,20 -xd=2,0,385,4,20 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3Testerc
+[Thd 19904 CPU 1 7/10/24 11:36:07.068] Error creating dir 'Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3Testerc/catgt_1697_240628_day17_Npx_g0'.
+[Thd 19904 CPU 1 7/10/24 11:36:07.068] 
+[Thd 34112 CPU 7 7/10/24 11:36:59.928] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=1697_240628_day17_Npx -g=0 -t=0 -ni -prb=0 -xd=2,0,385,1,20 -xd=2,0,385,2,20 -xd=2,0,385,3,20 -xd=2,0,385,4,20 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3_Testerc
+[Thd 34112 CPU 1 7/10/24 11:37:16.575] 
+[Thd 37676 CPU 1 7/10/24 11:39:39.709] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=1697_240628_day17_Npx -g=0 -t=0 -ni -prb=0 -xd=2,0,386,1,20 -xd=2,0,386,2,20 -xd=2,0,386,3,20 -xd=2,0,386,4,20 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3_Testerc
+[Thd 37676 CPU 1 7/10/24 11:39:56.483] 
+[Thd 28204 CPU 1 7/10/24 11:45:42.374] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=1697_240628_day17_Npx -g=0 -t=0 -ni -prb=0 -xd=2,0,386,1,20 -xd=2,0,386,2,20 -xd=2,0,386,3,20 -xd=2,0,386,4,20 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3_Testerd
+[Thd 28204 CPU 1 7/10/24 11:45:42.374] Error creating dir 'Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3_Testerd/catgt_1697_240628_day17_Npx_g0'.
+[Thd 28204 CPU 1 7/10/24 11:45:42.374] 
+[Thd 7436 CPU 1 7/10/24 11:46:19.268] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=1697_240628_day17_Npx -g=0 -t=0 -ni -prb=0 -xd=2,0,386,1,20 -xd=2,0,386,2,20 -xd=2,0,386,3,20 -xd=2,0,386,4,200 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3Testerd
+[Thd 7436 CPU 1 7/10/24 11:46:35.618] 
+[Thd 39752 CPU 1 7/10/24 11:49:14.896] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=1697_240628_day17_Npx -g=0 -t=0 -ni -prb=0 -xd=2,0,2,1,20 -xd=2,0,2,2,20 -xd=2,0,2,3,20 -xd=2,0,2,4,200 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3Testere
+[Thd 39752 CPU 1 7/10/24 11:49:31.476] 
+[Thd 37076 CPU 4 7/10/24 11:54:05.672] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=1697_240628_day17_Npx -g=0 -t=0 -ni -prb=0 -xd=2,0,387,1,20 -xd=2,0,387,2,20 -xd=2,0,387,3,20 -xd=2,0,387,4,200 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3Testere
+[Thd 37076 CPU 1 7/10/24 11:54:22.461] 
+[Thd 23944 CPU 1 7/10/24 11:58:09.955] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=1697_240628_day17_Npx -g=0 -t=0 -ni -prb=0 -xd=2,0,387,1,20 -xd=2,0,387,2,20 -xd=2,0,8,3,20 -xd=2,0,387,4,200 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3Testere -no_catgt_fld
+[Thd 23944 CPU 1 7/10/24 11:58:26.587] 
+[Thd 32604 CPU 6 7/10/24 11:59:15.049] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=1697_240628_day17_Npx -g=0 -t=0 -ni -prb=0 -xd=2,0,387,1,20 -xd=2,0,387,2,20 -xd=2,0,8,3,20 -xd=2,0,388,1,200 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3Testere -no_catgt_fld
+[Thd 32604 CPU 1 7/10/24 11:59:31.468] 
+[Thd 32404 CPU 0 7/10/24 12:00:57.626] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=1697_240628_day17_Npx -g=0 -t=0 -ni -prb=0 -xd=2,0,389,1,200 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3Testere -no_catgt_fld
+[Thd 28204 CPU 4 7/10/24 12:01:08.850] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=1697_240628_day17_Npx -g=0 -t=0 -ni -prb=0 -xd=2,0,389,1,0 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3Testere -no_catgt_fld
+[Thd 32404 CPU 2 7/10/24 12:01:14.443] 
+[Thd 28204 CPU 3 7/10/24 12:01:14.443] 
+[Thd 32088 CPU 1 7/10/24 12:02:21.227] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=1697_240628_day17_Npx -g=0 -t=0 -ni -prb=0 -xd=2,0,-1,1,0 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3Testere -no_catgt_fld
+[Thd 18908 CPU 1 7/10/24 12:02:29.031] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=1697_240628_day17_Npx -g=0 -t=0 -ni -prb=0 -xd=0,0,-1,1,0 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3Testere -no_catgt_fld
+[Thd 32088 CPU 1 7/10/24 12:02:37.694] 
+[Thd 18908 CPU 1 7/10/24 12:02:37.709] 
+[Thd 3688 CPU 1 7/10/24 12:02:59.592] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=1697_240628_day17_Npx -g=0 -t=0 -ni -prb=0 -xd=2,0,-1,1,0 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3Testere -no_catgt_fld
+[Thd 3688 CPU 1 7/10/24 12:03:15.919] 
+[Thd 36764 CPU 1 7/10/24 12:03:39.194] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=1697_240628_day17_Npx -g=0 -t=0 -ni -prb=0 -xd=0,0,-1,1,0 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3Testere -no_catgt_fld
+[Thd 36764 CPU 1 7/10/24 12:03:55.856] 
+[Thd 40476 CPU 2 7/10/24 12:16:04.700] Unknown option or wrong param count for option '-ixd=0,0,-1,6,0'.
+[Thd 40476 CPU 1 7/10/24 12:16:04.702] 
+[Thd 40704 CPU 2 7/10/24 12:17:21.509] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=1697_240628_day17_Npx -g=0 -t=0 -ni -prb=0 -maxsecs=855.762 -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/1697_240628_day17_Npx_g0/4_3Testere
+[Thd 40704 CPU 1 7/10/24 12:17:37.017] 
+[Thd 28876 CPU 6 7/10/24 12:21:08.581] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=240709_1697_day20_Npx_a -g=0 -t=0 -ni -prb=0 -maxsecs=2415.58 -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/240709_1697_day20_Npx_a_g0/TrimmedDueToAPfailure
+[Thd 28876 CPU 1 7/10/24 12:21:49.570] 
+[Thd 29768 CPU 1 7/10/24 12:23:04.154] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=240709_1697_day20_Npx_a -g=0 -t=0 -ni -prb=0 -maxsecs=2415.58 -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/240709_1697_day20_Npx_a_g0/TrimmedDueToAPfailure -no_catgt_fld
+[Thd 29768 CPU 1 7/10/24 12:23:44.301] 
+[Thd 37128 CPU 2 7/10/24 15:14:56.104] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=240709_1697_day20_Npx_a -g=0 -t=0 -ni -ap -prb=0 -maxsecs=2415.58 -loccar=1,2 -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0 -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/240709_1697_day20_Npx_a_g0/TrimmedDueToAPfailure -no_catgt_fld
+[Thd 36664 CPU 1 7/10/24 15:18:15.729] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=240709_1697_day20_Npx_b -g=0 -t=0 -ni -ap -prb=0 -loccar=1,2 -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 37128 CPU 1 7/10/24 15:48:29.212] 
+[Thd 36664 CPU 1 7/10/24 16:11:14.567] 
+[Thd 19888 CPU 2 7/11/24 12:23:57.379] Unknown option or wrong param count for option '240709_1697_day20_Npx_a_g0}{Z:/NeuropixelsAnalysis/AuditoryDay1/1697,'.
+[Thd 19888 CPU 1 7/11/24 12:23:57.388] 
+[Thd 41140 CPU 5 7/11/24 12:26:32.862] Cmdline: CatGT -t=cat -ni -ap -prb=0 -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0 -supercat={Z:/NeuropixelsAnalysis/AuditoryDay1/1697,240709_1697_day20_Npx_a_g0}{Z:/NeuropixelsAnalysis/AuditoryDay1/1697,240709_1697_day20_Npx_b_g0} -supercat_trim_edges -dest=/Z:NeuropixelsAnalysis/AuditoryDay1/1697/240709_1697_day20_Npx_supercat
+[Thd 41140 CPU 1 7/11/24 12:26:32.865] Error creating dir '/Z:NeuropixelsAnalysis/AuditoryDay1/1697/240709_1697_day20_Npx_supercat/supercat_240709_1697_day20_Npx_a_g0'.
+[Thd 41140 CPU 2 7/11/24 12:26:32.866] 
+[Thd 40516 CPU 2 7/11/24 12:27:37.760] Cmdline: CatGT -t=cat -ni -ap -prb=0 -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0 -supercat={Z:/NeuropixelsAnalysis/AuditoryDay1/1697,240709_1697_day20_Npx_a_g0}{Z:/NeuropixelsAnalysis/AuditoryDay1/1697,240709_1697_day20_Npx_b_g0} -supercat_trim_edges -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/240709_1697_day20_Npx_supercat
+[Thd 40516 CPU 2 7/11/24 12:27:38.005] File not found 'Z:/NeuropixelsAnalysis/AuditoryDay1/1697/240709_1697_day20_Npx_a_g0/240709_1697_day20_Npx_a_g0_tcat.nidq.bin'.
+[Thd 40516 CPU 1 7/11/24 12:27:38.026] 
+[Thd 40112 CPU 1 7/11/24 12:42:46.078] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=240709_1697_day20_Npx_a -g=0 -t=0 -ni -ap -prb=0 -maxsecs=2415.58 -loccar=1,2 -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0 -pass1_force_ni_ob_bin
+[Thd 1936 CPU 1 7/11/24 12:43:24.364] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=240709_1697_day20_Npx_b -g=0 -t=0 -ni -ap -prb=0 -loccar=1,2 -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0 -pass1_force_ni_ob_bin
+[Thd 40112 CPU 1 7/11/24 13:19:38.854] 
+[Thd 1936 CPU 1 7/11/24 13:40:44.710] 
+[Thd 26708 CPU 3 7/11/24 13:42:34.583] Cmdline: CatGT -t=cat -ni -ap -prb=0 -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0 -supercat={Z:/NeuropixelsAnalysis/AuditoryDay1/1697,240709_1697_day20_Npx_a_g0}{Z:/NeuropixelsAnalysis/AuditoryDay1/1697,240709_1697_day20_Npx_b_g0} -supercat_trim_edges -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/240709_1697_day20_Npx_supercat
+[Thd 26708 CPU 1 7/11/24 14:55:34.238] 
+[Thd 36112 CPU 0 7/11/24 16:50:19.373] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=240711_1697_day22_Npx -g=0 -t=0 -ni -ap -prb=0 -loccar=1,2 -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 36112 CPU 1 7/11/24 17:58:01.674] 
+[Thd 42440 CPU 1 7/12/24 09:26:27.354] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=240709_1697_day20_Npx_a -g=0 -t=0 -ap -prb=0 -maxsecs=2415.58 -pass1_force_ni_ob_bin -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/240709_1697_day20_Npx_supercat_noLoccar -no_catgt_fld
+[Thd 25376 CPU 1 7/12/24 09:27:19.190] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=240709_1697_day20_Npx_b -g=0 -t=0 -ap -prb=0 -pass1_force_ni_ob_bin -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/240709_1697_day20_Npx_supercat_noLoccar -no_catgt_fld
+[Thd 42440 CPU 3 7/12/24 09:59:31.017] 
+[Thd 25376 CPU 1 7/12/24 10:18:20.025] 
+[Thd 40288 CPU 1 7/12/24 13:16:44.930] Cmdline: CatGT -t=cat -ap -prb=0 -supercat={Z:/NeuropixelsAnalysis/AuditoryDay1/1697/240709_1697_day20_Npx_supercat_noLoccar,240709_1697_day20_Npx_a_g0}{Z:/NeuropixelsAnalysis/AuditoryDay1/1697/240709_1697_day20_Npx_supercat_noLoccar,240709_1697_day20_Npx_b_g0} -supercat_trim_edges -supercat_skip_ni_ob_bin -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/240709_1697_day20_Npx_supercat_noLoccar
+[Thd 40288 CPU 1 7/12/24 13:16:44.941] Meta file not found 'Z:/NeuropixelsAnalysis/AuditoryDay1/1697/240709_1697_day20_Npx_supercat_noLoccar/240709_1697_day20_Npx_a_g0/240709_1697_day20_Npx_a_g0_tcat.imec0.ap.meta'.
+[Thd 40288 CPU 1 7/12/24 13:16:44.941] 
+[Thd 44728 CPU 1 7/12/24 13:17:49.288] Cmdline: CatGT -t=cat -no_run_fld -ap -prb=0 -supercat={Z:/NeuropixelsAnalysis/AuditoryDay1/1697/240709_1697_day20_Npx_supercat_noLoccar,240709_1697_day20_Npx_a_g0}{Z:/NeuropixelsAnalysis/AuditoryDay1/1697/240709_1697_day20_Npx_supercat_noLoccar,240709_1697_day20_Npx_b_g0} -supercat_trim_edges -supercat_skip_ni_ob_bin -dest=Z:/NeuropixelsAnalysis/AuditoryDay1/1697/240709_1697_day20_Npx_supercat_noLoccar
+[Thd 44728 CPU 1 7/12/24 14:09:38.554] 
+[Thd 43064 CPU 1 7/16/24 14:00:36.502] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=240716_1697_day25_Npx -g=0 -t=0 -ni -ap -prb=0 -loccar=1,2 -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 43064 CPU 2 7/16/24 15:25:35.798] 
+[Thd 7612 CPU 5 7/19/24 11:49:30.445] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/AuditoryDay1/1697 -run=240718_1697_day26_Npx -g=0 -t=0 -ni -ap -prb=0 -loccar=1,2 -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 7612 CPU 1 7/19/24 13:03:02.796] 
+[Thd 13772 CPU 3 8/08/24 16:28:01.057] Cmdline: CatGT -dir=Z:/LaserCueCC/3106/240808_day1 -run=240808_1 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 13772 CPU 1 8/08/24 16:28:01.068] Meta file not found 'Z:/LaserCueCC/3106/240808_day1/240808_1_g0/240808_1_g0_t0.nidq.meta'.
+[Thd 13772 CPU 1 8/08/24 16:28:01.068] 
+[Thd 37608 CPU 4 8/08/24 16:29:26.852] Cmdline: CatGT -dir=Z:/LaserCueCC/3106/240808_day1 -run=240808_1 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 37608 CPU 0 8/08/24 16:30:33.966] 
+[Thd 2108 CPU 0 8/09/24 09:03:43.579] Cmdline: CatGT -dir=Z:/LaserCueCC/3106/240808_day1 -run=240808_1 -g=0 -t=0 -ni -xid=0,0,-1,2,0
+[Thd 2108 CPU 0 8/09/24 09:04:48.226] 
+[Thd 19480 CPU 1 8/09/24 15:09:52.291] Cmdline: CatGT -dir=Z:/LaserCueCC/3106/240809_day2 -run=240809_day2 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 19480 CPU 4 8/09/24 15:09:52.297] Meta file not found 'Z:/LaserCueCC/3106/240809_day2/240809_day2_g0/240809_day2_g0_t0.nidq.meta'.
+[Thd 19480 CPU 4 8/09/24 15:09:52.298] 
+[Thd 23712 CPU 1 8/09/24 15:10:19.497] Cmdline: CatGT -dir=Z:/LaserCueCC/3106/240809_day2_g0 -run=240809_day2 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 23712 CPU 0 8/09/24 15:10:19.501] Meta file not found 'Z:/LaserCueCC/3106/240809_day2_g0/240809_day2_g0/240809_day2_g0_t0.nidq.meta'.
+[Thd 23712 CPU 0 8/09/24 15:10:19.502] 
+[Thd 39632 CPU 0 8/09/24 15:11:05.718] Cmdline: CatGT -dir=Z:/LaserCueCC/3106 -run=240809_day2 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 39632 CPU 1 8/09/24 15:11:11.596] 
+[Thd 2072 CPU 1 8/09/24 15:17:09.493] Cmdline: CatGT -dir=Z:/LaserCueCC/3106 -run=240809_day2 -g=1 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 2072 CPU 1 8/09/24 15:19:04.298] 
+[Thd 17064 CPU 7 8/12/24 13:18:37.862] Cmdline: CatGT -dir=Z:/LaserCueCC/3106 -run=240812_day3 -g=1 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 17064 CPU 1 8/12/24 13:20:18.762] 
+[Thd 30200 CPU 1 8/14/24 08:04:52.701] Cmdline: CatGT -dir=Z:/LaserCueCC/3106 -run=240813_day4 -g=1 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 30200 CPU 1 8/14/24 08:06:32.082] 
+[Thd 2912 CPU 3 8/14/24 16:51:28.533] Cmdline: CatGT -dir=Z:/LaserCueCC/3106 -run=240813_day5 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 2912 CPU 1 8/14/24 16:51:28.538] Meta file not found 'Z:/LaserCueCC/3106/240813_day5_g0/240813_day5_g0_t0.nidq.meta'.
+[Thd 2912 CPU 1 8/14/24 16:51:28.538] 
+[Thd 39028 CPU 7 8/15/24 10:54:35.455] Cmdline: CatGT -dir=Z:/LaserCueCC/3106 -run=240814_day5 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 39028 CPU 3 8/15/24 10:56:14.292] 
+[Thd 11192 CPU 4 8/20/24 13:49:41.373] Cmdline: CatGT -dir=Z:/LaserCueCC/3106 -run=240820_day6_3106 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 19432 CPU 1 8/20/24 13:49:59.105] Cmdline: CatGT -dir=Z:/LaserCueCC/3106 -run=240815_day6 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 11192 CPU 1 8/20/24 13:52:33.843] 
+[Thd 19432 CPU 1 8/20/24 13:52:43.046] 
+[Thd 27596 CPU 6 8/23/24 14:47:38.054] Cmdline: CatGT -dir=Z:/LaserCueCC/223 -run=223_240823_day5 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 27596 CPU 1 8/23/24 14:48:55.068] 
+[Thd 28492 CPU 1 8/23/24 15:43:58.579] Cmdline: CatGT -dir=Z:/LaserCueCC/223 -run=223_240822_day4 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 28492 CPU 1 8/23/24 15:44:18.750] 
+[Thd 21804 CPU 3 8/23/24 15:44:52.439] Cmdline: CatGT -dir=Z:/LaserCueCC/223/240821_day3_savedWrong -run=222_240821_day2 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 19860 CPU 0 8/23/24 15:45:23.968] Cmdline: CatGT -dir=Z:/LaserCueCC/223 -run=240820_day2_223 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 27228 CPU 4 8/23/24 15:45:51.031] Cmdline: CatGT -dir=Z:/LaserCueCC/223 -run=240815_day1 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 21804 CPU 6 8/23/24 15:46:36.439] 
+[Thd 19860 CPU 3 8/23/24 15:48:09.120] 
+[Thd 27228 CPU 1 8/23/24 15:48:35.376] 
+[Thd 29572 CPU 1 8/26/24 15:17:54.039] Cmdline: CatGT -dir=Z:/LaserCueCC/223 -run=223_240826_day6 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 29572 CPU 1 8/26/24 15:19:38.720] 
+[Thd 11672 CPU 5 8/27/24 14:46:28.398] Cmdline: CatGT -dir=Z:/LaserCueCC/223 -run=223_240827_day7 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 11672 CPU 3 8/27/24 14:46:28.408] Meta file not found 'Z:/LaserCueCC/223/223_240827_day7_g0/223_240827_day7_g0_t0.nidq.meta'.
+[Thd 11672 CPU 3 8/27/24 14:46:28.409] 
+[Thd 27112 CPU 1 8/27/24 15:05:15.581] Cmdline: CatGT -dir=Z:/LaserCueCC/223 -run=223_240827_day7_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 27112 CPU 1 8/27/24 15:06:44.030] 
+[Thd 3600 CPU 0 8/28/24 12:07:37.466] Cmdline: CatGT -dir=Z:/LaserCueCC/223 -run=223_240828_day8_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 3600 CPU 5 8/28/24 12:09:10.237] 
+[Thd 13812 CPU 7 8/29/24 14:26:05.106] Cmdline: CatGT -dir=Z:/LaserCueCC/223 -run=223_240829_day9_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 13812 CPU 0 8/29/24 14:29:11.504] 
+[Thd 16076 CPU 0 8/29/24 14:51:27.615] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=223_240820_day1 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 16076 CPU 1 8/29/24 14:51:27.625] Meta file not found 'Z:/LaserCueCC/222/223_240820_day1_g0/223_240820_day1_g0_t0.nidq.meta'.
+[Thd 16076 CPU 0 8/29/24 14:51:27.628] 
+[Thd 28344 CPU 0 8/29/24 14:51:51.666] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240820_day1 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 9192 CPU 4 8/29/24 14:52:28.263] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240820_day2 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 9192 CPU 2 8/29/24 14:52:28.432] Meta file not found 'Z:/LaserCueCC/222/222_240820_day2_g0/222_240820_day2_g0_t0.nidq.meta'.
+[Thd 9192 CPU 4 8/29/24 14:52:28.432] 
+[Thd 27836 CPU 0 8/29/24 14:52:39.712] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240822_day2 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 15248 CPU 1 8/29/24 14:53:01.232] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240823_day3 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 17248 CPU 1 8/29/24 14:53:21.188] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240826_day4 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 21628 CPU 1 8/29/24 14:53:51.289] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240827_day5_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 16760 CPU 0 8/29/24 14:54:14.989] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240829_day6_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 30700 CPU 0 8/29/24 14:55:05.434] Cmdline: CatGT -dir=Z:/LaserCueCC/223 -run=223_240828_day8_withMaskLight -g=1 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 7916 CPU 2 8/29/24 14:55:47.579] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=222_240829_day4_withMaskLight -g=1 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 7916 CPU 1 8/29/24 14:55:47.891] Meta file not found 'Z:/LaserCueCC/240/222_240829_day4_withMaskLight_g1/222_240829_day4_withMaskLight_g1_t0.nidq.meta'.
+[Thd 7916 CPU 1 8/29/24 14:55:47.891] 
+[Thd 28344 CPU 0 8/29/24 14:55:58.490] 
+[Thd 11868 CPU 1 8/29/24 14:56:11.531] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=222_240829_day4_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 11868 CPU 2 8/29/24 14:56:23.173] 
+[Thd 17248 CPU 1 8/29/24 14:57:33.575] 
+[Thd 27836 CPU 0 8/29/24 14:59:15.183] 
+[Thd 30700 CPU 0 8/29/24 14:59:30.598] 
+[Thd 21628 CPU 4 8/29/24 14:59:47.853] 
+[Thd 16760 CPU 6 8/29/24 15:01:09.648] 
+[Thd 15248 CPU 1 8/29/24 15:01:27.009] 
+[Thd 18352 CPU 1 8/29/24 15:04:33.973] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_240829_day1_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 18352 CPU 5 8/29/24 15:04:33.977] Meta file not found 'Z:/LaserCueCC/240/240_240829_day1_withMaskLight_g0/240_240829_day1_withMaskLight_g0_t0.nidq.meta'.
+[Thd 18352 CPU 0 8/29/24 15:04:33.982] 
+[Thd 15736 CPU 0 8/29/24 15:04:49.507] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_240829_day1 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 15736 CPU 3 8/29/24 15:04:49.507] Meta file not found 'Z:/LaserCueCC/240/240_240829_day1_g0/240_240829_day1_g0_t0.nidq.meta'.
+[Thd 15736 CPU 3 8/29/24 15:04:49.507] 
+[Thd 12096 CPU 1 8/29/24 15:05:04.673] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_240822_day1 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 27400 CPU 0 8/29/24 15:05:23.010] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_240822_day2 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 27400 CPU 1 8/29/24 15:05:23.031] Meta file not found 'Z:/LaserCueCC/240/240_240822_day2_g0/240_240822_day2_g0_t0.nidq.meta'.
+[Thd 27400 CPU 1 8/29/24 15:05:23.031] 
+[Thd 30628 CPU 4 8/29/24 15:05:34.850] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_240823_day2 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 10956 CPU 3 8/29/24 15:07:19.979] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_240827_day3 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 10956 CPU 4 8/29/24 15:07:20.009] Meta file not found 'Z:/LaserCueCC/240/240_240827_day3_g0/240_240827_day3_g0_t0.nidq.meta'.
+[Thd 10956 CPU 4 8/29/24 15:07:20.009] 
+[Thd 27388 CPU 1 8/29/24 15:07:31.732] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_240827_day3_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 30204 CPU 5 8/29/24 15:07:41.213] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_240827_day3a_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 30628 CPU 0 8/29/24 15:07:49.595] 
+[Thd 12096 CPU 0 8/29/24 15:08:03.507] 
+[Thd 30204 CPU 2 8/29/24 15:09:41.273] 
+[Thd 27388 CPU 4 8/29/24 15:10:45.647] 
+[Thd 32444 CPU 1 8/30/24 13:35:05.828] Cmdline: CatGT -dir=Z:/LaserCueCC/223 -run=223_240829_day10_withMaskLight_startExtinct -g=1 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 32444 CPU 0 8/30/24 13:38:20.843] 
+[Thd 12916 CPU 5 8/30/24 14:23:00.485] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240830_day7_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 12916 CPU 2 8/30/24 14:24:15.775] 
+[Thd 10756 CPU 5 9/06/24 15:25:09.219] Cmdline: CatGT -dir=Z:/LaserCueCC/223 -run=222_240903day8_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 10756 CPU 1 9/06/24 15:25:09.229] Meta file not found 'Z:/LaserCueCC/223/222_240903day8_withMaskLight_g0/222_240903day8_withMaskLight_g0_t0.nidq.meta'.
+[Thd 10756 CPU 1 9/06/24 15:25:09.230] 
+[Thd 33368 CPU 1 9/06/24 15:25:32.660] Cmdline: CatGT -dir=Z:/LaserCueCC/223 -run=222_240903_day8_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 33368 CPU 1 9/06/24 15:25:32.664] Meta file not found 'Z:/LaserCueCC/223/222_240903_day8_withMaskLight_g0/222_240903_day8_withMaskLight_g0_t0.nidq.meta'.
+[Thd 33368 CPU 1 9/06/24 15:25:32.665] 
+[Thd 41616 CPU 1 9/06/24 15:26:33.178] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240903_day8_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 41616 CPU 1 9/06/24 15:27:45.877] 
+[Thd 41140 CPU 1 9/06/24 15:27:49.377] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240904_day9_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 41140 CPU 1 9/06/24 15:28:49.476] 
+[Thd 33876 CPU 1 9/06/24 15:29:34.101] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240905_day10_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 41884 CPU 1 9/06/24 15:29:53.660] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240906_day11_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 33876 CPU 2 9/06/24 15:31:38.752] 
+[Thd 41884 CPU 1 9/06/24 15:31:52.715] 
+[Thd 18216 CPU 1 9/10/24 08:53:02.835] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240909_day12_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 18216 CPU 1 9/10/24 08:54:02.631] 
+[Thd 33700 CPU 1 9/10/24 12:18:07.745] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240910_day13_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 33700 CPU 1 9/10/24 12:18:08.102] 
+[Thd 29044 CPU 1 9/10/24 12:18:24.813] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240910_day13_withMaskLight -g=1 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 29044 CPU 1 9/10/24 12:19:27.836] 
+[Thd 36200 CPU 5 9/11/24 14:59:09.911] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240911_day14_withMaskLight_higherLaser -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 36200 CPU 6 9/11/24 15:00:13.818] 
+[Thd 22360 CPU 0 9/17/24 15:22:43.883] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240917_day17_withMaskLight_higherLaser -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 22360 CPU 1 9/17/24 15:23:39.359] 
+[Thd 6836 CPU 2 9/17/24 15:24:02.458] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240912_day15_withMaskLight_higherLaser -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 43608 CPU 6 9/17/24 15:24:29.857] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240916_day16_withMaskLight_higherLaser -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 6836 CPU 2 9/17/24 15:26:07.109] 
+[Thd 43608 CPU 3 9/17/24 15:26:07.109] 
+[Thd 45528 CPU 0 9/24/24 10:45:45.074] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240917_day17_withMaskLight_higherLaser -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 47304 CPU 2 9/24/24 10:46:06.729] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240919_day18_withMaskLight_higherLaser -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 34280 CPU 7 9/24/24 10:46:33.076] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240920_day19_withMaskLight_higherLaser -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 48440 CPU 1 9/24/24 10:46:52.650] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240923_day20_withMaskLight_higherLaser -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 45528 CPU 5 9/24/24 10:47:07.921] 
+[Thd 47304 CPU 6 9/24/24 10:49:04.511] 
+[Thd 34280 CPU 2 9/24/24 10:50:19.520] 
+[Thd 48440 CPU 1 9/24/24 10:50:20.312] 
+[Thd 51276 CPU 5 9/30/24 14:11:19.130] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240924_day21_withMaskLight_higherLaser -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 39808 CPU 4 9/30/24 14:11:36.946] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240927_day22_withMaskLight_higherLaser -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 39220 CPU 1 9/30/24 14:11:49.546] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_240930_day23_withMaskLight_higherLaser -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 51276 CPU 5 9/30/24 14:12:59.936] 
+[Thd 39808 CPU 2 9/30/24 14:13:24.848] 
+[Thd 39220 CPU 1 9/30/24 14:14:10.232] 
+[Thd 32196 CPU 2 10/02/24 10:04:31.729] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_2401001_day24_withMaskLight_higherLaser -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 32196 CPU 1 10/02/24 10:04:31.740] Meta file not found 'Z:/LaserCueCC/222/222_2401001_day24_withMaskLight_higherLaser_g0/222_2401001_day24_withMaskLight_higherLaser_g0_t0.nidq.meta'.
+[Thd 32196 CPU 1 10/02/24 10:04:31.740] 
+[Thd 30020 CPU 2 10/02/24 10:04:53.719] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_241001_day24_withMaskLight_higherLaser -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 19496 CPU 1 10/02/24 10:05:24.723] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=240_241001_day26_withMaskLight_higherLaser -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 19496 CPU 1 10/02/24 10:05:24.755] Meta file not found 'Z:/LaserCueCC/222/240_241001_day26_withMaskLight_higherLaser_g0/240_241001_day26_withMaskLight_higherLaser_g0_t0.nidq.meta'.
+[Thd 19496 CPU 1 10/02/24 10:05:24.755] 
+[Thd 51792 CPU 1 10/02/24 10:05:41.901] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241001_day26_withMaskLight_higherLaser -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 51792 CPU 2 10/02/24 10:05:41.961] Meta file not found 'Z:/LaserCueCC/240/240_241001_day26_withMaskLight_higherLaser_g0/240_241001_day26_withMaskLight_higherLaser_g0_t0.nidq.meta'.
+[Thd 51792 CPU 2 10/02/24 10:05:41.961] 
+[Thd 30020 CPU 1 10/02/24 10:06:14.532] 
+[Thd 11552 CPU 2 10/02/24 10:06:59.789] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241001_day26_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 11552 CPU 0 10/02/24 10:07:43.293] 
+[Thd 15932 CPU 1 10/04/24 08:38:02.724] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_241002_day25_withMaskLight_higherPower -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 18700 CPU 1 10/04/24 08:38:30.081] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_241003_day26_withMaskLight_higherPower -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 18700 CPU 2 10/04/24 08:38:30.140] Meta file not found 'Z:/LaserCueCC/222/222_241003_day26_withMaskLight_higherPower_g0/222_241003_day26_withMaskLight_higherPower_g0_t0.nidq.meta'.
+[Thd 18700 CPU 2 10/04/24 08:38:30.141] 
+[Thd 5900 CPU 1 10/04/24 08:38:47.704] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_241003_day26_withMaskLight_higherLaser -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 15932 CPU 1 10/04/24 08:39:40.696] 
+[Thd 5900 CPU 1 10/04/24 08:41:07.402] 
+[Thd 7328 CPU 3 10/04/24 16:25:58.627] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_241004_day27_withMaskLight_higherPower_extinguish -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 7328 CPU 2 10/04/24 16:27:04.638] 
+[Thd 24972 CPU 0 10/07/24 09:07:05.904] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241002_day7_withMaskLight_a -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 50424 CPU 7 10/07/24 09:07:40.039] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241003_day8_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 36356 CPU 4 10/07/24 09:07:56.933] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241004_day9_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 53388 CPU 3 10/07/24 09:08:48.447] Cmdline: CatGT -dir=Z:/LaserCueCC/241 -run=241_241002_day1_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 24972 CPU 2 10/07/24 09:09:00.348] 
+[Thd 50940 CPU 3 10/07/24 09:09:30.324] Cmdline: CatGT -dir=Z:/LaserCueCC/241 -run=241_241003_day2_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 8624 CPU 0 10/07/24 09:09:48.760] Cmdline: CatGT -dir=Z:/LaserCueCC/241 -run=241_241004_day3_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 53388 CPU 6 10/07/24 09:11:25.088] 
+[Thd 50424 CPU 2 10/07/24 09:11:44.322] 
+[Thd 8624 CPU 3 10/07/24 09:12:09.721] 
+[Thd 50940 CPU 1 10/07/24 09:12:17.053] 
+[Thd 52680 CPU 2 10/08/24 10:37:01.476] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241007_day10_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 432 CPU 1 10/08/24 10:37:29.412] Cmdline: CatGT -dir=Z:/LaserCueCC/241 -run=241_241007_day4_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 15680 CPU 1 10/08/24 10:37:53.282] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_241007_day28_withMaskLight_higherPower_extinguish -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 15680 CPU 3 10/08/24 10:37:53.390] Meta file not found 'Z:/LaserCueCC/222/222_241007_day28_withMaskLight_higherPower_extinguish_g0/222_241007_day28_withMaskLight_higherPower_extinguish_g0_t0.nidq.meta'.
+[Thd 15680 CPU 3 10/08/24 10:37:53.390] 
+[Thd 2896 CPU 2 10/08/24 10:38:07.805] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_241007_day28_withMaskLight_higherPower_extinguish_g0 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 52680 CPU 1 10/08/24 10:38:33.134] 
+[Thd 432 CPU 1 10/08/24 10:39:16.535] 
+[Thd 2896 CPU 2 10/08/24 10:39:36.214] 
+[Thd 38396 CPU 1 10/09/24 10:35:32.879] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_241008_day29_withMaskLight_higherPower_extinguish -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 49692 CPU 1 10/09/24 10:36:27.595] Cmdline: CatGT -dir=Z:/LaserCueCC/240/day11 -run=240_241008_day21_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 38396 CPU 3 10/09/24 10:36:30.751] 
+[Thd 36872 CPU 1 10/09/24 10:37:00.921] Cmdline: CatGT -dir=Z:/LaserCueCC/241 -run=241_241008_day5_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 36872 CPU 3 10/09/24 10:37:05.428] 
+[Thd 55900 CPU 1 10/09/24 10:37:09.968] Cmdline: CatGT -dir=Z:/LaserCueCC/241 -run=241_241008_day5_withMaskLight -g=1 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 49692 CPU 3 10/09/24 10:37:52.970] 
+[Thd 55900 CPU 1 10/09/24 10:38:32.413] 
+[Thd 33760 CPU 1 10/10/24 09:29:47.806] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241009_day12_withMaskLight_forReal -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 33760 CPU 1 10/10/24 09:31:30.134] 
+[Thd 21476 CPU 2 10/15/24 14:59:33.771] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/1699troubleshooting -run=tester1_700ms -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 21476 CPU 1 10/15/24 14:59:45.939] 
+[Thd 3280 CPU 1 10/15/24 15:00:01.357] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/1699troubleshooting -run=tester2_n18_700ms -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 3280 CPU 1 10/15/24 15:00:09.057] 
+[Thd 16168 CPU 1 10/21/24 09:47:34.918] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241010_day13_withMaskLight_higherPower -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 31108 CPU 1 10/21/24 09:48:00.007] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241015_day14_withMaskLight_higherPower -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 22180 CPU 1 10/21/24 09:48:27.929] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241016_day15_withMaskLight_higherPower -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 22180 CPU 2 10/21/24 09:48:28.035] Meta file not found 'Z:/LaserCueCC/240/240_241016_day15_withMaskLight_higherPower_g0/240_241016_day15_withMaskLight_higherPower_g0_t0.nidq.meta'.
+[Thd 22180 CPU 2 10/21/24 09:48:28.035] 
+[Thd 16168 CPU 1 10/21/24 09:48:49.849] 
+[Thd 27300 CPU 1 10/21/24 09:48:52.153] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241016_day15_wihtMaskLight_higherPower -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 34528 CPU 1 10/21/24 09:49:18.825] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241017_day16_withMaskLight_higherPower -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 32052 CPU 1 10/21/24 09:49:38.843] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241018_day17_withMaskLight_higherPower -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 31108 CPU 4 10/21/24 09:50:41.673] 
+[Thd 27300 CPU 2 10/21/24 09:52:19.194] 
+[Thd 34528 CPU 1 10/21/24 09:52:37.751] 
+[Thd 32052 CPU 1 10/21/24 09:53:03.774] 
+[Thd 932 CPU 1 10/21/24 10:40:27.393] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_241010_day31_withMaskLight_extinguish -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 932 CPU 1 10/21/24 10:41:03.074] 
+[Thd 20716 CPU 2 10/21/24 10:42:25.814] Unknown option or wrong param count for option 'recording_100paired_lowerPower'.
+[Thd 20716 CPU 2 10/21/24 10:42:25.816] 
+[Thd 33704 CPU 4 10/21/24 10:55:35.641] Unknown option or wrong param count for option 'recording_100paired_lowerPower'.
+[Thd 33704 CPU 4 10/21/24 10:55:35.642] 
+[Thd 32968 CPU 0 10/21/24 10:57:05.693] Unknown option or wrong param count for option 'recording_100paired_lowerPower'.
+[Thd 32968 CPU 0 10/21/24 10:57:05.694] 
+[Thd 32764 CPU 1 10/21/24 10:57:48.487] Cmdline: CatGT -dir=Z:/LaserCueCC/222/222_241009_day30_Mistake -run=240_241009_day12_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 32764 CPU 2 10/21/24 10:57:48.490] Meta file not found 'Z:/LaserCueCC/222/222_241009_day30_Mistake/240_241009_day12_withMaskLight_g0/240_241009_day12_withMaskLight_g0_t0.nidq.meta'.
+[Thd 32764 CPU 2 10/21/24 10:57:48.490] 
+[Thd 29348 CPU 7 10/21/24 11:00:11.231] Cmdline: CatGT -dir=Z:/LaserCueCC/222/222_241009_day30_Mistake_recording_100paired_lowerPower -run=240_241009_day12_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 29348 CPU 1 10/21/24 11:01:20.639] 
+[Thd 31636 CPU 2 10/21/24 11:02:22.106] Cmdline: CatGT -dir=Z:/LaserCueCC/222/700ms -run=222_241015_day1_700 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 34136 CPU 1 10/21/24 11:02:43.634] Cmdline: CatGT -dir=Z:/LaserCueCC/222/700ms -run=222_241016_day2_700 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 30940 CPU 5 10/21/24 11:03:01.481] Cmdline: CatGT -dir=Z:/LaserCueCC/222/700ms -run=222_241017_day3_700 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 28924 CPU 2 10/21/24 11:03:20.506] Cmdline: CatGT -dir=Z:/LaserCueCC/222/700ms -run=222_241018_day4_700 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 31636 CPU 1 10/21/24 11:04:18.501] 
+[Thd 34136 CPU 4 10/21/24 11:05:34.172] 
+[Thd 30940 CPU 1 10/21/24 11:05:49.458] 
+[Thd 28924 CPU 1 10/21/24 11:06:14.665] 
+[Thd 26448 CPU 2 10/21/24 11:51:44.692] Cmdline: CatGT -dir=Z:/LaserCueCC/241 -run=241_241009_day6_withMaskLight -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 26448 CPU 1 10/21/24 11:52:59.223] 
+[Thd 16288 CPU 6 10/21/24 12:14:56.993] Cmdline: CatGT -dir=Z:/LaserCueCC/241 -run=241_241010_day7_withMaskLight_extinguish -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 27700 CPU 7 10/21/24 12:15:24.375] Cmdline: CatGT -dir=Z:/LaserCueCC/241 -run=241_241015_day8_withMaskLight_extinguish -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 27700 CPU 3 10/21/24 12:15:24.380] Meta file not found 'Z:/LaserCueCC/241/241_241015_day8_withMaskLight_extinguish_g0/241_241015_day8_withMaskLight_extinguish_g0_t0.nidq.meta'.
+[Thd 27700 CPU 3 10/21/24 12:15:24.380] 
+[Thd 21456 CPU 1 10/21/24 12:15:52.233] Cmdline: CatGT -dir=Z:/LaserCueCC/241 -run=241_241015_day8_withMaskLight_extringuish -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 924 CPU 1 10/21/24 12:16:14.241] Cmdline: CatGT -dir=Z:/LaserCueCC/241 -run=241_241015_day8_withMaskLight_extringuish -g=1 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 924 CPU 1 10/21/24 12:16:20.870] 
+[Thd 16288 CPU 1 10/21/24 12:16:34.335] 
+[Thd 30932 CPU 1 10/21/24 12:16:41.250] Cmdline: CatGT -dir=Z:/LaserCueCC/241 -run=241_241016_day9_withMaskLight_extringuish -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 30932 CPU 1 10/21/24 12:16:41.300] Meta file not found 'Z:/LaserCueCC/241/241_241016_day9_withMaskLight_extringuish_g0/241_241016_day9_withMaskLight_extringuish_g0_t0.nidq.meta'.
+[Thd 30932 CPU 1 10/21/24 12:16:41.300] 
+[Thd 33024 CPU 1 10/21/24 12:17:05.288] Cmdline: CatGT -dir=Z:/LaserCueCC/241 -run=241_241016_day9_wihtMaskLight_extringuish -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 21456 CPU 1 10/21/24 12:17:18.115] 
+[Thd 33024 CPU 1 10/21/24 12:18:14.207] 
+[Thd 23856 CPU 6 10/21/24 13:55:10.216] Cmdline: CatGT -dir=Z:/LaserCueCC/222/700ms -run=222_241021_day5_700 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 32152 CPU 1 10/21/24 13:56:16.894] Cmdline: CatGT -dir=Z:/LaserCueCC/241 -run=240_241021_day8_withMaskLight_higherPower -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 32152 CPU 1 10/21/24 13:56:16.946] Meta file not found 'Z:/LaserCueCC/241/240_241021_day8_withMaskLight_higherPower_g0/240_241021_day8_withMaskLight_higherPower_g0_t0.nidq.meta'.
+[Thd 32152 CPU 1 10/21/24 13:56:16.946] 
+[Thd 23856 CPU 1 10/21/24 13:56:22.979] 
+[Thd 34764 CPU 7 10/21/24 13:59:05.823] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241021_day8_withMaskLight_higherPower -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 34764 CPU 4 10/21/24 14:00:22.536] 
+[Thd 35260 CPU 3 10/22/24 14:45:33.568] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241021_day19_withMaskLight_higherPower -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 21268 CPU 1 10/22/24 14:46:17.868] Cmdline: CatGT -dir=Z:/LaserCueCC/222/700ms -run=222_241022_day6_700ms -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 35260 CPU 1 10/22/24 14:46:56.558] 
+[Thd 21268 CPU 1 10/22/24 14:47:52.414] 
+[Thd 16292 CPU 1 10/25/24 10:13:11.613] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241023_day20_withMaskLight_higherPower -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 31292 CPU 1 10/25/24 10:13:42.591] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241021_day21_withMaskLight_higherPower -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 31292 CPU 2 10/25/24 10:13:42.623] Meta file not found 'Z:/LaserCueCC/240/240_241021_day21_withMaskLight_higherPower_g0/240_241021_day21_withMaskLight_higherPower_g0_t0.nidq.meta'.
+[Thd 31292 CPU 2 10/25/24 10:13:42.623] 
+[Thd 21044 CPU 1 10/25/24 10:14:03.065] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241024_day21_withMaskLight_higherPower -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 7488 CPU 1 10/25/24 10:14:58.192] Cmdline: CatGT -dir=Z:/LaserCueCC/222/700ms -run=222_241023_day7_700 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 16292 CPU 1 10/25/24 10:15:03.783] 
+[Thd 12748 CPU 2 10/25/24 10:15:23.211] Cmdline: CatGT -dir=Z:/LaserCueCC/222/700ms -run=222_241024_day8_700_Ext -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 21044 CPU 3 10/25/24 10:17:19.196] 
+[Thd 12748 CPU 3 10/25/24 10:17:41.228] 
+[Thd 7488 CPU 1 10/25/24 10:17:45.889] 
+[Thd 36964 CPU 1 10/25/24 15:32:08.353] Cmdline: CatGT -dir=Z:/LaserCueCC/222/700ms -run=222_241025_day9_700_Ext -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 2592 CPU 1 10/25/24 15:32:42.500] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241025_day22_withMaskLight_higherPower -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 4052 CPU 1 10/25/24 15:33:03.312] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241025_day22_withMaskLight_higherPower -g=1 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 2592 CPU 1 10/25/24 15:33:10.397] 
+[Thd 36964 CPU 2 10/25/24 15:33:42.265] 
+[Thd 4052 CPU 1 10/25/24 15:34:42.516] 
+[Thd 13264 CPU 2 10/28/24 16:23:01.345] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241028_day23_withMaskLight_higherPower -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 6100 CPU 1 10/28/24 16:23:23.770] Cmdline: CatGT -dir=Z:/LaserCueCC/222/700ms -run=222_241028_day10_700_Ext -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 6100 CPU 1 10/28/24 16:25:17.620] 
+[Thd 13264 CPU 1 10/28/24 16:25:26.662] 
+[Thd 26172 CPU 2 10/31/24 14:18:46.317] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241029_day24_Ext -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 26484 CPU 1 10/31/24 14:19:03.260] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241029_day25_Ext -g=1 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 26484 CPU 2 10/31/24 14:19:03.301] Meta file not found 'Z:/LaserCueCC/240/240_241029_day25_Ext_g1/240_241029_day25_Ext_g1_t0.nidq.meta'.
+[Thd 26484 CPU 2 10/31/24 14:19:03.302] 
+[Thd 33636 CPU 1 10/31/24 14:19:29.888] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241030_day25_Ext -g=1 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 17472 CPU 0 10/31/24 14:19:52.460] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241031_day26_Ext -g=1 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 17472 CPU 1 10/31/24 14:19:52.641] Meta file not found 'Z:/LaserCueCC/240/240_241031_day26_Ext_g1/240_241031_day26_Ext_g1_t0.nidq.meta'.
+[Thd 17472 CPU 1 10/31/24 14:19:52.642] 
+[Thd 29916 CPU 2 10/31/24 14:20:09.379] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241031_day26_Ext -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 26172 CPU 0 10/31/24 14:21:16.179] 
+[Thd 33636 CPU 1 10/31/24 14:22:46.206] 
+[Thd 29916 CPU 1 10/31/24 14:23:15.592] 
+[Thd 21376 CPU 7 11/05/24 15:02:33.206] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241031_day27_reEst_500 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 21376 CPU 3 11/05/24 15:02:33.216] Meta file not found 'Z:/LaserCueCC/240/240_241031_day27_reEst_500_g0/240_241031_day27_reEst_500_g0_t0.nidq.meta'.
+[Thd 21376 CPU 3 11/05/24 15:02:33.216] 
+[Thd 3620 CPU 1 11/05/24 15:03:04.848] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241104_day27_reEst_500 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 3620 CPU 1 11/05/24 15:04:32.127] 
+[Thd 42568 CPU 1 11/05/24 15:06:08.229] Cmdline: CatGT -dir=Z:/LaserCueCC/241 -run=241_241104_day10_reEst_500 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 42568 CPU 2 11/05/24 15:07:18.879] 
+[Thd 42600 CPU 1 11/05/24 15:27:52.594] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/1699troubleshooting -run=CCmatchTry2_g0 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 42600 CPU 2 11/05/24 15:27:52.597] Meta file not found 'Z:/NeuropixelsAnalysis/1699troubleshooting/CCmatchTry2_g0_g0/CCmatchTry2_g0_g0_t0.nidq.meta'.
+[Thd 42600 CPU 1 11/05/24 15:27:52.598] 
+[Thd 40768 CPU 2 11/05/24 15:28:12.920] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/1699troubleshooting -run=CCmatchTry2 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 40768 CPU 1 11/05/24 15:28:33.337] 
+[Thd 28476 CPU 1 11/06/24 13:18:14.448] Cmdline: CatGT -dir=Z:/LaserCueCC/241 -run=241_241106_day11_500_lockedWheel -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 21908 CPU 1 11/06/24 13:18:28.272] Cmdline: CatGT -dir=Z:/LaserCueCC/241 -run=241_241106_day11_500_lockedWheel -g=1 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 28212 CPU 0 11/06/24 13:19:15.659] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241106_day28_500_LockedWheel -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 21908 CPU 7 11/06/24 13:19:18.384] 
+[Thd 43968 CPU 0 11/06/24 13:19:24.196] Cmdline: CatGT -dir=Z:/LaserCueCC/240 -run=240_241106_day28_500_LockedWheel -g=1 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 28476 CPU 2 11/06/24 13:20:20.023] 
+[Thd 43968 CPU 5 11/06/24 13:20:38.784] 
+[Thd 28212 CPU 5 11/06/24 13:21:28.492] 
+[Thd 37908 CPU 1 11/06/24 14:42:39.290] Cmdline: CatGT -dir=Z:/NeuropixelsAnalysis/1699troubleshooting -run=CCmatchTry3 -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 37908 CPU 1 11/06/24 14:43:45.441] 
+[Thd 39580 CPU 1 11/07/24 14:34:28.905] Cmdline: CatGT -dir=Z:/LaserCueCC/223 -run=223_241107_day11_500_ReEst -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 39580 CPU 1 11/07/24 14:35:00.654] 
+[Thd 42952 CPU 1 11/08/24 11:05:48.629] Cmdline: CatGT -dir=Z:/LaserCueCC/223 -run=223_241108_day12_500_LockedWheel -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 42952 CPU 1 11/08/24 11:06:42.659] 
+[Thd 35872 CPU 3 11/11/24 11:09:38.833] Cmdline: CatGT -dir=Z:/LaserCueCC/222 -run=222_241111_day32_500_ReEst -g=0 -t=0 -ni -xd=0,0,-1,1,0 -xd=0,0,-1,2,0 -xid=0,0,-1,2,0 -xd=0,0,-1,3,0 -xd=0,0,-1,4,0 -xd=0,0,-1,6,0 -xd=0,0,-1,7,0 -xid=0,0,-1,6,0 -xid=0,0,-1,7,0
+[Thd 35872 CPU 1 11/11/24 11:10:56.584] 
+[Thd 54632 CPU 56 11/14/24 15:57:49.325] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/240816 -run=i2730-240816-CrossOri-RandDirFourPhase -g=0 -t=0 -ni -prb=0 -xd=0,0,8,0,0 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/240816
+[Thd 54632 CPU 56 11/14/24 16:03:17.180] 
+[Thd 93732 CPU 48 2/17/25 13:35:32.214] Unknown option or wrong param count for option '\-run=i2746-250211-CrossOri-RandDirFourPhase'.
+[Thd 93732 CPU 48 2/17/25 13:35:32.218] 
+[Thd 49928 CPU 50 2/17/25 13:40:08.286] Unknown option or wrong param count for option '\'.
+[Thd 49928 CPU 50 2/17/25 13:40:08.288] 
+[Thd 95092 CPU 48 2/17/25 13:40:36.452] Unknown option or wrong param count for option '\'.
+[Thd 95092 CPU 48 2/17/25 13:40:36.454] 
+[Thd 30608 CPU 48 2/17/25 13:41:16.538] Unknown option or wrong param count for option '\'.
+[Thd 30608 CPU 48 2/17/25 13:41:16.539] 
+[Thd 31500 CPU 48 2/17/25 13:43:20.900] Unknown option or wrong param count for option '\'.
+[Thd 31500 CPU 48 2/17/25 13:43:20.902] 
+[Thd 78128 CPU 2 2/17/25 13:45:06.028] Unknown option or wrong param count for option '\'.
+[Thd 78128 CPU 2 2/17/25 13:45:06.030] 
+[Thd 91088 CPU 4 2/17/25 13:45:55.613] Unknown option or wrong param count for option '-xd=0'.
+[Thd 91088 CPU 4 2/17/25 13:45:55.615] 
+[Thd 37516 CPU 2 2/17/25 13:51:33.024] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest_1sOn1sOff -g=0 -t=0 -ni -prb=0 -xd=0,0,0,1,0 -xd=0,0,0,2,0 -xd=0,0,0,3,0 -xd=0,0,0,6,0 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 37516 CPU 0 2/17/25 13:51:33.033] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest_1sOn1sOff_g0/i2746-250211-12DirTest_1sOn1sOff_g0_t0.nidq.meta'.
+[Thd 37516 CPU 0 2/17/25 13:51:33.034] 
+[Thd 15768 CPU 8 2/17/25 13:57:55.292] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest_1sOn1sOff -g=0 -t=0 -ni -prb=0 -xd=0,0,0,3,0 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 15768 CPU 6 2/17/25 13:57:55.296] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest_1sOn1sOff_g0/i2746-250211-12DirTest_1sOn1sOff_g0_t0.nidq.meta'.
+[Thd 15768 CPU 6 2/17/25 13:57:55.297] 
+[Thd 28644 CPU 8 2/17/25 13:58:20.100] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest_1sOn1sOff -g=0 -t=0 -ni -prb=0 -xd=0,0,3,0,0 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 28644 CPU 8 2/17/25 13:58:20.104] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest_1sOn1sOff_g0/i2746-250211-12DirTest_1sOn1sOff_g0_t0.nidq.meta'.
+[Thd 28644 CPU 8 2/17/25 13:58:20.104] 
+[Thd 42396 CPU 54 2/17/25 13:58:40.644] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest_1sOn1sOff -g=0 -t=0 -ni -prb=0 -xd=0,0,8,0,0 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 42396 CPU 48 2/17/25 13:58:40.648] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest_1sOn1sOff_g0/i2746-250211-12DirTest_1sOn1sOff_g0_t0.nidq.meta'.
+[Thd 42396 CPU 48 2/17/25 13:58:40.649] 
+[Thd 90384 CPU 48 2/17/25 13:59:05.075] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest_1sOn1sOff -g=0 -t=0 -ni -prb=0 -xd=0,0,1,0,0 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 90384 CPU 48 2/17/25 13:59:05.079] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest_1sOn1sOff_g0/i2746-250211-12DirTest_1sOn1sOff_g0_t0.nidq.meta'.
+[Thd 90384 CPU 48 2/17/25 13:59:05.079] 
+[Thd 61380 CPU 48 2/17/25 13:59:41.159] Error: Bad g- or t-indices.
+[Thd 61380 CPU 52 2/17/25 13:59:41.161] 
+[Thd 61380 CPU 52 2/17/25 13:59:41.162] *** ERROR: MISSING CRITICAL PARAMETERS ***
+[Thd 61380 CPU 52 2/17/25 13:59:41.162] ------------------------
+[Thd 61380 CPU 52 2/17/25 13:59:41.163] Purpose:
+[Thd 61380 CPU 56 2/17/25 13:59:41.163] + Optionally join trials with given run_name and index ranges [ga,gb] [ta,tb]...
+[Thd 61380 CPU 56 2/17/25 13:59:41.164] + ...Or run on any individual file.
+[Thd 61380 CPU 56 2/17/25 13:59:41.164] + Optionally apply demultiplexing corrections.
+[Thd 61380 CPU 56 2/17/25 13:59:41.165] + Optionally apply band-pass and global CAR filters.
+[Thd 61380 CPU 56 2/17/25 13:59:41.165] + Optionally edit out saturation artifacts.
+[Thd 61380 CPU 56 2/17/25 13:59:41.166] + Optionally extract tables of sync waveform edge times to drive TPrime.
+[Thd 61380 CPU 56 2/17/25 13:59:41.166] + Optionally extract tables of other nonneural event times to be aligned with spikes.
+[Thd 61380 CPU 56 2/17/25 13:59:41.167] + Optionally join the above outputs across different runs (supercat feature).
+
+[Thd 61380 CPU 56 2/17/25 13:59:41.167] Output:
+[Thd 61380 CPU 56 2/17/25 13:59:41.168] + Results are placed next to source, named like this, with t-index = tcat:
+[Thd 61380 CPU 56 2/17/25 13:59:41.168] +    path/run_name_g5_tcat.imec1.ap.bin.
+[Thd 61380 CPU 38 2/17/25 13:59:41.169] + Errors and run messages are appended to CatGT.log in the current working directory.
+
+[Thd 61380 CPU 38 2/17/25 13:59:41.170] Usage:
+[Thd 61380 CPU 38 2/17/25 13:59:41.171] >CatGT -dir=data_dir -run=run_name -g=ga,gb -t=ta,tb <which streams> [ options ]
+
+[Thd 61380 CPU 36 2/17/25 13:59:41.171] Which streams:
+[Thd 61380 CPU 36 2/17/25 13:59:41.172] -ni                      ;required to process ni stream
+[Thd 61380 CPU 36 2/17/25 13:59:41.172] -ob                      ;required to process ob streams
+[Thd 61380 CPU 36 2/17/25 13:59:41.173] -ap                      ;required to process ap streams
+[Thd 61380 CPU 36 2/17/25 13:59:41.173] -lf                      ;required to process lf streams
+[Thd 61380 CPU 36 2/17/25 13:59:41.174] -obx=0,3:5               ;if -ob process these OneBoxes
+[Thd 61380 CPU 36 2/17/25 13:59:41.174] -prb_3A                  ;if -ap or -lf process 3A-style probe files, e.g., run_name_g0_t0.imec.ap.bin
+[Thd 61380 CPU 36 2/17/25 13:59:41.175] -prb=0,3:5               ;if -ap or -lf AND !prb_3A process these probes
+
+[Thd 61380 CPU 36 2/17/25 13:59:41.175] Options:
+[Thd 61380 CPU 36 2/17/25 13:59:41.176] -no_run_fld              ;older data, or data files relocated without a run folder
+[Thd 61380 CPU 36 2/17/25 13:59:41.176] -prb_fld                 ;use folder-per-probe organization
+[Thd 61380 CPU 36 2/17/25 13:59:41.177] -prb_miss_ok             ;instead of stopping, silently skip missing probes
+[Thd 61380 CPU 36 2/17/25 13:59:41.177] -gtlist={gj,tja,tjb}     ;override {-g,-t} giving each listed g-index its own t-range
+[Thd 61380 CPU 36 2/17/25 13:59:41.178] -t=cat                   ;extract events from CatGT output files (instead of -t=ta,tb)
+[Thd 61380 CPU 36 2/17/25 13:59:41.178] -exported                ;apply FileViewer 'exported' tag to in/output filenames
+[Thd 61380 CPU 36 2/17/25 13:59:41.179] -t_miss_ok               ;instead of stopping, zero-fill if trial missing
+[Thd 61380 CPU 36 2/17/25 13:59:41.179] -zerofillmax=500         ;set a maximum zero-fill span (millisec)
+[Thd 61380 CPU 36 2/17/25 13:59:41.180] -startsecs=120.0         ;skip this initial span of each input stream (float seconds)
+[Thd 61380 CPU 36 2/17/25 13:59:41.180] -maxsecs=7.5             ;set a maximum output file length (float seconds)
+[Thd 61380 CPU 36 2/17/25 13:59:41.181] -apfilter=Typ,N,Fhi,Flo  ;apply ap band-pass filter of given {type, order, corners(float Hz)}
+[Thd 61380 CPU 36 2/17/25 13:59:41.181] -lffilter=Typ,N,Fhi,Flo  ;apply lf band-pass filter of given {type, order, corners(float Hz)}
+[Thd 61380 CPU 36 2/17/25 13:59:41.182] -no_tshift               ;DO NOT time-align channels to account for ADC multiplexing
+[Thd 61380 CPU 36 2/17/25 13:59:41.182] -loccar_um=40,140        ;apply ap local CAR annulus (exclude radius, include radius)
+[Thd 61380 CPU 36 2/17/25 13:59:41.183] -loccar=2,8              ;apply ap local CAR annulus (exclude radius, include radius)
+[Thd 61380 CPU 36 2/17/25 13:59:41.183] -gblcar                  ;apply ap global CAR filter over all channels
+[Thd 61380 CPU 48 2/17/25 13:59:41.188] -gbldmx                  ;apply ap global demuxed CAR filter over channel groups
+[Thd 61380 CPU 48 2/17/25 13:59:41.188] -gfix=0.40,0.10,0.02     ;rmv ap artifacts: ||amp(mV)||, ||slope(mV/sample)||, ||noise(mV)||
+[Thd 61380 CPU 48 2/17/25 13:59:41.189] -chnexcl={prb;chans}     ;this probe, exclude listed chans from ap loccar, gblcar, gfix
+[Thd 61380 CPU 48 2/17/25 13:59:41.189] -xa=0,0,2,3.0,4.5,25     ;extract pulse signal from analog chan (js,ip,word,thresh1(V),thresh2(V),millisec)
+[Thd 61380 CPU 48 2/17/25 13:59:41.190] -xd=2,0,384,6,500        ;extract pulse signal from digital chan (js,ip,word,bit,millisec)
+[Thd 61380 CPU 48 2/17/25 13:59:41.190] -xia=0,0,2,3.0,4.5,2     ;inverted version of xa
+[Thd 61380 CPU 48 2/17/25 13:59:41.191] -xid=2,0,384,6,50        ;inverted version of xd
+[Thd 61380 CPU 48 2/17/25 13:59:41.191] -bf=0,0,8,2,4,3          ;extract numeric bit-field from digital chan (js,ip,word,startbit,nbits,inarow)
+[Thd 61380 CPU 48 2/17/25 13:59:41.192] -inarow=5                ;extractor {xa,xd,xia,xid} antibounce stay high/low sample count
+[Thd 61380 CPU 48 2/17/25 13:59:41.192] -no_auto_sync            ;disable the automatic extraction of sync edges in all streams
+[Thd 61380 CPU 48 2/17/25 13:59:41.193] -save=2,0,5,20:60        ;save subset of probe chans (js,ip1,ip2,chan-list)
+[Thd 61380 CPU 38 2/17/25 13:59:41.194] -maxZ=0,0,100            ;probe inserted to given depth (ip,depth-type,depth-value)
+[Thd 61380 CPU 38 2/17/25 13:59:41.194] -pass1_force_ni_ob_bin   ;write pass one ni/ob binary tcat file even if not changed
+[Thd 61380 CPU 38 2/17/25 13:59:41.195] -supercat={dir,run_ga}   ;concatenate existing output files across runs (see ReadMe)
+[Thd 61380 CPU 36 2/17/25 13:59:41.195] -supercat_trim_edges     ;supercat after trimming each stream to matched sync edges
+[Thd 61380 CPU 36 2/17/25 13:59:41.196] -supercat_skip_ni_ob_bin ;do not supercat ni/ob binary files
+[Thd 61380 CPU 36 2/17/25 13:59:41.196] -dest=path               ;alternate path for output files (must exist)
+[Thd 61380 CPU 36 2/17/25 13:59:41.197] -no_catgt_fld            ;if using -dest, do not create catgt_run subfolder
+[Thd 61380 CPU 36 2/17/25 13:59:41.197] -out_prb_fld             ;if using -dest, create output subfolder per probe
+[Thd 61380 CPU 36 2/17/25 13:59:41.198] ------------------------
+[Thd 61380 CPU 36 2/17/25 13:59:41.198] 
+[Thd 49264 CPU 13 2/17/25 14:02:02.508] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest_1sOn1sOff -g=0 -t=0 -ni -prb=0 -xd=0,0,8,0,0 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 49264 CPU 13 2/17/25 14:02:02.512] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest_1sOn1sOff_g0/i2746-250211-12DirTest_1sOn1sOff_g0_t0.nidq.meta'.
+[Thd 49264 CPU 13 2/17/25 14:02:02.512] 
+[Thd 60028 CPU 14 2/17/25 14:02:24.149] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest_1sOn1sOff -g=0 -t=0 -ni -prb=0 -xd=0,0,8,0,0 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 60028 CPU 14 2/17/25 14:02:24.156] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest_1sOn1sOff_g0/i2746-250211-12DirTest_1sOn1sOff_g0_t0.nidq.meta'.
+[Thd 60028 CPU 14 2/17/25 14:02:24.156] 
+[Thd 88448 CPU 4 2/17/25 14:03:22.884] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest_1sOn1sOff -g=0 -t=0 -ni -prb=0 -xd=0,0,1,0,0 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 88448 CPU 4 2/17/25 14:03:22.890] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest_1sOn1sOff_g0/i2746-250211-12DirTest_1sOn1sOff_g0_t0.nidq.meta'.
+[Thd 88448 CPU 4 2/17/25 14:03:22.891] 
+[Thd 2988 CPU 50 2/17/25 14:04:14.213] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest_1sOn1sOff -g=0 -t=0 -ni -prb=0 -xd=0,0,1,0,0 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 2988 CPU 48 2/17/25 14:04:14.221] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest_1sOn1sOff_g0/i2746-250211-12DirTest_1sOn1sOff_g0_t0.nidq.meta'.
+[Thd 2988 CPU 48 2/17/25 14:04:14.222] 
+[Thd 89896 CPU 50 2/17/25 14:07:36.870] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest_1sOn1sOff -g=0 -t=0 -ni -prb=0 -xd=0,0,0,1,0 -xd=0,0,0,2,0 -xd=0,0,0,3,0 -xd=0,0,0,6,0 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 89896 CPU 50 2/17/25 14:07:36.876] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest_1sOn1sOff_g0/i2746-250211-12DirTest_1sOn1sOff_g0_t0.nidq.meta'.
+[Thd 89896 CPU 50 2/17/25 14:07:36.877] 
+[Thd 79532 CPU 10 2/18/25 13:24:49.371] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest_1sOn1sOff -g=0 -t=0 -ni -prb=0 -xd=0,0,0,1,0 -xd=0,0,0,2,0 -xd=0,0,0,3,0 -xd=0,0,0,6,0 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 79532 CPU 10 2/18/25 13:24:49.377] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest_1sOn1sOff_g0/i2746-250211-12DirTest_1sOn1sOff_g0_t0.nidq.meta'.
+[Thd 79532 CPU 10 2/18/25 13:24:49.378] 
+[Thd 27600 CPU 48 2/18/25 13:25:14.632] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest_1sOn1sOff -g=0 -t=0 -ni -prb=0 -xd=0,0,0,1,0 -xd=0,0,0,2,0 -xd=0,0,0,3,0 -xd=0,0,0,6,0 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 27600 CPU 52 2/18/25 13:25:14.640] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest_1sOn1sOff_g0/i2746-250211-12DirTest_1sOn1sOff_g0_t0.nidq.meta'.
+[Thd 27600 CPU 52 2/18/25 13:25:14.641] 
+[Thd 68620 CPU 48 2/18/25 13:26:17.420] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest_1sOn1sOff -g=0 -t=0 -ni -prb=0 -xd=0,0,1,0,0 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 68620 CPU 52 2/18/25 13:26:17.424] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest_1sOn1sOff_g0/i2746-250211-12DirTest_1sOn1sOff_g0_t0.nidq.meta'.
+[Thd 68620 CPU 52 2/18/25 13:26:17.424] 
+[Thd 24020 CPU 48 2/18/25 13:26:47.835] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest_1sOn1sOff -g=0 -t=0 -ni -prb=0 -xd=0,0,8,0,0 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 24020 CPU 48 2/18/25 13:26:47.841] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest_1sOn1sOff_g0/i2746-250211-12DirTest_1sOn1sOff_g0_t0.nidq.meta'.
+[Thd 24020 CPU 48 2/18/25 13:26:47.842] 
+[Thd 92340 CPU 48 2/18/25 13:28:30.012] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest-1sOn1sOff -g=0 -t=0 -ni -prb=0 -xd=0,0,0,1,0 -xd=0,0,0,2,0 -xd=0,0,0,3,0 -xd=0,0,0,6,0 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 92340 CPU 48 2/18/25 13:28:51.602] 
+[Thd 75664 CPU 8 2/18/25 13:30:02.827] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest-1sOn1sOff -g=0 -t=0 -ni -prb=0 -xd=0,0,0,1,0 -xd=0,0,0,2,0 -xd=0,0,0,3,0 -xd=0,0,0,6,0 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 75664 CPU 8 2/18/25 13:30:16.072] 
+[Thd 94612 CPU 10 2/18/25 13:33:38.540] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest-1sOn1sOff -g=0 -t=0 -ni -prb=0 -xd=0,0,0,1,0 -xd=0,0,0,2,0 -xd=0,0,0,3,0 -xd=0,0,0,6,0 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 94612 CPU 10 2/18/25 13:33:50.943] 
+[Thd 76828 CPU 2 2/18/25 13:39:51.189] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest-1sOn1sOff -g=0 -t=0 -ni -prb=0 -xd=0,0,0,0,0 -xd=0,0,0,1,0 -xd=0,0,0,2,0 -xd=0,0,0,5,0 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 76828 CPU 48 2/18/25 13:40:06.173] 
+[Thd 80132 CPU 32 2/18/25 14:12:42.817] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest-1sOn1sOff -g=0 -t=0 -ni -prb=0 -xd=0,0,0,0,0 -xd=0,0,0,1,0 -xd=0,0,0,2,0 -xd=0,0,0,5,0 -xd=2,0,-1,6,500 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 80132 CPU 60 2/18/25 14:13:19.999] 
+[Thd 38700 CPU 48 2/18/25 14:15:12.505] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest-1sOn1sOff -g=0 -t=0 -ni -ap -prb=0 -xd=0,0,0,0,0 -xd=0,0,0,1,0 -xd=0,0,0,2,0 -xd=0,0,0,5,0 -xd=2,0,-1,6,500 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 38700 CPU 24 2/18/25 14:15:12.526] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest-1sOn1sOff_g0/i2746-250211-12DirTest-1sOn1sOff_g0_t0.imec0.ap.meta'.
+[Thd 38700 CPU 24 2/18/25 14:15:12.541] 
+[Thd 31728 CPU 53 2/18/25 14:16:38.792] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest-1sOn1sOff -g=0 -t=0 -ap -prb=0 -xd=2,0,-1,6,500 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 31728 CPU 52 2/18/25 14:16:38.797] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest-1sOn1sOff_g0/i2746-250211-12DirTest-1sOn1sOff_g0_t0.imec0.ap.meta'.
+[Thd 31728 CPU 52 2/18/25 14:16:38.805] 
+[Thd 75924 CPU 56 2/18/25 14:19:32.817] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest-1sOn1sOff -g=0 -t=0 -ap -prb=0 -xd=2,0,-1,6,500 -no_auto_sync -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 75924 CPU 24 2/18/25 14:19:32.823] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest-1sOn1sOff_g0/i2746-250211-12DirTest-1sOn1sOff_g0_t0.imec0.ap.meta'.
+[Thd 75924 CPU 6 2/18/25 14:19:32.831] 
+[Thd 29156 CPU 48 2/18/25 14:23:36.686] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest-1sOn1sOff_g0/i2746-250211-12DirTest-1sOn1sOff_g0_imec0 -run=i2746-250211-12DirTest-1sOn1sOff -g=0 -t=0 -ap -prb=0 -xd=2,0,-1,6,500 -no_auto_sync -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 29156 CPU 48 2/18/25 14:23:36.691] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest-1sOn1sOff_g0/i2746-250211-12DirTest-1sOn1sOff_g0_imec0/i2746-250211-12DirTest-1sOn1sOff_g0/i2746-250211-12DirTest-1sOn1sOff_g0_t0.imec0.ap.meta'.
+[Thd 29156 CPU 4 2/18/25 14:23:36.698] 
+[Thd 87080 CPU 60 2/18/25 14:40:10.706] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest-1sOn1sOff_g0/i2746-250211-12DirTest-1sOn1sOff_g0_imec0 -run=i2746-250211-12DirTest-1sOn1sOff -g=0 -t=0 -ap -prb=0 -xd=2,0,-1,6,500 -no_auto_sync -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 87080 CPU 60 2/18/25 14:40:10.715] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest-1sOn1sOff_g0/i2746-250211-12DirTest-1sOn1sOff_g0_imec0/i2746-250211-12DirTest-1sOn1sOff_g0/i2746-250211-12DirTest-1sOn1sOff_g0_t0.imec0.ap.meta'.
+[Thd 87080 CPU 60 2/18/25 14:40:10.722] 
+[Thd 52180 CPU 56 2/18/25 14:42:20.799] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest-1sOn1sOff -g=0 -t=0 -ap -prb=0 -xd=2,0,-1,6,500 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 52180 CPU 53 2/18/25 14:42:20.808] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest-1sOn1sOff_g0/i2746-250211-12DirTest-1sOn1sOff_g0_t0.imec0.ap.meta'.
+[Thd 52180 CPU 52 2/18/25 14:42:20.815] 
+[Thd 14364 CPU 50 2/18/25 14:43:43.039] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest-1sOn1sOff -g=0 -t=0 -ap -prb=0 -xd=2,0,-1,6,0 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 14364 CPU 54 2/18/25 14:43:43.044] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest-1sOn1sOff_g0/i2746-250211-12DirTest-1sOn1sOff_g0_t0.imec0.ap.meta'.
+[Thd 14364 CPU 53 2/18/25 14:43:43.052] 
+[Thd 43428 CPU 12 2/18/25 14:50:44.187] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest-1sOn1sOff_g0_imec0 -run=i2746-250211-12DirTest-1sOn1sOff_g0 -g=0 -t=0 -ap -prb=0 -xd=2,0,-1,6,500 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 43428 CPU 12 2/18/25 14:50:44.194] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest-1sOn1sOff_g0_imec0/i2746-250211-12DirTest-1sOn1sOff_g0_g0/i2746-250211-12DirTest-1sOn1sOff_g0_g0_t0.imec0.ap.meta'.
+[Thd 43428 CPU 12 2/18/25 14:50:44.201] 
+[Thd 60008 CPU 50 2/18/25 14:52:06.070] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest-1sOn1sOff_g0_imec0 -run=i2746-250211-12DirTest-1sOn1sOff -g=0 -t=0 -ap -prb=0 -xd=2,0,-1,6,500 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 60008 CPU 48 2/18/25 14:52:06.078] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest-1sOn1sOff_g0_imec0/i2746-250211-12DirTest-1sOn1sOff_g0/i2746-250211-12DirTest-1sOn1sOff_g0_t0.imec0.ap.meta'.
+[Thd 60008 CPU 48 2/18/25 14:52:06.086] 
+[Thd 90740 CPU 59 2/18/25 14:53:48.988] Error: Bad g- or t-indices.
+[Thd 90740 CPU 59 2/18/25 14:53:48.990] 
+[Thd 90740 CPU 59 2/18/25 14:53:48.990] *** ERROR: MISSING CRITICAL PARAMETERS ***
+[Thd 90740 CPU 59 2/18/25 14:53:48.991] ------------------------
+[Thd 90740 CPU 59 2/18/25 14:53:48.991] Purpose:
+[Thd 90740 CPU 59 2/18/25 14:53:48.992] + Optionally join trials with given run_name and index ranges [ga,gb] [ta,tb]...
+[Thd 90740 CPU 59 2/18/25 14:53:48.992] + ...Or run on any individual file.
+[Thd 90740 CPU 59 2/18/25 14:53:48.993] + Optionally apply demultiplexing corrections.
+[Thd 90740 CPU 59 2/18/25 14:53:48.993] + Optionally apply band-pass and global CAR filters.
+[Thd 90740 CPU 59 2/18/25 14:53:48.994] + Optionally edit out saturation artifacts.
+[Thd 90740 CPU 59 2/18/25 14:53:48.994] + Optionally extract tables of sync waveform edge times to drive TPrime.
+[Thd 90740 CPU 34 2/18/25 14:53:48.995] + Optionally extract tables of other nonneural event times to be aligned with spikes.
+[Thd 90740 CPU 34 2/18/25 14:53:48.996] + Optionally join the above outputs across different runs (supercat feature).
+
+[Thd 90740 CPU 34 2/18/25 14:53:48.996] Output:
+[Thd 90740 CPU 34 2/18/25 14:53:48.997] + Results are placed next to source, named like this, with t-index = tcat:
+[Thd 90740 CPU 34 2/18/25 14:53:48.997] +    path/run_name_g5_tcat.imec1.ap.bin.
+[Thd 90740 CPU 34 2/18/25 14:53:48.998] + Errors and run messages are appended to CatGT.log in the current working directory.
+
+[Thd 90740 CPU 44 2/18/25 14:53:48.999] Usage:
+[Thd 90740 CPU 44 2/18/25 14:53:48.999] >CatGT -dir=data_dir -run=run_name -g=ga,gb -t=ta,tb <which streams> [ options ]
+
+[Thd 90740 CPU 44 2/18/25 14:53:49.000] Which streams:
+[Thd 90740 CPU 44 2/18/25 14:53:49.000] -ni                      ;required to process ni stream
+[Thd 90740 CPU 44 2/18/25 14:53:49.001] -ob                      ;required to process ob streams
+[Thd 90740 CPU 42 2/18/25 14:53:49.001] -ap                      ;required to process ap streams
+[Thd 90740 CPU 59 2/18/25 14:53:49.002] -lf                      ;required to process lf streams
+[Thd 90740 CPU 59 2/18/25 14:53:49.002] -obx=0,3:5               ;if -ob process these OneBoxes
+[Thd 90740 CPU 59 2/18/25 14:53:49.003] -prb_3A                  ;if -ap or -lf process 3A-style probe files, e.g., run_name_g0_t0.imec.ap.bin
+[Thd 90740 CPU 59 2/18/25 14:53:49.003] -prb=0,3:5               ;if -ap or -lf AND !prb_3A process these probes
+
+[Thd 90740 CPU 34 2/18/25 14:53:49.004] Options:
+[Thd 90740 CPU 34 2/18/25 14:53:49.005] -no_run_fld              ;older data, or data files relocated without a run folder
+[Thd 90740 CPU 34 2/18/25 14:53:49.006] -prb_fld                 ;use folder-per-probe organization
+[Thd 90740 CPU 34 2/18/25 14:53:49.006] -prb_miss_ok             ;instead of stopping, silently skip missing probes
+[Thd 90740 CPU 34 2/18/25 14:53:49.007] -gtlist={gj,tja,tjb}     ;override {-g,-t} giving each listed g-index its own t-range
+[Thd 90740 CPU 34 2/18/25 14:53:49.007] -t=cat                   ;extract events from CatGT output files (instead of -t=ta,tb)
+[Thd 90740 CPU 34 2/18/25 14:53:49.008] -exported                ;apply FileViewer 'exported' tag to in/output filenames
+[Thd 90740 CPU 34 2/18/25 14:53:49.008] -t_miss_ok               ;instead of stopping, zero-fill if trial missing
+[Thd 90740 CPU 34 2/18/25 14:53:49.009] -zerofillmax=500         ;set a maximum zero-fill span (millisec)
+[Thd 90740 CPU 34 2/18/25 14:53:49.009] -startsecs=120.0         ;skip this initial span of each input stream (float seconds)
+[Thd 90740 CPU 34 2/18/25 14:53:49.010] -maxsecs=7.5             ;set a maximum output file length (float seconds)
+[Thd 90740 CPU 34 2/18/25 14:53:49.010] -apfilter=Typ,N,Fhi,Flo  ;apply ap band-pass filter of given {type, order, corners(float Hz)}
+[Thd 90740 CPU 34 2/18/25 14:53:49.011] -lffilter=Typ,N,Fhi,Flo  ;apply lf band-pass filter of given {type, order, corners(float Hz)}
+[Thd 90740 CPU 34 2/18/25 14:53:49.011] -no_tshift               ;DO NOT time-align channels to account for ADC multiplexing
+[Thd 90740 CPU 34 2/18/25 14:53:49.012] -loccar_um=40,140        ;apply ap local CAR annulus (exclude radius, include radius)
+[Thd 90740 CPU 34 2/18/25 14:53:49.012] -loccar=2,8              ;apply ap local CAR annulus (exclude radius, include radius)
+[Thd 90740 CPU 34 2/18/25 14:53:49.013] -gblcar                  ;apply ap global CAR filter over all channels
+[Thd 90740 CPU 34 2/18/25 14:53:49.013] -gbldmx                  ;apply ap global demuxed CAR filter over channel groups
+[Thd 90740 CPU 34 2/18/25 14:53:49.014] -gfix=0.40,0.10,0.02     ;rmv ap artifacts: ||amp(mV)||, ||slope(mV/sample)||, ||noise(mV)||
+[Thd 90740 CPU 34 2/18/25 14:53:49.014] -chnexcl={prb;chans}     ;this probe, exclude listed chans from ap loccar, gblcar, gfix
+[Thd 90740 CPU 34 2/18/25 14:53:49.015] -xa=0,0,2,3.0,4.5,25     ;extract pulse signal from analog chan (js,ip,word,thresh1(V),thresh2(V),millisec)
+[Thd 90740 CPU 34 2/18/25 14:53:49.015] -xd=2,0,384,6,500        ;extract pulse signal from digital chan (js,ip,word,bit,millisec)
+[Thd 90740 CPU 34 2/18/25 14:53:49.016] -xia=0,0,2,3.0,4.5,2     ;inverted version of xa
+[Thd 90740 CPU 34 2/18/25 14:53:49.016] -xid=2,0,384,6,50        ;inverted version of xd
+[Thd 90740 CPU 34 2/18/25 14:53:49.017] -bf=0,0,8,2,4,3          ;extract numeric bit-field from digital chan (js,ip,word,startbit,nbits,inarow)
+[Thd 90740 CPU 34 2/18/25 14:53:49.017] -inarow=5                ;extractor {xa,xd,xia,xid} antibounce stay high/low sample count
+[Thd 90740 CPU 34 2/18/25 14:53:49.018] -no_auto_sync            ;disable the automatic extraction of sync edges in all streams
+[Thd 90740 CPU 34 2/18/25 14:53:49.018] -save=2,0,5,20:60        ;save subset of probe chans (js,ip1,ip2,chan-list)
+[Thd 90740 CPU 34 2/18/25 14:53:49.019] -maxZ=0,0,100            ;probe inserted to given depth (ip,depth-type,depth-value)
+[Thd 90740 CPU 34 2/18/25 14:53:49.019] -pass1_force_ni_ob_bin   ;write pass one ni/ob binary tcat file even if not changed
+[Thd 90740 CPU 34 2/18/25 14:53:49.020] -supercat={dir,run_ga}   ;concatenate existing output files across runs (see ReadMe)
+[Thd 90740 CPU 34 2/18/25 14:53:49.020] -supercat_trim_edges     ;supercat after trimming each stream to matched sync edges
+[Thd 90740 CPU 34 2/18/25 14:53:49.021] -supercat_skip_ni_ob_bin ;do not supercat ni/ob binary files
+[Thd 90740 CPU 34 2/18/25 14:53:49.021] -dest=path               ;alternate path for output files (must exist)
+[Thd 90740 CPU 34 2/18/25 14:53:49.022] -no_catgt_fld            ;if using -dest, do not create catgt_run subfolder
+[Thd 90740 CPU 34 2/18/25 14:53:49.022] -out_prb_fld             ;if using -dest, create output subfolder per probe
+[Thd 90740 CPU 34 2/18/25 14:53:49.023] ------------------------
+[Thd 90740 CPU 34 2/18/25 14:53:49.023] 
+[Thd 91860 CPU 8 2/18/25 14:54:18.193] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest-1sOn1sOff -g=0 -t=0 -ni -prb=0 -xd=0,0,0,0,0 -xd=0,0,0,1,0 -xd=0,0,0,2,0 -xd=0,0,0,5,0 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 91860 CPU 8 2/18/25 14:54:39.514] 
+[Thd 47460 CPU 55 2/18/25 14:56:58.484] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest-1sOn1sOff_g0_imec0 -run=i2746-250211-12DirTest-1sOn1sOff -g=0 -t=0 -ap -prb=0 -xd=2,0,-1,6,500 -no_auto_sync -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 47460 CPU 55 2/18/25 14:56:58.492] Meta file not found '//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211/i2746-250211-12DirTest-1sOn1sOff_g0_imec0/i2746-250211-12DirTest-1sOn1sOff_g0/i2746-250211-12DirTest-1sOn1sOff_g0_t0.imec0.ap.meta'.
+[Thd 47460 CPU 55 2/18/25 14:56:58.499] 
+[Thd 94044 CPU 49 2/18/25 15:02:18.262] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest-1sOn1sOff -g=0 -t=0 -ap -prb=0 -xd=2,0,-1,6,500 -no_auto_sync -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 94044 CPU 49 2/18/25 15:12:38.016] 
+[Thd 23856 CPU 4 2/18/25 15:13:42.924] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest-1sOn1sOff -g=0 -t=0 -ni -prb=0 -xd=0,0,0,0,0 -xd=0,0,0,1,0 -xd=0,0,0,2,0 -xd=0,0,0,5,0 -xd=2,0,-1,6,500 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 23856 CPU 4 2/18/25 15:13:56.377] 
+[Thd 83364 CPU 57 2/18/25 15:15:12.652] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest-1sOn1sOff -g=0 -t=0 -ni -prb=0 -xd=0,0,0,0,0 -xd=0,0,0,1,0 -xd=0,0,0,2,0 -xd=0,0,0,5,0 -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 83364 CPU 57 2/18/25 15:15:25.135] 
+[Thd 6040 CPU 50 2/18/25 15:15:34.375] Cmdline: CatGT -dir=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Data/neuropixel/250211 -run=i2746-250211-12DirTest-1sOn1sOff -g=0 -t=0 -ap -prb=0 -xd=2,0,-1,6,500 -no_auto_sync -dest=//duhs-user-nc1.dhe.duke.edu/dusom_glickfeldlab/All_Staff/home/sara/Analysis/Neuropixel/250211
+[Thd 6040 CPU 54 2/18/25 15:26:33.261] 
