@@ -29,5 +29,36 @@ expt(2).eyetrack = {'n'};
 expt(2).wheeltrack = {'n'};
 expt(2).saveLoc = 'sara';
 
+%% i2748 250314, V1 -- 100ms gratings first, then RandDirFourPhase 1s on, 1s off
+expt(3).mouse = 'i2748';
+expt(3).date = '250314';
+expt(3).loc  = {'V1'};
+expt(3).z = -2000;
+expt(3).probe = {'NP1'};
+expt(3).genotype = {'C57/CBA'};
+expt(3).sex = {'M'};
+expt(3).age = '250';
+expt(3).cog = {'awake'};
+expt(3).layerTime = '1429';
+expt(3).exptTime = '1437';
+expt(3).eyetrack = {'n'};
+expt(3).wheeltrack = {'n'};
+expt(3).saveLoc = 'sara';
+
+%% i2753 250328, V1 -- 100ms gratings first, then RandDirFourPhase 1s on, 1s off
+expt(4).mouse = 'i2753';
+expt(4).date = '250328';
+expt(4).loc  = {'V1'};
+expt(4).z = -2000;
+expt(4).probe = {'NP1'};
+expt(4).genotype = {'C57/CBA'};
+expt(4).sex = {'M'};
+expt(4).age = '117';
+expt(4).cog = {'awake'};
+expt(4).layerTime = '1441';
+expt(4).exptTime = '1450';
+expt(4).eyetrack = {'n'};
+expt(4).wheeltrack = {'n'};
+expt(4).saveLoc = 'sara';
 
 

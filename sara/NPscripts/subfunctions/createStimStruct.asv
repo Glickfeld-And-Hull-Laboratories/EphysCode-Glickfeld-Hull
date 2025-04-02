@@ -23,11 +23,13 @@ function [stimStruct] = createStimStruct(exptStruct)
         lonelyThreshold = 0.05; % 50 ms
         timeDiffs       = abs(diff(stimOnTimestampsPD));  % Compute pairwise differences efficiently
         hasNeighbor = [false; timeDiffs < lonelyThreshold] | [timeDiffs < lonelyThreshold; false]; % Identify indices where a close neighbor exists
-        filteredPD = stimOnTimestampsPD(hasNeighbor);   % Keep only timestamps that have a neighbor within 50 ms
+    
+    % Keep only timestamps that have a neighbor within 50 ms
+        filteredPD = stimOnTimestampsPD(hasNeighbor);
 
     % Account for report of the monitor's refresh rate in the photodiode signal
         minInterval = 0.5; % Define a minimum separation threshold (should be longer than a refresh cycle but shorter than ISI)     
-        leadingEdgesPD = filteredPD([true; diff(filteredPD) > minInterval]); % Extract the leading edges (first timestamp of each stimulus period)
+        leadingEdgesPD = stimOnTimestampsPD([true; diff(stimOnTimestampsPD) > minInterval]); % Extract the leading edges (first timestamp of each stimulus period)
         % [true; ...] ensures that the very first timestamp is always included because otherwise diff() returns an array that is one element shorter than the original.
 
     % Check that PD signal starts at same time as MW signal; sometimes there are errant PD signals 

@@ -35,8 +35,8 @@ function [layerStruct] = findLayer4(exptStruct,stimStruct,b);
 % Look at loaded LFP data
     figure()
     n=1;
-    for ic = 1:30:370
-        subplot(13,1,n)
+    for ic = 1:30:330
+        subplot(11,1,n)
         plot(LFPtime(1:end-1),LFPdata(ic,:))
         hold on
         subtitle(['chnl ' num2str(ic)])
@@ -58,7 +58,7 @@ function [layerStruct] = findLayer4(exptStruct,stimStruct,b);
     print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\' loc '\Analysis\Neuropixel\' date '\' mouse '-' date '-LFPrawtraces.pdf']),'-dpdf')
 
 
-    LFPdata = LFPdata(:,:)-LFPdata(300,:);
+    
 % Load Stimulus On times
     timestamps = stimStruct.timestamps{b};
 
@@ -144,42 +144,8 @@ function [layerStruct] = findLayer4(exptStruct,stimStruct,b);
         h = colorbar;
         h.Ticks =  h.Limits;
         movegui('center')
-
- % Compute second derivative for CSD using unsmoothed LFP
-    CSD = diff(LFP, 2, 1) / dz^2;  
-    
-% Smooth CSD
-    sigma       = 5; % Standard deviation for smoothing (adjust if needed)
-    CSD_smooth  = imgaussfilt(CSD, sigma, 'FilterSize', 15);  % 2D Gaussian smoothing
-
-% Plot CSD as a function of depth
-    z = depth:dz:depth+(dz*length(chnls)-1);
-    v = 1; % Interpolation factor
-    [mCSD, peakCSD] = max(mean(CSD_smooth,2),[],"all");
-    subplot 223
-        imagesc(xx, depth_subset(2:end-1), interp2(CSD_smooth, v))  % Exclude first and last rows due to second derivative
-        hold on
-        set(gca,'YDir','normal');
-        yline(z(peakCSD));
-        ylim([depth_subset(3) depth_subset(end-2)])
-        xlabel('Time (s)')
-        ylabel('Depth (um)')
-        title('CSD (\muA/mm^3)')
-        colormap('jet') 
-        h = colorbar;
-        h.Ticks = h.Limits;
-        movegui('center')
         
-        sgtitle({[mouse ' ' date], ['probe tip ' num2str(depth) ', avgd ' num2str(is) ' stimuli']})
-        print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\' loc '\Analysis\Neuropixel\' date '\' mouse '-' date '-findLayer4.pdf']),'-dpdf','-bestfit')
-
-
-   layerStruct.LFPtime = LFPtime;
-   layerStruct.LFPdata = LFPdata;
-
-
-        
-% Compute second derivative for CSD using smoothed LFP
+% Compute second derivative for CSD
     CSD = diff(LFP_smooth, 2, 1) / dz^2;  
     
 % Smooth CSD
@@ -190,7 +156,7 @@ function [layerStruct] = findLayer4(exptStruct,stimStruct,b);
     z = depth:dz:depth+(dz*length(chnls)-1);
     v = 1; % Interpolation factor
     [mCSD, peakCSD] = max(mean(CSD_smooth,2),[],"all");
-    subplot 224
+    subplot 223
         imagesc(xx, depth_subset(2:end-1), interp2(CSD_smooth, v))  % Exclude first and last rows due to second derivative
         hold on
         set(gca,'YDir','normal');

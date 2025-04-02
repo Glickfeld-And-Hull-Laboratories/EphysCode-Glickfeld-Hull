@@ -1,15 +1,24 @@
 clear all; close all; clc
 base = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
-iexp = 2; % Choose experiment
+iexp = 3; % Choose experiment
 
 [exptStruct] = createExptStruct(iexp); % Load relevant times and directories for this experiment
+
+%% Run CatGT to extract sync pulse times from nidaq and imec data
+
+runCatGT_SG(exptStruct.date)
+% Wait like 30 minutes for this to finish running before continuing
+
+%% Run TPrime to sync photodiode signal to spikes
+
+runTPrime_SG(exptStruct.date)
 
 %% Extract units from KS output
 
 cd ([base exptStruct.loc '\Analysis\Neuropixel\' exptStruct.date '\KS_Output']) % Navigate to KS_Output folder
 
 % Choose imec0.ap.bin file (I just choose the CatGT bin file)
-[allUnitStruct, goodUnitStruct, muaStruct] = importKSdata_SG();
+[allUnitStruct, goodUnitStruct] = importKSdata_SG();
 
 %% Load stimulus "on" timestamps
 
@@ -38,8 +47,9 @@ b = 2; % What stimulus presentation block to use for RandDirFourPhase analysis?
 % (grating/plaid). Each element is then nTrials x Time (in bins of 10 ms)
 
 %%
+outDir=('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\250314\');
 
-[avg_resp_dir, resp_ind_dir, DSI_ind, p_dir] = getResponses(resp, base);
+[avg_resp_dir, resp_ind_dir] = getResponses(resp, base);
 
 figure;
     depth_all   = -2000 + [goodUnitStruct.depth];
@@ -53,6 +63,8 @@ figure;
     xlabel('avg FR')
     ylim([-2000 0])
     movegui('center')
+    sgtitle([mouse ' ' date ', FR by depth'])
+    print(fullfile([outDir, '\i2748-250314-FRbyDepth.pdf']),'-dpdf','-bestfit');
 
 
 %%
@@ -66,10 +78,10 @@ figure;
 
 
 %% Plot grating rasters for all neurons
-outDir=('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\250227\i2747-250227_gratingRasters');
+outDir=('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\250314\i2748-250314_gratingRasters');
 
 close all
-for ic = 1:104
+for ic = 1:82
     depth = -2000 + goodUnitStruct(ic).depth;
 figure;
     for i=1:12
@@ -78,7 +90,7 @@ figure;
     end
     sgtitle(['unit '  num2str(ic) ', depth=' num2str(depth)])
     movegui('center')
-    print(fullfile([outDir, '\i2747-250227-depth' num2str(-depth) '-unit' num2str(ic) '.pdf']),'-dpdf','-bestfit');
+    print(fullfile([outDir, '\i2748-250314-depth' num2str(-depth) '-unit' num2str(ic) '.pdf']),'-dpdf','-bestfit');
     close all
 end
 

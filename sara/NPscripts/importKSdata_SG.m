@@ -20,7 +20,7 @@
 %
 %
 %
-function [AllUnitStruct, GoodUnitStruct, MultiUnitStruct] = importKSdata_SG(); 
+function [AllUnitStruct, GoodUnitStruct] = importKSdata_SG(); 
 
     SpikeTimes = SampToSec();         % use SampToSec funtion to get spiketimes and convert them to seconds using exact sampling rate
     
@@ -41,7 +41,7 @@ function [AllUnitStruct, GoodUnitStruct, MultiUnitStruct] = importKSdata_SG();
     cluster_struct = struct('cluster', cluster, 'group', group, 'channel', channel, 'depth', depth, 'FR', FR, 'rank', rank);
 
     
-    [NoiseUnits, GoodUnits, MultiUnits] = ReadInClusterLabels(cluster_struct);
+    [NoiseUnits, GoodUnits] = ReadInClusterLabels(cluster_struct);
 
     
     [AllUnitStruct] = createAllUnitStruct(cluster, SpikeTimes, clustersAllST);
@@ -76,17 +76,17 @@ function [AllUnitStruct, GoodUnitStruct, MultiUnitStruct] = importKSdata_SG();
         GoodUnitStruct(i).FR        = uFR(index);
         GoodUnitStruct(i).rank      = urank(index);
     end
-
-
-    [MultiUnitStruct] = createGoodUnitStruct(MultiUnits, SpikeTimes, clustersAllST);
-    for i = 1:length(MultiUnitStruct)
-        index = find(ucluster == MultiUnitStruct(i).unitID);
-        MultiUnitStruct(i).channel    = uchannel (index);
-        MultiUnitStruct(i).depth      = udepth(index);
-        MultiUnitStruct(i).group      = group(index);
-        MultiUnitStruct(i).FR         = uFR(index);
-        MultiUnitStruct(i).rank       = urank(index);
-    end
+    % 
+    % 
+    % [MultiUnitStruct] = createGoodUnitStruct(MultiUnits, SpikeTimes, clustersAllST);
+    % for i = 1:length(MultiUnitStruct)
+    %     index = find(ucluster == MultiUnitStruct(i).unitID);
+    %     MultiUnitStruct(i).channel    = uchannel (index);
+    %     MultiUnitStruct(i).depth      = udepth(index);
+    %     MultiUnitStruct(i).group      = group(index);
+    %     MultiUnitStruct(i).FR         = uFR(index);
+    %     MultiUnitStruct(i).rank       = urank(index);
+    % end
 
     %   [GoodANDmuaStruct] = createGoodUnitStruct(GoodANDmua, SpikeTimes, clustersAllST);
     % for i = 1:length(GoodANDmuaStruct)

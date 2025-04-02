@@ -1,7 +1,7 @@
 % Adapted from Marie Hemelt's subfunction ReadInClusters.m, copied on
 % 2/19/2025 by SMG
 
-function [NoiseUnits, GoodUnits, MUnits] = ReadInClusterLabels(cluster_struct)
+function [NoiseUnits, GoodUnits] = ReadInClusterLabels(cluster_struct)
 n=1;   % set counters to one that will help fill the vectors of Good, Noise, and MU lists of units and both Good and MU
 g=1;
 m=1;
