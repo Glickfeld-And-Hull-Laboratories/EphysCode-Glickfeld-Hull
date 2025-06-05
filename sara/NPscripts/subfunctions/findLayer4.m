@@ -58,7 +58,21 @@ function [layerStruct] = findLayer4(exptStruct,stimStruct,b);
     print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\' loc '\Analysis\Neuropixel\' date '\' mouse '-' date '-LFPrawtraces.pdf']),'-dpdf')
 
 
-    LFPdata = LFPdata(:,:)-LFPdata(300,:);
+    fs = 2500; % Sampling frequency
+    low_cutoff = 1;   % Low cutoff frequency in Hz
+    high_cutoff = 200; % High cutoff frequency in Hz
+    order = 4; % Filter order -- affects the "smoothness" of the cutoff
+    
+    % Design Butterworth bandpass filter
+    [b, a] = butter(order/2, [low_cutoff high_cutoff] / (fs/2), 'bandpass');
+    
+    % Apply the filter using filtfilt for zero-phase filtering
+    filtered_LFP = filtfilt(b, a, LFPdata')'; % Transpose before and after to maintain dimensions
+
+    LFPdata_og = LFPdata;
+    LFPdata = filtered_LFP;
+
+
 % Load Stimulus On times
     timestamps = stimStruct.timestamps{b};
 
@@ -94,7 +108,7 @@ function [layerStruct] = findLayer4(exptStruct,stimStruct,b);
     LFP = (mean(all_stimLFP,3)-mean(all_baseLFP,2))./1000;  % Average across stim on windows and average across baselines, then subtract and convert to muV
 
 % Determine depth to be plotted
-    maxDepth = -1000; % Set maximum depth to plot (in µm)
+    maxDepth = -1000; % Set maximum depth to plot (in �m)
     numChannels = size(LFP, 1); % Total channels (assumed to be 100)
     depths = linspace(depth, depth + (numChannels - 1) * dz, numChannels);    % Compute actual depth values for each channel
     % Find channels that are shallower than maxDepth
@@ -170,15 +184,6 @@ function [layerStruct] = findLayer4(exptStruct,stimStruct,b);
         h.Ticks = h.Limits;
         movegui('center')
         
-        sgtitle({[mouse ' ' date], ['probe tip ' num2str(depth) ', avgd ' num2str(is) ' stimuli']})
-        print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\' loc '\Analysis\Neuropixel\' date '\' mouse '-' date '-findLayer4.pdf']),'-dpdf','-bestfit')
-
-
-   layerStruct.LFPtime = LFPtime;
-   layerStruct.LFPdata = LFPdata;
-
-
-        
 % Compute second derivative for CSD using smoothed LFP
     CSD = diff(LFP_smooth, 2, 1) / dz^2;  
     
@@ -208,6 +213,8 @@ function [layerStruct] = findLayer4(exptStruct,stimStruct,b);
         print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\' loc '\Analysis\Neuropixel\' date '\' mouse '-' date '-findLayer4.pdf']),'-dpdf','-bestfit')
 
 
+      
+
    layerStruct.LFPtime = LFPtime;
    layerStruct.LFPdata = LFPdata;
 
@@ -223,7 +230,7 @@ fs = 2500;  % Sampling rate (Hz), modify if different
 LFP = LFPdata(chnls,1:10000);
 
 % Define depth values
-depths = depth + (0:size(LFP,1)-1) * 20; % Each channel is 20�m apart
+depths = depth + (0:size(LFP,1)-1) * 20; % Each channel is 20m apart
 
 % Compute Power Spectrum using Welch's Method
 freqs = 1:200; % Extended frequency range for analysis

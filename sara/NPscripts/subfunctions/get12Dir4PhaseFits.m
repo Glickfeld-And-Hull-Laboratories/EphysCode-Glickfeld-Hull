@@ -1,8 +1,8 @@
-function get12Dir4PhaseFits(resp,base)
-
+function get12Dir4PhaseFits(resp,base, exptStruct)
+    
     mouse   = exptStruct.mouse;
     date    = exptStruct.date;
-    base    = ['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\' exptStruct.loc];
+    baseDir    = ['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\' exptStruct.loc];
 
     nCells  = size(resp,1);
     nDirs   = size(resp,2);
@@ -13,14 +13,15 @@ function get12Dir4PhaseFits(resp,base)
     avg_resp_dir    = NaN(nCells, nDirs, nPhas, 2, 2); % Last dim: 1 = mean, 2 = SEM
     h_resp          = NaN(nCells, nDirs, nPhas, 2);
     p_resp          = NaN(nCells, nDirs, nPhas, 2);
+    trialsperstim   = NaN(nDirs, nPhas, 2);
     
     % Loop over all conditions
     for ic = 1:nCells
         for id = 1:nDirs
             for ip = 1:nPhas
                 for is = 1:2 % Grating/Plaid
-                    % Get current condition's trial count
-                    nTrials = size(resp{ic,id,ip,is}, 1);
+                    nTrials                 = size(resp{ic,id,ip,is}, 1);   % Get current condition's trial count
+                    trialsperstim(id,ip,is) = nTrials;  % Store trial count for each stimulus condition into a matrix
     
                     if nTrials > 0
                         % Compute mean and SEM for response period
@@ -33,7 +34,6 @@ function get12Dir4PhaseFits(resp,base)
     
                         % Perform t-test between response and baseline
                         [h_resp(ic,id,ip,is), p_resp(ic,id,ip,is)] = ttest2(resp_cell_trials, base_cell_trials, 'dim', 1, 'tail', 'right', 'alpha', 0.05 / nStim);
-
                     else
                         % Assign NaNs when no trials exist
                         avg_resp_dir(ic,id,ip,is,:) = NaN;
@@ -48,16 +48,16 @@ function get12Dir4PhaseFits(resp,base)
     % Find cells significantly responsive to gratings
     resp_ind_dir = find(sum(h_resp(:,:,1,1), 2)); 
     
-    % Determine direction selectivity
-     DSIstruct = getDSIstruct(avg_resp_dir);
+    % Do all fits at once
+    [DSIstruct, ZpZcStruct, plaid_corr, gratingFitStruct, ZpZcPWdist, phaseModStruct] = bigFits(avg_resp_dir);
+        
+    % Get direction selectivity
         DSI         = DSIstruct.DSI;
         DSI_ind     = DSIstruct.DS_ind;
         DSI_maxInd  = DSIstruct.prefDir;
-
-    
-    % Direction tuning curve fit
-    gratingFitStruct = getGratingTuningCurveFit(avg_resp_dir);
-        b_hat_all           = gratingFitStruct.b;
+        
+    % Get direction tuning curve fit
+        dir_b_hat_all       = gratingFitStruct.b;
         k1_hat_all          = gratingFitStruct.k1;
         R1_hat_all          = gratingFitStruct.R1;
         R2_hat_all          = gratingFitStruct.R2;
@@ -67,38 +67,30 @@ function get12Dir4PhaseFits(resp,base)
         dir_R_square_all    = gratingFitStruct.Rsq;
         dir_yfit_all        = gratingFitStruct.yfit;
 
-    % Run partial correlations
-     ZpZcStruct = getZpZcStruct(avg_resp_dir);
+    % Get partial correlations
         Zp = ZpZcStruct.Zp;
         Zc = ZpZcStruct.Zc;
         Rp = ZpZcStruct.Rp;
         Rc = ZpZcStruct.Rc;
 
-    % Find correlations between plaid tuning curves
-     plaid_corr = getPlaidTuningCorrelations(avg_resp_dir);
-
-    % Calculate pairwise dist between Zp Zc points
-    ZpZcPWdist = getZpZcPWdist(ZpZcStruct);
-
-    % Calculate PCI fit, get amplitude and baseline
-    PCI = (Zp-Zc);
-    phase = [0 90 180 270];
-    phase_range = 0:1:359;
-
-    for iCell = 1:nCells
-        [b_hat_all(iCell,1), amp_hat_all(iCell,1), per_hat_all(iCell,1),pha_hat_all(iCell,1),sse_all(iCell,1),R_square_all(iCell,1)] = sinefit_PCI(deg2rad(phase),PCI(:,iCell));
-        yfit_all(iCell,:,1) = b_hat_all(iCell,1)+amp_hat_all(iCell,1).*(sin(2*pi*deg2rad(phase_range)./per_hat_all(iCell,1) + 2.*pi/pha_hat_all(iCell,1)));
-    end
+    % Get PCI fit, get amplitude and baseline
+        PCI             = phaseModStruct.PCI;
+        yfit_all        = phaseModStruct.yfit;
+        amp_hat_all     = phaseModStruct.amp;
+        b_hat_all       = phaseModStruct.b;
+        sse_all         = phaseModStruct.sse;
+        R_square_all    = phaseModStruct.rsq;
+        
 
     save(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' date], [mouse '_' date '_fitsSG.mat']), 'resp_ind_dir','nCells','nTrials','nDirs','avg_resp_dir','DSI','plaid_corr','Rp','Rc','Zp','Zc','ZpZcPWdist','yfit_all','amp_hat_all','b_hat_all','sse_all','R_square_all','dir_yfit_all','k1_hat_all','dir_sse_all','dir_R_square_all');
-    save(fullfile(base, 'Analysis\Neuropixel', [date], [date '_' mouse '_' run_str '_respData.mat']), 'resp', 'base', 'resp_ind', 'h_resp', 'avg_resp_dir','p_anova_dir','p_anova_plaid', 'trialInd');
-    save(fullfile(base, 'Analysis\Neuropixel', [date], [date '_' mouse '_' run_str '_stimData.mat']), 'resp_cell_trials', 'base_cell_trials', 'trialsperstim','DSI_ind','OSI_ind','resp_ind_dir','p_dir');
+    save(fullfile(baseDir, 'Analysis\Neuropixel', [date], [date '_' mouse '_respData.mat']), 'resp', 'base', 'avg_resp_dir'); % ,'p_anova_dir','p_anova_plaid'
+    save(fullfile(baseDir, 'Analysis\Neuropixel', [date], [date '_' mouse '_stimData.mat']), 'resp_cell_trials', 'base_cell_trials', 'trialsperstim','DSI_ind','resp_ind_dir','p_dir');
 
 %% set inclusion criteria
-resp_ind = intersect(resp_ind_dir,find(DSI>0.5));
+resp_ind = 1:nCells;
+%resp_ind = intersect(resp_ind_dir,find(DSI>0.5));
 
 ind = ZpZcStruct.PDSind_byphase;
-
 
 %%
 [avg_resp_grat, avg_resp_plaid] = getAlignedGratPlaidTuning(avg_resp_dir);
@@ -218,7 +210,7 @@ for iCell = 1:nCells
             hold on
         end
         polarplot([x_rad x_rad(1)], [avg_resp_grat(ic,:) avg_resp_grat(ic,1)],'k', 'LineWidth',2) 
-        subtitle(['cell ' num2str(ic) ', ' num2str([-2000 + goodUnitStruct(iCell).depth])])
+        subtitle(['cell ' num2str(ic) ', ' num2str(-2000 + goodUnitStruct(iCell).depth)])
     start = start+1;    
     if start>20
         sgtitle([mouse ' ' date ' - Polar plots'])
@@ -251,7 +243,7 @@ for iCell = 1:nCells
         ylabel('Zp'); ylim([-4 8]);
         xlabel('Zc'); xlim([-4 8]);
         if ic ==1; legend('0 deg','90 deg','180 deg', '270 deg'); end;
-        subtitle(['cell ' num2str(ic)])
+        subtitle(['cell ' num2str(ic) ', ' num2str(-2000+goodUnitStruct(ic).depth)])
         plotZcZpBorders; axis square
     start = start+1;    
     if start>20

@@ -26,7 +26,7 @@ function [stimStruct] = createStimStruct(exptStruct)
         filteredPD = stimOnTimestampsPD(hasNeighbor);   % Keep only timestamps that have a neighbor within 50 ms
 
     % Account for report of the monitor's refresh rate in the photodiode signal
-        minInterval = 0.5; % Define a minimum separation threshold (should be longer than a refresh cycle but shorter than ISI)     
+        minInterval = 0.4; % Define a minimum separation threshold (should be longer than a refresh cycle but shorter than ISI)     
         leadingEdgesPD = filteredPD([true; diff(filteredPD) > minInterval]); % Extract the leading edges (first timestamp of each stimulus period)
         % [true; ...] ensures that the very first timestamp is always included because otherwise diff() returns an array that is one element shorter than the original.
 

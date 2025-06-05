@@ -1,6 +1,6 @@
 clear all; close all; clc
 base = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
-iexp = 4; % Choose experiment
+iexp = 8; % Choose experiment
 
 [exptStruct] = createExptStruct(iexp); % Load relevant times and directories for this experiment
 
@@ -32,7 +32,7 @@ b = 1;  % What stimulus presentation block to use for layer mapping?
 
 %% Sort spikes into trials and bins
 
-b = 2; % What stimulus presentation block to use for RandDirFourPhase analysis?
+b = 1; % What stimulus presentation block to use for RandDirFourPhase analysis?
 [trialStruct, gratingRespMatrix, gratingRespOFFMatrix, resp, base] = createTrialStruct12Dir4Phase(stimStruct, goodUnitStruct, b);     
 
 % gratingRespMatrix: This is a nUnits x nDirections cell array, where each element 
@@ -47,7 +47,7 @@ b = 2; % What stimulus presentation block to use for RandDirFourPhase analysis?
 % (grating/plaid). Each element is then nTrials x Time (in bins of 10 ms)
 
 %%
-outDir=('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\250328\');
+outDir=(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\' exptStruct.date]);
 
 [avg_resp_dir, resp_ind_dir] = getResponses(resp, base);
 
@@ -64,14 +64,13 @@ subplot 221
     xlabel('avg FR')
     ylim([-2000 0])
     movegui('center')
-    sgtitle([mouse ' ' date ', FR by depth'])
-    print(fullfile([outDir, '\i2753-250328-FRbyDepth.pdf']),'-dpdf','-bestfit');
+    sgtitle([exptStruct.mouse ' ' exptStruct.date ', FR by depth'])
+    print(fullfile([outDir, '\' exptStruct.mouse '-' exptStruct.date '-FRbyDepth.pdf']),'-dpdf','-bestfit');
 
 
 %%
 
-
-
+get12Dir4PhaseFits(resp,base,exptStruct)
 
 
 
@@ -79,10 +78,10 @@ subplot 221
 
 
 %% Plot grating rasters for all neurons
-outDir=('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\250328\i2753-250328_gratingRasters');
+outDir=(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\' exptStruct.mouse '-' exptStruct.date '_gratingRasters']);
 
 close all
-for ic = 1:82
+for ic = 1:128
     depth = -2000 + goodUnitStruct(ic).depth;
 figure;
     for i=1:12
@@ -91,7 +90,7 @@ figure;
     end
     sgtitle(['unit '  num2str(ic) ', depth=' num2str(depth)])
     movegui('center')
-    print(fullfile([outDir, '\i2753-250328-depth' num2str(-depth) '-unit' num2str(ic) '.pdf']),'-dpdf','-bestfit');
+    print(fullfile([outDir, '\' exptStruct.mouse '-' exptStruct.date '-depth' num2str(-depth) '-unit' num2str(ic) '.pdf']),'-dpdf','-bestfit');
     close all
 end
 
