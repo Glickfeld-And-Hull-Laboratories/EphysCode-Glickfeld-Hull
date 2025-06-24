@@ -1,6 +1,6 @@
 clear all; close all; clc
 base = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
-iexp = 8; % Choose experiment
+iexp = 11; % Choose experiment
 
 [exptStruct] = createExptStruct(iexp); % Load relevant times and directories for this experiment
 
@@ -32,7 +32,7 @@ b = 1;  % What stimulus presentation block to use for layer mapping?
 
 %% Sort spikes into trials and bins
 
-b = 1; % What stimulus presentation block to use for RandDirFourPhase analysis?
+b = 4; % What stimulus presentation block to use for RandDirFourPhase analysis?
 [trialStruct, gratingRespMatrix, gratingRespOFFMatrix, resp, base] = createTrialStruct12Dir4Phase(stimStruct, goodUnitStruct, b);     
 
 % gratingRespMatrix: This is a nUnits x nDirections cell array, where each element 
@@ -47,6 +47,7 @@ b = 1; % What stimulus presentation block to use for RandDirFourPhase analysis?
 % (grating/plaid). Each element is then nTrials x Time (in bins of 10 ms)
 
 %%
+
 outDir=(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\' exptStruct.date]);
 
 [avg_resp_dir, resp_ind_dir] = getResponses(resp, base);
@@ -78,10 +79,13 @@ get12Dir4PhaseFits(resp,base,exptStruct)
 
 
 %% Plot grating rasters for all neurons
+if ~exist(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\' exptStruct.mouse '-' exptStruct.date '_gratingRasters']), 'dir')
+        mkdir(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\' exptStruct.mouse '-' exptStruct.date '_gratingRasters']));
+    end
 outDir=(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\' exptStruct.mouse '-' exptStruct.date '_gratingRasters']);
 
 close all
-for ic = 1:128
+for ic = 1:length(goodUnitStruct)
     depth = -2000 + goodUnitStruct(ic).depth;
 figure;
     for i=1:12

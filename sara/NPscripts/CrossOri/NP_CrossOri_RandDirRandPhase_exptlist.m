@@ -110,7 +110,7 @@ expt(7).eyetrack = {'y'};
 expt(7).wheeltrack = {'n'};
 expt(7).saveLoc = 'sara';
 
-%% i2757 250529, V1     % RF mapping + 12Dir4Phase
+%% i2757 250529, V1     % RF mapping + 12 dir 4 phase
 expt(8).mouse = 'i2757';
 expt(8).date = '250529';
 expt(8).loc  = {'V1'};
@@ -125,4 +125,69 @@ expt(8).exptTime = '1517';
 expt(8).eyetrack = {'y'}; 
 expt(8).wheeltrack = {'n'};
 expt(8).saveLoc = 'sara';
+
+%% i2756 250610, V1     % LFP retinotopy & RF mapping 
+expt(9).mouse = 'i2756';
+expt(9).date = '250610';
+expt(9).loc  = {'V1'};
+expt(9).z = -2000;
+expt(9).probe = {'NP1'};
+expt(9).genotype = {'PV x CBA'};
+expt(9).sex = {'M'};
+expt(9).age = '238';
+expt(9).cog = {'awake'};
+expt(9).layerTime = '';
+expt(9).exptTime = '';
+expt(9).eyetrack = {'y'}; 
+expt(9).wheeltrack = {'n'};
+expt(9).saveLoc = 'sara';
+
+%% i2756 250611, V1    
+expt(10).mouse = 'i2756';
+expt(10).date = '250611';
+expt(10).loc  = {'V1'};
+expt(10).z = -2000;
+expt(10).probe = {'NP1'};
+expt(10).genotype = {'PV x CBA'};
+expt(10).sex = {'M'};
+expt(10).age = '239';
+expt(10).cog = {'awake'};
+expt(10).layerTime = '';
+expt(10).exptTime = '1447';
+expt(10).eyetrack = {'y'}; 
+expt(10).wheeltrack = {'n'};
+expt(10).saveLoc = 'sara';
+
+%% i2758 250619, V1    
+expt(11).mouse = 'i2758';
+expt(11).date = '250619';
+expt(11).loc  = {'V1'};
+expt(11).z = -2000;
+expt(11).probe = {'NP1'};
+expt(11).genotype = {'PV x CBA'};
+expt(11).sex = {'M'};
+expt(11).age = '200';
+expt(11).cog = {'awake'};
+expt(11).layerTime = '';
+expt(11).exptTime = '1443';
+expt(11).eyetrack = {'y'}; 
+expt(11).wheeltrack = {'n'};
+expt(11).saveLoc = 'sara';
+
+%% i2758 250620, V1    
+expt(12).mouse = 'i2758';
+expt(12).date = '250620';
+expt(12).loc  = {'V1'};
+expt(12).z = -2000;
+expt(12).probe = {'NP1'};
+expt(12).genotype = {'PV x CBA'};
+expt(12).sex = {'M'};
+expt(12).age = '201';
+expt(12).cog = {'awake'};
+expt(12).layerTime = '';
+expt(12).exptTime = '1448';
+expt(12).eyetrack = {'y'};  % yes, but forgot to start for RF mapping--only have expt run
+expt(12).wheeltrack = {'n'};
+expt(12).saveLoc = 'sara';
+
 

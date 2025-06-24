@@ -11,7 +11,7 @@
 % Outputs located in Analysis/Neuropixel/date folder.
 %
 
-function runCatGT_SG(date)
+function runCatGTret_SG(date)
 
 % Set base directories
     dataDir     = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Data\neuropixel\';
@@ -24,18 +24,18 @@ function runCatGT_SG(date)
     dirContents = dir(fullDataPath);
     runFolders  = {dirContents([dirContents.isdir] & ~ismember({dirContents.name}, {'.', '..'})).name};
 
-% Check if two folders are found (one retinotopy run, one experiment run)
+% Check if exactly one folder is found
     if isempty(runFolders)
         error('No run folder found in %s', fullDataPath);
-    elseif numel(runFolders) > 2
-        error('  *runCatGT_SG* Three run folders found in %s. Please check the data and experiment structure.', fullDataPath);
+    elseif numel(runFolders) > 1
+        error('  *runCatGT_SG* Multiple run folders found in %s. Please check the data and experiment structure.', fullDataPath);
     end
 
-% Get full experimental run folder and name
-    runFolder = fullfile(runFolders(~contains(runFolders, 'retinotopy')));
+% Get full run folder and name
+    runFolder = fullfile(fullDataPath, runFolders{1});
 
 % Get run name minus experimental run digits
-    runName = runFolder{1};
+    runName = runFolders{1};
     runName = regexprep(runName, '(_imec0)$', '');    % Remove _imec0 ending on file name
     runName = regexprep(runName, '(_[gt]\d+)$', '');    % Remove '_gN' or '_tN' at the end if present
         % _ matches underscore
@@ -46,11 +46,11 @@ function runCatGT_SG(date)
     runName = regexprep(runName, '(_[gt]\d+)$', '');    % Run twice, in case there is _gN_tN
 
 % Extract gN and tN from the .bin filename
-    binFiles = dir(fullfile(fullDataPath, runFolder{1}, '*.imec0.ap.bin'));  % Locate .bin file inside runFolder
+    binFiles = dir(fullfile(runFolder, '*.imec0.ap.bin'));  % Locate .bin file inside runFolder
     if isempty(binFiles)
-        error('No .bin file found in %s', runFolder{1});
+        error('No .bin file found in %s', runFolder);
     elseif numel(binFiles) > 1
-        error('Multiple .bin files found in %s. Check data folder.', runFolder{1});
+        error('Multiple .bin files found in %s. Check data folder.', runFolder);
     end
     binFileName = binFiles(1).name;
     exptdigits  = regexp(binFileName, '_g(\d+)_t(\d+)', 'tokens');   % Find digits associated with gN and tN
