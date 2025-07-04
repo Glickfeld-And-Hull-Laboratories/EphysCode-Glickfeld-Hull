@@ -1,6 +1,6 @@
 clear all; close all; clc
 base = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
-iexp = 11; % Choose experiment
+iexp = 14; % Choose experiment
 
 [exptStruct] = createExptStruct(iexp); % Load relevant times and directories for this experiment
 
@@ -32,8 +32,9 @@ b = 1;  % What stimulus presentation block to use for layer mapping?
 
 %% Sort spikes into trials and bins
 
-b = 4; % What stimulus presentation block to use for RandDirFourPhase analysis?
+b = 5; % What stimulus presentation block to use for RandDirFourPhase analysis?
 [trialStruct, gratingRespMatrix, gratingRespOFFMatrix, resp, base] = createTrialStruct12Dir4Phase(stimStruct, goodUnitStruct, b);     
+[f0mat, f1mat, f1overf0mat] = getF1_SG(gratingRespMatrix);
 
 % gratingRespMatrix: This is a nUnits x nDirections cell array, where each element 
 % contains a cell array of spike times for each trial. For example, 

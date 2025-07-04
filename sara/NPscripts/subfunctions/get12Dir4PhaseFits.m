@@ -55,7 +55,7 @@ function get12Dir4PhaseFits(resp,base, exptStruct)
         DSI         = DSIstruct.DSI;
         DSI_ind     = DSIstruct.DS_ind;
         DSI_maxInd  = DSIstruct.prefDir;
-        
+
     % Get direction tuning curve fit
         dir_b_hat_all       = gratingFitStruct.b;
         k1_hat_all          = gratingFitStruct.k1;
@@ -80,7 +80,7 @@ function get12Dir4PhaseFits(resp,base, exptStruct)
         b_hat_all       = phaseModStruct.b;
         sse_all         = phaseModStruct.sse;
         R_square_all    = phaseModStruct.rsq;
-        
+    
 
     save(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' date], [mouse '_' date '_fitsSG.mat']), 'resp_ind_dir','nCells','nTrials','nDirs','avg_resp_dir','DSI','plaid_corr','Rp','Rc','Zp','Zc','ZpZcPWdist','yfit_all','amp_hat_all','b_hat_all','sse_all','R_square_all','dir_yfit_all','k1_hat_all','dir_sse_all','dir_R_square_all');
     save(fullfile(baseDir, 'Analysis\Neuropixel', [date], [date '_' mouse '_respData.mat']), 'resp', 'base', 'avg_resp_dir'); % ,'p_anova_dir','p_anova_plaid'

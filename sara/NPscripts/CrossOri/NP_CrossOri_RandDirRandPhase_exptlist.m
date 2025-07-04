@@ -190,4 +190,35 @@ expt(12).eyetrack = {'y'};  % yes, but forgot to start for RF mapping--only have
 expt(12).wheeltrack = {'n'};
 expt(12).saveLoc = 'sara';
 
+%% i2761 250701, V1    
+expt(13).mouse = 'i2761';
+expt(13).date = '250701';
+expt(13).loc  = {'V1'};
+expt(13).z = -2000;
+expt(13).probe = {'NP1'};
+expt(13).genotype = {'C57/CBA'};
+expt(13).sex = {'M'};
+expt(13).age = '139';
+expt(13).cog = {'awake'};
+expt(13).layerTime = '';
+expt(13).exptTime = '1552';
+expt(13).eyetrack = {'y'};  
+expt(13).wheeltrack = {'n'};
+expt(13).saveLoc = 'sara';
+
+%% i2761 250702, V1    
+expt(14).mouse = 'i2761';
+expt(14).date = '250702';
+expt(14).loc  = {'V1'};
+expt(14).z = -2000;
+expt(14).probe = {'NP1'};
+expt(14).genotype = {'C57/CBA'};
+expt(14).sex = {'M'};
+expt(14).age = '140';
+expt(14).cog = {'awake'};
+expt(14).layerTime = '';
+expt(14).exptTime = '1611';
+expt(14).eyetrack = {'y'};  
+expt(14).wheeltrack = {'n'};
+expt(14).saveLoc = 'sara';
 

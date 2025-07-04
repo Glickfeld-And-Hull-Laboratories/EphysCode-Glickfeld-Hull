@@ -20,6 +20,8 @@ function getPupilTrackingData(exptStruct)
     framesCollected = mov.NumFrames;     % Get number of frames collected
     assert(length(timestamps) == framesCollected, 'Error. Collected frames do not match collected timestamps.');    % Throw error if frames collected doesn't match timestamps collected
 
+% ======
+%
 % Double check each chunk of frames has exactly 30 frames
     dt              = diff(timestamps(:));   % Compute frame-to-frame time differences
     chunkBoundaries = [find(dt > 1); numel(timestamps) + 1];   % Find gaps > 1 sec to detect chunk boundaries
@@ -30,11 +32,37 @@ function getPupilTrackingData(exptStruct)
     shortChunks     = find(chunkLengths<30);
     longChunks      = find(chunkLengths>30);
  
+% ===== 
+% idk what to do about the chunking above. I'll come back to that.
+% Below I am just troubleshooting if I can use imfindcircles to extract the
+% pupil info from each frame
+%
+% =====
+
+
+% Get all frames from movie object
+    firstframe = rgb2gray(read(mov,1));
+    [ffcrop, rect] = imcrop(firstframe);
+    secondframe = imcrop(rgb2gray(read(mov,2)),rect);
+   
+    secondframe_TEST1 = adapthisteq(secondframe);
+    secondframe_TEST2 = edge(secondframe, 'Canny');
+    figure; imshow(secondframe_TEST2)
+
+    
+    [centers, radii, metric] = imfindcircles(secondframe_TEST2,[6 40],'ObjectPolarity','bright','Sensitivity',1); 
 
 
 
 
+    %%%%%%%%
 
+
+
+    % Find the Pupil boudary 
+    im = imread('example.jpg');
+    [minX, minY, minR, image] = daugmanCircleDetection();
+    imshow(image);
 
 
 end

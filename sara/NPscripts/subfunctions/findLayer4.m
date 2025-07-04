@@ -16,14 +16,15 @@ function [layerStruct] = findLayer4(exptStruct,stimStruct,b);
     dataPath = fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', loc, 'Data', 'neuropixel', date);
     cd(dataPath)
 
-% % Navigate into imec folder
-%     matchingFolder = dir(fullfile(dataPath, [mouse '*']));  % Find folders in dataPath location that start with mouse name
-% 
-%     if numel(matchingFolder) == 1 && matchingFolder(1).isdir    % If there is only one folder that starts with mouse name
-%         cd(fullfile(dataPath, matchingFolder(1).name));         % Change directory
-%     else
-%         error('Expected one folder for mouse %s, but found %d', mouse, numel(matchingFolder));  % Throw error if there is > or < than 1 folder that starts with mouse name
-%     end
+% Navigate into imec folder
+    matchingFolders = dir(fullfile(dataPath, [mouse '*']));  % Find folders in dataPath location that start with mouse name
+    matchingFolder = matchingFolders(~contains({matchingFolder.name}, 'retinotopy'));   % Filter out folders that contain 'retinotopy' in the name
+
+    if numel(matchingFolder) == 1 && matchingFolder(1).isdir    % If there is only one folder that starts with mouse name
+        cd(fullfile(dataPath, matchingFolder(1).name));         % Change directory
+    else
+        error('Expected one folder for mouse %s, but found %d', mouse, numel(matchingFolder));  % Throw error if there is > or < than 1 folder that starts with mouse name and does not contain 'retinotopy'
+    end
 
 % Load LFP data (expected to be NPX data collected at 2500hz and reported in mV)
     lfFile      = dir(fullfile(pwd, '*imec0.lf.bin'));   % Get info on file that ends in imec0.lf.bin
@@ -32,11 +33,20 @@ function [layerStruct] = findLayer4(exptStruct,stimStruct,b);
     nSamp       = str2double(metaLFP.imSampRate)*str2double(metaLFP.fileTimeSecs); % Set number of samples to grab (as in, grabs all)
     LFPdata     = ReadBin(0, nSamp, metaLFP, lfFile.name, pwd);    % Load LFP (channels x samples)
 
+% Parameters
+    Fs          = 2500; % Sampling frequency in Hz
+    cutofflow   = 150; % Cutoff frequency in Hz
+    cutoffhigh  = 300;
+    [b, a] = butter(4, cutofflow/(Fs/2), 'low'); % Design filter (Butterworth, 4th order)
+    LFPdata1=LFPdata;
+    LFPdataFilt1 = filtfilt(b, a, LFPdata);
+    LFPdata = (LFPdataFilt1-LFPdataFilt1(300,:));
+
 % Look at loaded LFP data
     figure()
     n=1;
-    for ic = 1:30:370
-        subplot(13,1,n)
+    for ic = 170:2:190
+        subplot(11,1,n)
         plot(LFPtime(1:end-1),LFPdata(ic,:))
         hold on
         subtitle(['chnl ' num2str(ic)])
@@ -108,7 +118,7 @@ function [layerStruct] = findLayer4(exptStruct,stimStruct,b);
     LFP = (mean(all_stimLFP,3)-mean(all_baseLFP,2))./1000;  % Average across stim on windows and average across baselines, then subtract and convert to muV
 
 % Determine depth to be plotted
-    maxDepth = -1000; % Set maximum depth to plot (in �m)
+    maxDepth = -1000; % Set maximum depth to plot (in m)
     numChannels = size(LFP, 1); % Total channels (assumed to be 100)
     depths = linspace(depth, depth + (numChannels - 1) * dz, numChannels);    % Compute actual depth values for each channel
     % Find channels that are shallower than maxDepth
