@@ -69,7 +69,11 @@
         timestamps(it,:) = RFstimBlocks{it}(:);
     end
 
-    beforeSpike = [0.25 0.1 0.07 0.04 0.01]; % Look 40 ms before the spike
+
+%% Load bootstrap shuffle
+
+load(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, [mouse '-' date '_spatialRFs.mat']))
+
 %% plot spatial RFs
 
 if ~exist(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs']), 'dir')
@@ -79,37 +83,17 @@ end
 nCells  = length(goodUnitStruct);
 lastTimestamp = timestamps(end)+10; % Last timestamp plus 10 seconds
 
-totalSpikesUsed = [];
-averageImagesAll = [];
-
 figure;
 sp      = 1;   % subplot count
 start   = 1;    % cell count
 n       = 1;    % page count
 
 for iCell = 1:nCells
-    exCellSpikeTimes = goodUnitStruct(iCell).timestamps(find(goodUnitStruct(iCell).timestamps<lastTimestamp));  % Only take spikes during the RF run (for speed of processing)  
     for it = 1:length(beforeSpike)
-        timeBeforeSpike = beforeSpike(it); % Look [40 ms, etc.] before the spike
-        imagesAtSpikes  = NaN(length(exCellSpikeTimes),xDim, yDim);
-        for is = 1:length(exCellSpikeTimes)
-            spikeTime               = exCellSpikeTimes(is);
-            [trialIdx, frameIdx]    = findNoiseStimAtSpike(spikeTime, timestamps, timeBeforeSpike);
+        timeBeforeSpike                 = beforeSpike(it); % Look [40 ms, etc.] before the spike
+        averageImageAtSpike             = squeeze(averageImagesAll(iCell,it,:,:));
 
-            if ~isnan(trialIdx) && ~isnan(frameIdx)
-                frameAtSpike            = squeeze(imageMatrix(trialIdx,frameIdx,:,:));
-                imagesAtSpikes(is,:,:)  = frameAtSpike;
-                totalSpikesUsed(iCell)  =   nnz(~isnan(imagesAtSpikes(:,1,1)));
-            end   
-        end
-        averageImageAtSpike             = squeeze(nanmean(imagesAtSpikes, 1));  % Average across spikes
-        averageImagesAll(iCell,it,:,:)  = averageImageAtSpike;  % Put in matrix to save later. Size: [nCells x nTimePointsBeforeSpike x xDim x yDim]
-
-        % Smooth image
-        sigma           = 2; % Standard deviation for smoothing (adjust if needed)
-        avgImageSmooth  = imgaussfilt(averageImageAtSpike, sigma);  % 2D Gaussian smoothing; adjust the kernel size (final value, if needed)
-
-       subplot(8,5,sp)
+        subplot(8,5,sp)
             imagesc(averageImageAtSpike)
             %imagesc(avgImageSmooth)
             colormap('gray')
@@ -120,91 +104,27 @@ for iCell = 1:nCells
             end
             sp=sp+1;
     end
-   start=start+1;
-   if start > 8
-        sgtitle(['noise trials = ' num2str(size(timestamps,1))])
-        print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs'], [mouse '-' date '_spatialRFs_cell' num2str(iCell-7) 'to' num2str(iCell) '.pdf']),'-dpdf', '-fillpage')       
-        figure;
-        movegui('center')
-        start   = 1;
-        n       = n+1;
-        sp      = 1;
-        close all
-    end
-    if iCell == nCells
-        sgtitle(['noise trials = ' num2str(size(timestamps,1))])
-        print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs'], [mouse '-' date '_spatialRFs_untilcell' num2str(iCell) '.pdf']), '-dpdf','-fillpage')
-        close all
-    end   
+    start=start+1;
+    if start > 8
+         sgtitle(['noise trials = ' num2str(size(timestamps,1))])
+         print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs'], [mouse '-' date '_spatialRFs_cell' num2str(iCell-7) 'to' num2str(iCell) '.pdf']),'-dpdf', '-fillpage')       
+         figure;
+         movegui('center')
+         start   = 1;
+         n       = n+1;
+         sp      = 1;
+         close all
+     end
+     if iCell == nCells
+         sgtitle(['noise trials = ' num2str(size(timestamps,1))])
+         print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs'], [mouse '-' date '_spatialRFs_untilcell' num2str(iCell) '.pdf']), '-dpdf','-fillpage')
+         close all
+     end   
 end
 
 
-%% Shuffle image matrix to get random distribution of pixel values
+%% Generate zscore image, threshold
 
-nboots = 50;
-
-averageImagesAll_shuffled   = NaN(nboots, nCells, numel(beforeSpike), xDim, yDim);
-imageMatrix_list            = reshape(imageMatrix, [], size(imageMatrix,3), size(imageMatrix,4));   % Reshape from nTrials x nFrames to one dimension of all trials (nTrials*nFrames)
-frameStarts                 = timestamps;
-frameEnds                   = [timestamps(:,2:end), timestamps(:,end)+0.1];
-[nTrials, nFrames]          = size(timestamps);
-
-parpool("Threads",20)   % Start parallel pool processing
-tic
-for ib = 1:nboots
-    fprintf(['boot ' num2str(ib) '/' num2str(nboots) '\n'])
-    trialOrder          = randperm(size(imageMatrix,1));     % Random permutation of the integers from 1 to number of total trials without repeating elements
-    frameOrder          = randperm(size(imageMatrix,2)); 
-    imageMatrix_shuf    = imageMatrix(trialOrder, frameOrder, :, :);   % Resample with the random permutation and then reshape into expected matrix size
-    for iCell = 1:nCells
-        exCellSpikeTimes = goodUnitStruct(iCell).timestamps(goodUnitStruct(iCell).timestamps < lastTimestamp);
-
-        parfor it = 1:length(beforeSpike)
-            timeBeforeSpike = beforeSpike(it);
-            shiftedSpikes   = exCellSpikeTimes - timeBeforeSpike;
-            nSpikes         = length(shiftedSpikes);
-            trialIdx = NaN(1, nSpikes);                                 
-            frameIdx = NaN(1, nSpikes);
-    
-            % Expand dims
-            frameStartsExp      = reshape(frameStarts, [nTrials, nFrames, 1]);
-            frameEndsExp        = reshape(frameEnds,   [nTrials, nFrames, 1]);
-            shiftedSpikesExp    = reshape(shiftedSpikes, [1, 1, nSpikes]);
-
-            % Get frame for each spike
-            isInFrame = (shiftedSpikesExp >= frameStartsExp) & (shiftedSpikesExp < frameEndsExp);
-    
-            % Collapse trials & frames
-            isInFrame2D             = reshape(isInFrame, nTrials * nFrames, nSpikes);
-            [linearIdx, spikeIdx]   = find(isInFrame2D);
-    
-            if ~isempty(linearIdx)
-                [trialInds, frameInds]      = ind2sub([nTrials, nFrames], linearIdx);
-                [uniqueSpikes, firstIdx]    = unique(spikeIdx, 'first');   % Keep only the first match if multiple
-                trialIdx(uniqueSpikes)      = trialInds(firstIdx);
-                frameIdx(uniqueSpikes)      = frameInds(firstIdx);
-            end
-    
-            valid = ~isnan(trialIdx);    % Find valid spikes
-            imagesAtSpikes = NaN(nSpikes, xDim, yDim);    % Preallocate
-                
-            % Convert valid indices to linear indices
-            if any(valid)
-                ind                         = sub2ind([size(imageMatrix_shuf,1), size(imageMatrix_shuf,2)], trialIdx(valid), frameIdx(valid));    % Compute linear indices into imageMatrix_shuf
-                frames                      = reshape(imageMatrix_shuf, [], xDim, yDim);    % Extract all frames at once
-                imagesAtSpikes(valid,:,:)   = frames(ind, :, :);
-            end
-
-        averageImageAtSpike                         = squeeze(nanmean(imagesAtSpikes, 1));
-        averageImagesAll_shuffled(ib,iCell,it,:,:)  = averageImageAtSpike;
-    end
-    end
-end
-toc
-delete(gcp("nocreate"));
-
-
-%%
 % Set zThreshold
 zthreshold = 2.5;
 

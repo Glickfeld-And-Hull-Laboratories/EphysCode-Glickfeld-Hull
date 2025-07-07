@@ -15,7 +15,7 @@ runTPrime_SG(exptStruct.date)
 
 %% Extract units from KS output
 
-cd ([base exptStruct.loc '\Analysis\Neuropixel\' exptStruct.date '\KS_Output']) % Navigate to KS_Output folder
+cd(fullfile(baseWiesel, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, 'KS_Output/')) % Navigate to KS_Output folder
 
 % Choose imec0.ap.bin file (I just choose the CatGT bin file)
 [allUnitStruct, goodUnitStruct] = importKSdata_SG();
