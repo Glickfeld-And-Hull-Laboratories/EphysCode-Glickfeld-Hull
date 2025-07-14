@@ -72,7 +72,7 @@
 
 %% Load bootstrap shuffle
 
-load(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, [mouse '-' date '_spatialRFs.mat']))
+load(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, [mouse '-' date '_spatialRFs_Wiesel.mat']))
 
 %% plot spatial RFs
 
@@ -224,7 +224,7 @@ for iCell = 1:nCells
                 end
                 sp=sp+1;
         end
-        start=start+1;
+        start=start+1;z
     end
    if start > 8
         sgtitle('zcore image, clim ([-10 10])')

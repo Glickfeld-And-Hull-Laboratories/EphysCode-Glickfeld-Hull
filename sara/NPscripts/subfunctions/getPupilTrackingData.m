@@ -65,4 +65,67 @@ function getPupilTrackingData(exptStruct)
     imshow(image);
 
 
+    %%%%%%%
+
+% Pull first frame to crop
+    firstframe = rgb2gray(read(mov,1));
+    [ffcrop, rect] = imcrop(firstframe);
+
+% Initialize arrays and variables
+    nFrames         = mov.NumFrames;
+    xDim            = size(ffcrop,1);
+    yDim            = size(ffcrop,2);
+    framesToExtract = 1:nFrames; 
+    framesmat       = zeros(xDim,yDim,length(framesToExtract));
+
+% For all frames: read from movie object, turn to grayscale, crop
+
+tic
+    for ff = framesToExtract
+        frame = imcrop(rgb2gray(read(mov,ff)),rect);
+        framesmat(:,:,ff) = frame;
+
+        % Print progress every 100 frames
+        if mod(ff, 1000) == 0
+            fprintf('Processed frame %d/%d\n', ff, length(framesToExtract));
+        end
+    end
+toc
+fprintf(['Run complete. Extracted ' num2str(length(framesToExtract)) '/' num2str(nFrames) ' frames. \n'])
+
+
+% Find a chunk of frames that has the largest amount of change (i.e., rich
+% dataset for training DLC model
+    diffFrames  = diff(framesmat, 1, 3);    % Find differences in luminance
+    meanAbsDiff = squeeze(mean(mean(abs(diffFrames),1),2));
+
+    windowSize  = 2000;     % Training chunk size
+    halfWin     = floor(windowSize / 2);
+    movingAvg           = movmean(meanAbsDiff, windowSize);   % Window is automatically centered at index, so for starting and ending indices, the window cuts off
+    [maxVal, maxIdx]    = max(movingAvg);
+
+    startIdx = max(1, maxIdx - halfWin + 1);
+    endIdx   = min(size(framesmat,3), maxIdx + halfWin);
+    
+    trainingChunk = framesmat(:,:, startIdx:endIdx);
+    fprintf(['Window size: ' num2str(windowSize) ' frames \n' 'Training chunk size: ' num2str(size(trainingChunk, 3)) ' frames \nstartIdx: ' num2str(startIdx) '   endIdx: ' num2str(endIdx) ' \n'])
+
+
+
+    filename = 'training_chunk.mp4';
+    v = VideoWriter(filename, 'MPEG-4');
+    v.FrameRate = 30;  % Optional — adjust as needed
+    open(v);
+    
+    nFrames = size(trainingChunk, 3);
+    
+    for k = 1:nFrames
+        frame = trainingChunk(:,:,k);                   % double, likely > 1
+        frame_rgb = repmat(mat2gray(frame), [1 1 3]);   % convert to [0,1] RGB
+        writeVideo(v, frame_rgb);
+    end
+    
+    close(v);
+    disp(['Saved video: ', filename])
+
 end

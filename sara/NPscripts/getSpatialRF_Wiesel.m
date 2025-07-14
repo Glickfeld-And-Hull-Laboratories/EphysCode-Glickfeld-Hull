@@ -90,32 +90,58 @@ lastTimestamp = timestamps(end)+10; % Last timestamp plus 10 seconds
 totalSpikesUsed = [];
 averageImagesAll = [];
 
-for iCell = 1:nCells
-    exCellSpikeTimes = goodUnitStruct(iCell).timestamps(find(goodUnitStruct(iCell).timestamps<lastTimestamp));  % Only take spikes during the RF run (for speed of processing)  
-    for it = 1:length(beforeSpike)
-        timeBeforeSpike = beforeSpike(it); % Look [40 ms, etc.] before the spike
-        imagesAtSpikes  = NaN(length(exCellSpikeTimes),xDim, yDim);
-        for is = 1:length(exCellSpikeTimes)
-            spikeTime               = exCellSpikeTimes(is);
-            [trialIdx, frameIdx]    = findNoiseStimAtSpike(spikeTime, timestamps, timeBeforeSpike);
-            if ~isnan(trialIdx) && ~isnan(frameIdx)
-                frameAtSpike            = squeeze(imageMatrix(trialIdx,frameIdx,:,:));
-                imagesAtSpikes(is,:,:)  = frameAtSpike;
-                totalSpikesUsed(iCell)  =   nnz(~isnan(imagesAtSpikes(:,1,1)));
-            end   
-        end
-        averageImageAtSpike             = squeeze(nanmean(imagesAtSpikes, 1));  % Average across spikes
-        averageImagesAll(iCell,it,:,:)  = averageImageAtSpike;  % Put in matrix to save later. Size: [nCells x nTimePointsBeforeSpike x xDim x yDim]
+parpool("Threads", 40)   % Start parallel pool processing
+tic
+parfor iCell = 1:nCells
+    exCellSpikeTimes = goodUnitStruct(iCell).timestamps(goodUnitStruct(iCell).timestamps < lastTimestamp);
+        for it = timeOffsets
+            timeBeforeSpike = beforeSpike(it);
+            shiftedSpikes   = exCellSpikeTimes - timeBeforeSpike;
+            nSpikes         = length(shiftedSpikes);
+            trialIdx = NaN(1, nSpikes);                                 
+            frameIdx = NaN(1, nSpikes);
+    
+            % Expand dims
+            frameStartsExp      = reshape(frameStarts, [nTrials, nFrames, 1]);
+            frameEndsExp        = reshape(frameEnds,   [nTrials, nFrames, 1]);
+            shiftedSpikesExp    = reshape(shiftedSpikes, [1, 1, nSpikes]);
 
-        % Smooth image
-        sigma           = 2; % Standard deviation for smoothing (adjust if needed)
-        avgImageSmooth  = imgaussfilt(averageImageAtSpike, sigma);  % 2D Gaussian smoothing; adjust the kernel size (final value, if needed)
-    end
+            % Get frame for each spike
+            isInFrame = (shiftedSpikesExp >= frameStartsExp) & (shiftedSpikesExp < frameEndsExp);
+    
+            % Collapse trials & frames
+            isInFrame2D             = reshape(isInFrame, nTrials * nFrames, nSpikes);
+            [linearIdx, spikeIdx]   = find(isInFrame2D);
+    
+            if ~isempty(linearIdx)
+                [trialInds, frameInds]      = ind2sub([nTrials, nFrames], linearIdx);
+                [uniqueSpikes, firstIdx]    = unique(spikeIdx, 'first');   % Keep only the first match if multiple
+                trialIdx(uniqueSpikes)      = trialInds(firstIdx);
+                frameIdx(uniqueSpikes)      = frameInds(firstIdx);
+            end
+    
+            valid = ~isnan(trialIdx);    % Find valid spikes
+            imagesAtSpikes = NaN(nSpikes, xDim, yDim);    % Preallocate
+                
+            % Convert valid indices to linear indices
+            if any(valid)
+                ind                         = sub2ind([size(imageMatrix_shuf,1), size(imageMatrix_shuf,2)], trialIdx(valid), frameIdx(valid));    % Compute linear indices into imageMatrix_shuf
+                frames                      = reshape(imageMatrix_shuf, [], xDim, yDim);    % Extract all frames at once
+                imagesAtSpikes(valid,:,:)   = frames(ind, :, :);
+                totalSpikesUsed(iCell)      = size(imagesAtSpikes,1);
+            end
+
+            averageImageAtSpike             = squeeze(nanmean(imagesAtSpikes, 1));
+            averageImagesAll(iCell,it,:,:)  = averageImageAtSpike;
+        end
 end
+toc
+delete(gcp("nocreate"));
+
 
 %% Bootstrap to get null distribution of pixel values
 
-nboots = 2;
+nboots = 100;
 
 averageImagesAll_shuffled   = NaN(nboots, nCells, numel(beforeSpike), xDim, yDim);
 imageMatrix_list            = reshape(imageMatrix, [], size(imageMatrix,3), size(imageMatrix,4));   % Reshape from nTrials x nFrames to one dimension of all trials (nTrials*nFrames)
@@ -177,4 +203,4 @@ end
 toc
 delete(gcp("nocreate"));
 
-save(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, [mouse '-' date '_spatialRFs.mat']), 'totalSpikesUsed', 'averageImagesAll', 'averageImagesAll_shuffled', 'nboots', 'beforeSpike');
+save(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, [mouse '-' date '_spatialRFs_Wiesel.mat']), 'totalSpikesUsed', 'averageImagesAll', 'averageImagesAll_shuffled', 'nboots', 'beforeSpike');

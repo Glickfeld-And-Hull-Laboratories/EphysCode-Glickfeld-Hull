@@ -2,9 +2,9 @@ clear all
 clear all global
 close all
 
-date = '250702';
-mouse = 'i2761';
-mwtime = '1520';   
+date = '250710';
+mouse = 'i2759';
+mwtime = '1429';   
 chnls = 1:2:220;
 
 fprintf([date ' ' mouse ' \n'])
@@ -42,7 +42,7 @@ fprintf([date ' ' mouse ' \n'])
     stimOnTimestampsPD  = table2array(readtable([date '_photodiodeSync.txt']));
 
 % Lonely TTL removal
-    lonelyThreshold = 0.05; % 50 ms
+    lonelyThreshold = 0.1225; % 50 ms
     timeDiffs       = abs(diff(stimOnTimestampsPD));  % Compute pairwise differences efficiently
     hasNeighbor     = [false; timeDiffs < lonelyThreshold] | [timeDiffs < lonelyThreshold; false]; % Identify indices where a close neighbor exists
     filteredPD      = stimOnTimestampsPD(hasNeighbor);   % Keep only timestamps that have a neighbor within 50 ms
