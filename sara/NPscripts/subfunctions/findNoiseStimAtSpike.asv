@@ -21,31 +21,31 @@ function [trialIdx, frameIdx] = findNoiseStimAtSpike(spikeTime, timestamps, time
         end
     end
 end
-% 
-% 
-% function [trialIdx, frameIdx] = findNoiseStimAtSpike(spikeTime, timestamps, timeBeforeSpike)
-% 
-%     spikeTime = spikeTime - timeBeforeSpike;
-%     [nTrials, nFrames] = size(timestamps);
-%     frameDuration = 0.1;
-% 
-%     trialIdx = NaN;
-%     frameIdx = NaN;
-% 
-%     for it = 1:nTrials
-%         ts = timestamps(it, :);
-%         % Compute frame ends all at once
-%         frameEnds = [ts(2:end), ts(end)+frameDuration];
-% 
-%         % Vectorized compare for this trial only
-%         idx = find(spikeTime >= ts & spikeTime < frameEnds, 1);
-%         if ~isempty(idx)
-%             trialIdx = it;
-%             frameIdx = idx;
-%             return
-%         end
-%     end
-% end
+
+
+function [trialIdx, frameIdx] = findNoiseStimAtSpike(spikeTime, timestamps, timeBeforeSpike)
+
+    spikeTime = spikeTime - timeBeforeSpike;
+    [nTrials, nFrames] = size(timestamps);
+    frameDuration = 0.1;
+
+    trialIdx = NaN;
+    frameIdx = NaN;
+
+    for it = 1:nTrials
+        ts = timestamps(it, :);
+        % Compute frame ends all at once
+        frameEnds = [ts(2:end), ts(end)+frameDuration];
+
+        % Vectorized compare for this trial only
+        idx = find(spikeTime >= ts & spikeTime < frameEnds, 1);
+        if ~isempty(idx)
+            trialIdx = it;
+            frameIdx = idx;
+            return
+        end
+    end
+end
 
 
 
