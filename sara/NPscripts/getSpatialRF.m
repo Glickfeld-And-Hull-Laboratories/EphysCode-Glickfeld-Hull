@@ -90,8 +90,8 @@ n       = 1;    % page count
 
 for iCell = 1:nCells
     for it = 1:length(beforeSpike)
-        timeBeforeSpike                 = beforeSpike(it); % Look [40 ms, etc.] before the spike
-        averageImageAtSpike             = squeeze(averageImagesAll(iCell,it,:,:));
+        timeBeforeSpike     = beforeSpike(it); % Look [40 ms, etc.] before the spike
+        averageImageAtSpike = squeeze(averageImagesAll(iCell,it,:,:));
 
         subplot(8,5,sp)
             imagesc(averageImageAtSpike)
@@ -159,7 +159,7 @@ for iCell = 1:nCells
 end
 
 % Smooth image
-sigma           = 1; % Standard deviation for smoothing (adjust if needed)
+sigma           = 2; % Standard deviation for smoothing (adjust if needed)
 avgImageZscoreSmooth  = imgaussfilt(averageImageZscore, sigma);  % 2D Gaussian smoothing; adjust the kernel size (final value, if needed)
 
 %% find index of cells that have a cluster of 3 sig pixels within a 4 pixel square
@@ -228,7 +228,10 @@ for iCell = 1:nCells
     end
    if start > 8
         sgtitle('zcore image, clim ([-10 10])')
-        print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs'], [mouse '-' date '_RFs_ZscoreAverageAndThreshold_cell' num2str(iCell-3) 'to' num2str(iCell) '.pdf']),'-dpdf', '-fillpage')       
+        print( ...
+            fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs'], ...
+            [mouse '-' date '_RFs_ZscoreAverageAndThreshold_cell' num2str(iCell-3) 'to' num2str(iCell) '.pdf']), ...
+            '-dpdf', '-fillpage')       
         figure;
         movegui('center')
         start   = 1;
@@ -238,7 +241,10 @@ for iCell = 1:nCells
     end
     if iCell == nCells
         sgtitle(['noise trials = ' num2str(size(timestamps,1))])
-        print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs'], [mouse '-' date '_RFs_ZscoreAverageAndThreshold_untilcell' num2str(iCell) '.pdf']), '-dpdf','-fillpage')
+        print( ...
+            fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs'], ...
+            [mouse '-' date '_RFs_ZscoreAverageAndThreshold_untilcell' num2str(iCell) '.pdf']), ...
+            '-dpdf','-fillpage')
         close all
     end   
 end
@@ -304,7 +310,10 @@ for ic = 1:length(ind)
     end    
     sgtitle(['cell ' num2str(iCell) ', ' num2str(totalSpikesUsed(iCell)) ' spikes'])
     movegui('center')
-    print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs'], [mouse '-' date '_RFs_2dGaussianFits_cell' num2str(iCell) '.pdf']), '-dpdf','-fillpage')
+    print( ...
+        fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs'], ...
+        [mouse '-' date '_RFs_2dGaussianFits_cell' num2str(iCell) '.pdf']), ...
+        '-dpdf', '-fillpage')
 end        
 
 
@@ -332,7 +341,187 @@ end
 
 %% save
 
-save(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\', [mouse '-' date '_spatialRFs.mat']]), 'totalSpikesUsed', 'averageImagesAll', 'averageImagesAll_shuffled', 'nboots', 'zthreshold', 'cells_sigRFbyTime_On', 'cells_sigRFbyTime_Off', 'ind_sigRF');
+save( ...
+    fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\', ...
+        [mouse '-' date '_spatialRFs.mat']]), ...
+    'totalSpikesUsed', ...
+    'averageImagesAll', ...
+    'averageImagesAll_shuffled', ...
+    'averageImageZscore', ...
+    'averageImageZscoreThresh', ...
+    'nboots', ...
+    'zthreshold', ...
+    'cells_sigRFbyTime_On', ...
+    'cells_sigRFbyTime_Off', ...
+    'ind_sigRF' ...
+    );
+
+%%
+close all;
+
+[m, bestTime] = max(squeeze(sum(sum(averageImageZscore,3),4)),[],2);
+
+listnc  = 1:nCells;
+ind     = listnc(sum(cells_sigRFbyTime_On,2)>0);
+
+ind     = [51 60 95 105 112 127 130 132 135];
+nc      = length(ind);
+
+% Preallocate struct array for props
+clear props
+xmask = zeros(29,52);
+
+for ic = 1:nc
+    iCell = ind(ic);
+    xx = squeeze(averageImageZscore(iCell,bestTime(iCell),:,:));
+    maskOn = xx;
+    maskOn(maskOn<0) = 0;
+    figure;
+        subplot(4,4,1); imagesc(xx); colormap('gray'); subtitle('Zscore'); clim([-7 7])
+    
+    xmask(10:20,10:30) = 1;
+    bw = activecontour(maskOn,xmask);
+    cc = bwconncomp(bw);
+    p = regionprops(cc,"Area");
+    [maxArea,maxIdx] = max([p.Area]);
+    bw2 = cc2bw(cc,ObjectsToKeep=maxIdx);
+    [B,L] = bwboundaries(bw2,'noholes');
+    boundary = B{1};
+        subplot(4,4,2); imagesc(maskOn); colormap('gray'); subtitle('Zscore'); clim([-7 7])
+        subplot(4,4,3); imshow(bw)
+        subplot(4,4,4); imshow(label2rgb(L, @jet, [.5 .5 .5]))
+        
+    
+    % get properties of shape
+    clear tmp
+    tmp = regionprops(bw2, ...
+             'Area', ...
+             'BoundingBox', ...
+             'Circularity', ...
+             'Centroid', ...
+             'ConvexHull', ...
+             'Eccentricity', ...
+             'EquivDiameter', ...
+             'Extent', ...
+             'MajorAxisLength', ...
+             'MinorAxisLength', ...
+             'Orientation');
+      props(ic) = tmp();
+
+      aspRatio = [props(ic).MajorAxisLength]./[props(ic).MinorAxisLength];
+      subplot(4,4,5); imshow(label2rgb(L, @jet, [.5 .5 .5]))
+            hold on
+            plot(boundary(:,2), boundary(:,1), 'w', 'LineWidth', 2);
+            title(['A.R. = ' num2str(aspRatio)])
+    sgtitle(['cell ' num2str(iCell)])
+        
+end
+
+aspRatio = [props.MajorAxisLength]./[props.MinorAxisLength];
+circ = [props.Circularity];
+
+figure;
+    scatter(aspRatio,circ)
+    xlabel('aspect ratio (maj axis length/min axis length)')
+    ylabel('circularity')
+figure;
+    scatter(aspRatio,circ)
+    xlabel('aspect ratio (maj axis length/min axis length)')
+    ylabel('circularity')
+
+
+
+
+
+
+
+
+
+ZpAvg = mean(Zp,1);
+ZcAvg = mean(Zc,1);
+ZpMax = max(Zp,[],1);
+ZcMax = max(Zc,[],1);
+PCIavg = mean(PCI,1);
+PCImax = max(PCI,[],1);
+
+
+figure;
+    subplot 361
+        scatter([props.Circularity],ZpAvg(ind))
+        ylabel('avg Zp across phases')
+        xlabel('circularity')
+    subplot 362
+        scatter([props.Circularity],ZcAvg(ind))
+        ylabel('avg Zc across phases')
+        xlabel('circularity')
+    subplot 363
+        scatter([props.Circularity],ZpMax(ind))
+        ylabel('max Zp across phases')
+        xlabel('circularity')
+    subplot 364
+        scatter([props.Circularity],ZcMax(ind))
+        ylabel('max Zc across phases')
+        xlabel('circularity')
+    subplot 365
+        scatter([props.Circularity],PCIavg(ind))
+        ylabel('avg PCI across phases')
+        xlabel('circularity')
+    subplot 366
+        scatter([props.Circularity],PCImax(ind))
+        ylabel('max PCI across phases')
+        xlabel('circularity')
+    subplot 367
+        scatter([props.Eccentricity],ZpAvg(ind))
+        ylabel('avg Zp across phases')
+        xlabel('eccentricity')
+    subplot 368
+        scatter([props.Eccentricity],ZcAvg(ind))
+        ylabel('avg Zc across phases')
+        xlabel('eccentricity')
+    subplot 369
+        scatter([props.Eccentricity],ZpMax(ind))
+        ylabel('max Zp across phases')
+        xlabel('eccentricity')
+    subplot(3,6,10)
+        scatter([props.Eccentricity],ZcMax(ind))
+        ylabel('max Zc across phases')
+        xlabel('eccentricity')
+    subplot(3,6,11)
+        scatter([props.Eccentricity],PCIavg(ind))
+        ylabel('avg PCI across phases')
+        xlabel('circularity')
+    subplot(3,6,12)
+        scatter([props.Eccentricity],PCImax(ind))
+        ylabel('max PCI across phases')
+        xlabel('circularity')
+    subplot(3,6,13)
+        scatter(aspRatio,ZcAvg(ind))
+        ylabel('avg Zc across phases')
+        xlabel('maj ax length / min ax length')
+    subplot(3,6,14)
+        scatter(aspRatio,ZpAvg(ind))
+        ylabel('avg Zp across phases')
+        xlabel('maj ax length / min ax length')
+    subplot(3,6,15)
+        scatter(aspRatio,ZcMax(ind))
+        ylabel('max Zc across phases')
+        xlabel('maj ax length / min ax length')
+    subplot(3,6,16)
+        scatter(aspRatio,ZpMax(ind))
+        ylabel('max Zp across phases')
+        xlabel('maj ax length / min ax length')
+    subplot(3,6,17)
+        scatter(aspRatio,PCIavg(ind))
+        ylabel('avg PCI across phases')
+        xlabel('maj ax length / min ax length')
+    subplot(3,6,18)
+        scatter(aspRatio,PCImax(ind))
+        ylabel('max PCI across phases')
+        xlabel('maj ax length / min ax length')
+ 
+    
+    
+
 
 %% old bootstrap code
 % nboots = 2;

@@ -53,6 +53,15 @@ function getPupilTrainingData(iexp)
     end
 
 
+
+    close(v);
+    disp(['Saved video: ', filename])
+
+end
+
+
+%% Before adding in preprocessing
+
     % for k = 1:nFramesTrain
     %     frame = trainingChunk(:,:,k);                   % double
     %     frame_scaled = (frame - globalMin) / (globalMax - globalMin);
@@ -61,26 +70,34 @@ function getPupilTrainingData(iexp)
     %     frame_rgb = repmat(frame_bright, [1 1 3]);   % convert to [0,1] RGB
     %     writeVideo(v, frame_rgb);
     % end
-    % 
-    close(v);
-    disp(['Saved video: ', filename])
-
-end
-%%
-    frame = mean(trainingChunk(:,:,1000:1030),3);                   % double
-        frame_scaled = (frame - globalMin) / (globalMax - globalMin);
-        frame_bright = brightnessFactor * frame_scaled;
-        frame_bright = max(0, min(1, frame_bright));   % clip to [0,1]
-        frame_rgb = repmat(frame_bright, [1 1 3]);   % convert to [0,1] RGB
-        figure;subplot 222; imshow(frame_rgb)
+    %
 
 
 
-    frame = mean(trainingChunk(:,:,1000:1030),3);                   % double
-        Iblur = imgaussfilt(frame, 0.5);
-        Isharp = imsharpen(Iblur, 'Radius', 1.5, 'Amount', 0.5);
-        frame_scaled = (Isharp - globalMin) / (globalMax - globalMin);
-        frame_bright = brightnessFactor * frame_scaled;
-        frame_bright = max(0, min(1, frame_bright));   % clip to [0,1]
-        frame_rgb = repmat(frame_bright, [1 1 3]);   % convert to [0,1] RGB
-        figure;subplot 222; imshow(frame_rgb)
+
+        frame = trainingChunk(:,:,50);                   % double
+        frame_thr = frame;
+        frame_thr(frame_thr>49) = 100;
+        figure; 
+        subplot 231; imagesc(frame);
+        subplot 233; imagesc(frame); 
+        subplot 232; imagesc(frame_thr);
+
+
+        [centers, radii] = imfindcircles(frame_thr,[5 20],'ObjectPolarity','dark', 'Sensitivity', 0.9);
+        subplot 232; viscircles(centers, radii,'Color','b');
+        subplot 233; viscircles(centers, radii,'Color','r');
+
+        frame = trainingChunk(:,:,3453);                   % double
+        frame_thr = frame;
+        frame_thr(frame_thr>49) = 100;
+        subplot 234; imagesc(frame);
+        subplot 236; imagesc(frame); 
+        subplot 235; imagesc(frame_thr);
+
+
+        [centers, radii] = imfindcircles(frame_thr,[5 20],'ObjectPolarity','dark', 'Sensitivity', 0.9);
+        subplot 235; viscircles(centers, radii,'Color','b');
+        subplot 236; viscircles(centers, radii,'Color','r');
+
+

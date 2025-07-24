@@ -5,7 +5,7 @@
 function cropPupil(exptStruct)
 
 % Set base directories
-    base = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
+    base        = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
     dataDir     = ([base exptStruct.loc '\Data\neuropixel\' exptStruct.date]);
     analysisDir = ([base exptStruct.loc '\Analysis\Neuropixel\' exptStruct.date]);
 
@@ -16,8 +16,8 @@ function cropPupil(exptStruct)
     mov = VideoReader(movieFiles.name);   % Load frames
 
 % Pull first frame to crop
-    firstframe = rgb2gray(read(mov,1));
-    [ffcrop, rect] = imcrop(firstframe);
+    firstframe      = rgb2gray(read(mov,1));
+    [ffcrop, rect]  = imcrop(firstframe);
 
 % Initialize arrays and variables
     nFrames         = mov.NumFrames;
@@ -41,6 +41,18 @@ function cropPupil(exptStruct)
     fprintf(['Run complete. Extracted ' num2str(length(framesToExtract)) '/' num2str(nFrames) ' frames. \n'])
 
     fprintf('Saving output, may take a few minutes...\n')
-    save(fullfile([base, 'sara\Analysis\Neuropixel\', exptStruct.date], [exptStruct.mouse '_' exptStruct.date '_pupil_cropped.mat']), 'ffcrop', 'rect', 'mov', 'nFrames', 'framesToExtract', 'framesmat', '-v7.3') 
+    save( ...
+        fullfile( ...
+            [base, 'sara\Analysis\Neuropixel\', exptStruct.date], ...
+            [exptStruct.mouse '_' exptStruct.date '_pupil_cropped.mat'] ...
+            ), ...
+        'ffcrop', ...
+        'rect', ...
+        'mov', ...
+        'nFrames', ...
+        'framesToExtract', ...
+        'framesmat', ...
+        '-v7.3' ...
+        ) 
     fprintf('Output saved\n')
 end
