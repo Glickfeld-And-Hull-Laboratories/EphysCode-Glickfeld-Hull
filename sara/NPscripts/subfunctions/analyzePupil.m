@@ -39,14 +39,14 @@ function analyzePupil(iexp, threshold)
 
 % Threshold pixel values to pull out pupil
     framesThreshold                         = framesmat;
-    framesThreshold(framesThreshold>48)     = 100;
+    framesThreshold(framesThreshold>60)     = 100;
     data                                    = framesThreshold;
-    dataSzLoop                              = 1:sz(3);
+    dataSzLoop                              = 1:size(data,3);
 
 
 figure;
 data_avg = mean(data,3);
-imagesc(data_avg);
+imagesc(data_avg); clim([])
 movegui('center')
 ax = gca;
 rect = getrect(ax);
@@ -79,7 +79,7 @@ sz   = size(data);
 
 % Run imfindcircles to detect the pupil
     calib = 1/26.6; %mm per pixel
-    rad_range = [5 20];
+    rad_range = [3 20];
     warning off;
     A = cell(sz(3),1);
     B = cell(sz(3),1);
@@ -130,9 +130,6 @@ sz   = size(data);
             eye(n).Radii    = radii(1);
             
         end
-        % if mod(n,1000)==0
-        %     fprintf('Frame %d/%d\n',n,size(data,3));
-        % end
     end
     toc
     delete(gcp("nocreate"));

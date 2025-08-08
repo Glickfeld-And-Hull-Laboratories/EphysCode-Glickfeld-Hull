@@ -1,6 +1,6 @@
 clear all; close all; clc
 base = '/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/';
-iexp = 14; % Choose experiment
+iexp = 17; % Choose experiment
 
 [exptStruct] = createExptStruct(iexp); % Load relevant times and directories for this experiment
 
@@ -92,47 +92,32 @@ averageImagesAll = [];
 
 parpool("Threads", 40)   % Start parallel pool processing
 tic
-parfor iCell = 1:nCells
-    exCellSpikeTimes = goodUnitStruct(iCell).timestamps(goodUnitStruct(iCell).timestamps < lastTimestamp);
-        for it = timeOffsets
-            timeBeforeSpike = beforeSpike(it);
-            shiftedSpikes   = exCellSpikeTimes - timeBeforeSpike;
-            nSpikes         = length(shiftedSpikes);
-            trialIdx = NaN(1, nSpikes);                                 
-            frameIdx = NaN(1, nSpikes);
-    
-            % Expand dims
-            frameStartsExp      = reshape(frameStarts, [nTrials, nFrames, 1]);
-            frameEndsExp        = reshape(frameEnds,   [nTrials, nFrames, 1]);
-            shiftedSpikesExp    = reshape(shiftedSpikes, [1, 1, nSpikes]);
-
-            % Get frame for each spike
-            isInFrame = (shiftedSpikesExp >= frameStartsExp) & (shiftedSpikesExp < frameEndsExp);
-    
-            % Collapse trials & frames
-            isInFrame2D             = reshape(isInFrame, nTrials * nFrames, nSpikes);
-            [linearIdx, spikeIdx]   = find(isInFrame2D);
-    
-            if ~isempty(linearIdx)
-                [trialInds, frameInds]      = ind2sub([nTrials, nFrames], linearIdx);
-                [uniqueSpikes, firstIdx]    = unique(spikeIdx, 'first');   % Keep only the first match if multiple
-                trialIdx(uniqueSpikes)      = trialInds(firstIdx);
-                frameIdx(uniqueSpikes)      = frameInds(firstIdx);
+for iCell = 1:nCells
+    fprintf(['cell ' num2str(iCell) '/' num2str(nCells) '\n'])
+    exCellSpikeTimes = goodUnitStruct(iCell).timestamps(find(goodUnitStruct(iCell).timestamps<lastTimestamp));  % Only take spikes during the RF run (for speed of processing)  
+    totalSpikesUsed(iCell) = length(exCellSpikeTimes);
+        for it = 1:length(beforeSpike)
+            timeBeforeSpike = beforeSpike(it); % Look [40 ms, etc.] before the spike
+            nSpikes = length(exCellSpikeTimes);
+            imagesAtSpikesCell = cell(nSpikes, 1);
+            % Parallelize looping over spike times
+            parfor is = 1:nSpikes
+                spikeTime = exCellSpikeTimes(is);
+                [trialIdx, frameIdx] = findNoiseStimAtSpike(spikeTime, timestamps, timeBeforeSpike);
+                if ~isnan(trialIdx) && ~isnan(frameIdx)
+                    frameAtSpike = squeeze(imageMatrix(trialIdx, frameIdx, :, :));
+                    imagesAtSpikesCell{is} = frameAtSpike;
+                else
+                    imagesAtSpikesCell{is} = NaN(xDim, yDim);
+                end
             end
-    
-            valid = ~isnan(trialIdx);    % Find valid spikes
-            imagesAtSpikes = NaN(nSpikes, xDim, yDim);    % Preallocate
-                
-            % Convert valid indices to linear indices
-            if any(valid)
-                ind                         = sub2ind([size(imageMatrix_shuf,1), size(imageMatrix_shuf,2)], trialIdx(valid), frameIdx(valid));    % Compute linear indices into imageMatrix_shuf
-                frames                      = reshape(imageMatrix_shuf, [], xDim, yDim);    % Extract all frames at once
-                imagesAtSpikes(valid,:,:)   = frames(ind, :, :);
-                totalSpikesUsed(iCell)      = size(imagesAtSpikes,1);
+            % Convert back to 3D array
+            imagesAtSpikes = NaN(nSpikes, xDim, yDim);
+            for is = 1:nSpikes
+                imagesAtSpikes(is, :, :) = imagesAtSpikesCell{is};
             end
-
-            averageImageAtSpike             = squeeze(nanmean(imagesAtSpikes, 1));
-            averageImagesAll(iCell,it,:,:)  = averageImageAtSpike;
+            averageImageAtSpike = squeeze(nanmean(imagesAtSpikes, 1));
+            averageImagesAll(iCell,it,:,:)  = averageImageAtSpike;  % Put in matrix to use later. Size: [nBoots x nCells x nTimePointsBeforeSpike x xDim x yDim]
         end
 end
 toc

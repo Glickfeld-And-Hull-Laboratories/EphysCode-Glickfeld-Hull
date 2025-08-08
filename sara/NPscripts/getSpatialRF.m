@@ -4,7 +4,8 @@
 
     mouse = exptStruct.mouse;
     date = exptStruct.date;
- 
+    base = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
+
     % Load stim on information (both MWorks signal and photodiode)
         cd (['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\' exptStruct.loc '\Analysis\Neuropixel\' exptStruct.date])        % Move from KS_Output folder to ...\Analysis\neuropixel\date folder, where TPrime output is saved
         stimOnTimestampsMW  = table2array(readtable([date '_mworksStimOnSync.txt']));
@@ -224,7 +225,7 @@ for iCell = 1:nCells
                 end
                 sp=sp+1;
         end
-        start=start+1;z
+        start=start+1;
     end
    if start > 8
         sgtitle('zcore image, clim ([-10 10])')

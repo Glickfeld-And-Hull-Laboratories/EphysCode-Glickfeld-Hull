@@ -222,3 +222,50 @@ expt(14).eyetrack = {'y'};
 expt(14).wheeltrack = {'n'};
 expt(14).saveLoc = 'sara';
 
+%% i2763 250724, V1    
+expt(15).mouse = 'i2763';
+expt(15).date = '250724';
+expt(15).loc  = {'V1'};
+expt(15).z = -1550;
+expt(15).probe = {'NP1'};
+expt(15).genotype = {'C57/CBA'};
+expt(15).sex = {'M'};
+expt(15).age = '78';
+expt(15).cog = {'awake'};
+expt(15).layerTime = '';
+expt(15).exptTime = '1525';
+expt(15).eyetrack = {'y'};  
+expt(15).wheeltrack = {'n'};
+expt(15).saveLoc = 'sara';
+
+%% i2765 250801, V1    
+expt(16).mouse = 'i2765';
+expt(16).date = '250801';
+expt(16).loc  = {'V1'};
+expt(16).z = -2100;
+expt(16).probe = {'NP1'};
+expt(16).genotype = {'C57/CBA'};
+expt(16).sex = {'F'};
+expt(16).age = '86';
+expt(16).cog = {'awake'};
+expt(16).layerTime = '';
+expt(16).exptTime = '1423';
+expt(16).eyetrack = {'y'};  
+expt(16).wheeltrack = {'n'};
+expt(16).saveLoc = 'sara';
+
+%% i2766 250806, V1    
+expt(17).mouse = 'i2766';
+expt(17).date = '250806';
+expt(17).loc  = {'V1'};
+expt(17).z = -2000;
+expt(17).probe = {'NP1'};
+expt(17).genotype = {'C57/CBA'};
+expt(17).sex = {'F'};
+expt(17).age = '91';
+expt(17).cog = {'awake'};
+expt(17).layerTime = '';
+expt(17).exptTime = '1434';
+expt(17).eyetrack = {'y'};  
+expt(17).wheeltrack = {'n'};
+expt(17).saveLoc = 'sara';

@@ -47,29 +47,29 @@ end
 %     end
 % end
 
-
-
-function [trialIdx, frameIdx] = findNoiseStimAtSpike(spikeTime, timestamps, timeBeforeSpike)
-
-    spikeTime = spikeTime - timeBeforeSpike;
-    [nTrials, nFrames] = size(timestamps);
-
-    % Compute frame start times
-    frameStarts = timestamps;
-
-    % Compute frame end times:
-    frameEnds = [timestamps(:,2:end), timestamps(:,end) + 0.1];     % Make an array shifted left by 1, and append +0.1s for last frame
-
-
-    isInFrame = (spikeTime >= frameStarts) & (spikeTime < frameEnds);   % For each trial, check if spikeTime is in any frame interval
-
-    [trialIdx, frameIdx] = find(isInFrame, 1, 'first');     % Find where this is true
-
-    if isempty(trialIdx)    % If not found, set outputs to NaN
-        trialIdx = NaN;
-        frameIdx = NaN;
-    end
-
-end
+% 
+% 
+% function [trialIdx, frameIdx] = findNoiseStimAtSpike(spikeTime, timestamps, timeBeforeSpike)
+% 
+%     spikeTime = spikeTime - timeBeforeSpike;
+%     [nTrials, nFrames] = size(timestamps);
+% 
+%     % Compute frame start times
+%     frameStarts = timestamps;
+% 
+%     % Compute frame end times:
+%     frameEnds = [timestamps(:,2:end), timestamps(:,end) + 0.1];     % Make an array shifted left by 1, and append +0.1s for last frame
+% 
+% 
+%     isInFrame = (spikeTime >= frameStarts) & (spikeTime < frameEnds);   % For each trial, check if spikeTime is in any frame interval
+% 
+%     [trialIdx, frameIdx] = find(isInFrame, 1, 'first');     % Find where this is true
+% 
+%     if isempty(trialIdx)    % If not found, set outputs to NaN
+%         trialIdx = NaN;
+%         frameIdx = NaN;
+%     end
+% 
+% end
 
 

@@ -1,6 +1,6 @@
 clear all; close all; clc
 base = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
-iexp = 13; % Choose experiment
+iexp = 17; % Choose experiment
 
 [exptStruct] = createExptStruct(iexp); % Load relevant times and directories for this experiment
 
@@ -55,8 +55,8 @@ outDir=(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\An
 
 figure;
 subplot 221
-    depth_all   = -2000 + [goodUnitStruct.depth];
-    depth_resp  = -2000 + [goodUnitStruct(resp_ind_dir).depth];
+    depth_all   = -2100 + [goodUnitStruct.depth];
+    depth_resp  = -2100 + [goodUnitStruct(resp_ind_dir).depth];
     FR_all      = [goodUnitStruct.FR];
     FR_resp   = [goodUnitStruct(resp_ind_dir).FR];
     scatter(FR_all, depth_all, 15, 'filled')
@@ -112,7 +112,16 @@ num_samples     = 50;
 [waveformStruct] = createWaveformStruct(ksDir, imecFile, fs_threshold, num_samples);
 
 
-%% Plot waveforms for each cell
+%% Analyzing spiking activity and waveforms for each cell
+
+
+[spikingStruct, waveformStruct] = singleCellSpikeAnalysis(icell, goodUnitStruct);
+
+
+
+
+
+
 
 unitIdx = 5;
 

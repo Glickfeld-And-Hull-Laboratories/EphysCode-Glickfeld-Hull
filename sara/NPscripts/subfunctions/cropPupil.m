@@ -55,4 +55,10 @@ function cropPupil(exptStruct)
         '-v7.3' ...
         ) 
     fprintf('Output saved\n')
+
+    figure; 
+        subplot 221; imagesc(framesmat(:,:,1)); subtitle('First frame')
+        subplot 222; imagesc(framesmat(:,:,end)); subtitle('Last frame')   
+        sgtitle('Cropped pupil image')
+
 end

@@ -89,6 +89,7 @@ toc;
 kridge_tns = reshape(kridge,nks);
 kasd_tns = reshape(kasd,nks);
 
+figure;
 for j = 1:min(4,nks(3));
     subplot(3,4,j); imagesc(ktns(:,:,j)); 
     title(sprintf('slice %d',j));
@@ -98,6 +99,7 @@ end
 subplot(3,4,1); ylabel('\bf{true k}');
 subplot(3,4,5); ylabel('\bf ridge');
 subplot(3,4,9); ylabel('\bf ASD');
+movegui('center')
 
 
 % Display facts about estimate
