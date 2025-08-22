@@ -39,7 +39,7 @@ function analyzePupil(iexp, threshold)
 
 % Threshold pixel values to pull out pupil
     framesThreshold                         = framesmat;
-    framesThreshold(framesThreshold>60)     = 100;
+    framesThreshold(framesThreshold>52)     = 100;
     data                                    = framesThreshold;
     dataSzLoop                              = 1:size(data,3);
 
@@ -220,7 +220,8 @@ sz   = size(data);
     Rad_temp = radii;
     Centroid_temp = centroid;
     trialLength = trialEndIdx(1) - trialStartIdx(1) + 1;  % assume fixed trial length
-    nTrials = numel(trialStartIdx);
+    nTrials = numel(trialStartIdx)-1;
+    warning('on'); warning('Hard coding the removal of the last trial, because it is often not equal to 30 frames')
     
     % Preallocate
     clear rad_mat_start centroid_mat_start eye_mat_start
@@ -249,7 +250,7 @@ sz   = size(data);
                     Centroid_temp(nanind(inan),:) = mean(centroid(good_inds,:),1);
                 end
             end
-            end
+          end
         % --- Store trial-aligned data ---
         rad_mat_start(:,itrial) = Rad_temp(trialFrames,1);
         centroid_mat_start(:,:,itrial) = Centroid_temp(trialFrames,:);
@@ -349,116 +350,11 @@ sz   = size(data);
 
 
 
-
-% ==================================================
     
-    %align eyetracking to 
-     %reset frame counter    
-    cStimOn = celleqel2mat_padded(input.cStimOneOn);
-    nanrun = ceil(500*(frame_rate/1000));
-    Rad_temp = sqrt(Area./pi);
-    Centroid_temp = Centroid;
-    Rad_temp(unique([x1; x3]),:) =nan(length(unique([x1; x3])),1);
-    Centroid_temp(unique([x1; x3]),:) = nan(length(unique([x1; x3])),2);
-    sz = size(data);
-    rad_mat_start = zeros(prewin_frames+postwin_frames, nTrials);
-    centroid_mat_start = zeros(prewin_frames+postwin_frames,2, nTrials);
-    eye_mat_start = zeros(sz(1), sz(2), prewin_frames+postwin_frames, nTrials);
-   
-    nframes = size(Rad_temp,1);
-    
-    for itrial = 1:nTrials
-        if itrial == nTrials
-            crange = [double(cStimOn(itrial))-prewin_frames:nframes];
-        else
-            crange = [double(cStimOn(itrial))-prewin_frames: double(cStimOn(itrial+1)-prewin_frames-1)];
-        end
-        if sum(isnan(Rad_temp(crange,1)),1)>0
-            if sum(isnan(Rad_temp(crange,1)),1)./length(crange)> 0.25
-                Rad_temp(crange,1) = NaN(length(crange),1);
-                Centroid_temp(crange,:) = NaN(length(crange),2);
-            else
-                nanind = intersect(crange,find(isnan(Rad_temp)));
-                dataind = intersect(crange,find(~isnan(Rad_temp)));
-                for inan = 1:length(nanind)
-                    gap = min(abs(nanind(inan)-dataind),[],1);
-                    good_ind_stim = find(abs(nanind(inan)-dataind) == gap);
-                    Rad_temp(nanind(inan),1) = mean(Rad_temp(dataind(good_ind_stim),1),1);
-                    Centroid_temp(nanind(inan),:) = mean(Centroid(dataind(good_ind_stim),:),1);
-                end
-            end
-        end
-        if itrial < nTrials
-            rad_mat_start(:,itrial) = Rad_temp(cStimOn(itrial)-prewin_frames:cStimOn(itrial)+postwin_frames-1,:);
-            centroid_mat_start(:,:,itrial) = Centroid_temp(cStimOn(itrial)-prewin_frames:cStimOn(itrial)+postwin_frames-1,:);
-            eye_mat_start(:,:,:,itrial) = data(:,:,cStimOn(itrial)-prewin_frames:cStimOn(itrial)+postwin_frames-1);
-        else
-            if (cStimOn(itrial)+postwin_frames)<nframes
-                rad_mat_start(:,itrial) = Rad_temp(cStimOn(itrial)-prewin_frames:cStimOn(itrial)+postwin_frames-1,:);
-                centroid_mat_start(:,:,itrial) = Centroid_temp(cStimOn(itrial)-prewin_frames:cStimOn(itrial)+postwin_frames-1,:);
-                eye_mat_start(:,:,:,itrial) = data(:,:,cStimOn(itrial)-prewin_frames:cStimOn(itrial)+postwin_frames-1);
-            else
-                rad_mat_start(:,itrial) = nan(prewin_frames+postwin_frames,1);
-                centroid_mat_start(:,:,itrial) = nan(prewin_frames+postwin_frames,2,1);
-                eye_mat_start(:,:,:,itrial) = nan(sz(1),sz(2),prewin_frames+postwin_frames,1);
-            end
-        end
-            
-    end
-    rad_mat_calib = bsxfun(@times, rad_mat_start, calib);
-    centroid_mat_calib = bsxfun(@times,centroid_mat_start,calib);
-    t = mean(centroid_mat_calib(prewin_frames+1:end,:,:),1);
-    rad_base = mean(rad_mat_calib(1:prewin_frames,:),1);
-    rad_stim = mean(rad_mat_calib(prewin_frames+1:end,:),1);
-    centroid_base = squeeze(mean(centroid_mat_calib(1:prewin_frames,:,:),1))./0.025;
-    centroid_stim = squeeze(mean(centroid_mat_calib(prewin_frames+1:end,:,:),1))./0.025;
-
-    figure; subplot(2,1,1)
-    scatter(centroid_stim(1,:),centroid_stim(2,:), [], rad_stim); colorbar
-    ind = find(~isnan(centroid_stim(1,:)));
-    %centroid_med = geometric_median(centroid_stim(:,ind));
-    centroid_med = findMaxNeighbors(centroid_stim(:,ind),2);
-    hold on;
-    scatter(centroid_med(1),centroid_med(2),'og')
-    centroid_dist = sqrt((centroid_stim(1,:)-centroid_med(1)).^2 + (centroid_stim(2,:)-centroid_med(2)).^2);
-    title('Color- radius')
-    xlabel('x-pos')
-    ylabel('y-pos')
-    subplot(2,1,2)
-    hist(centroid_dist,0:0.5:60)
-    title([num2str(sum(centroid_dist<4)) ' trials w/in 4 deg'])
-    sgtitle([num2str(sum(~isnan(centroid_dist))) '/' num2str(nTrials) ' measurable trials'])
-    xlabel('Centroid distance from median')
-    print(fullfile(SG_base, 'Analysis\2P', [date '_' mouse], [date '_' mouse '_' run_str], [date '_' mouse '_' run_str '_pupilPosDist.pdf']),'-dpdf','-fillpage');
-    movegui('center')
-        
-    [n edges bin] = histcounts(centroid_dist,[0:2:30]);
-    
-    i = find(n);
-    [n1 n2] = subplotn(length(i)); 
-    figure;
-    for ii = 1:length(i)
-        subplot(n1,n2,ii)
-        ind = find(bin== i(ii),1);
-        if ii == 1
-            ind_i = ind;
-        end
-        imagesc(mean(eye_mat_start(:,:,prewin_frames+1:end,ind),3))
-        hold on
-        plot(squeeze(nanmean(centroid_mat_start(prewin_frames+1:end,1,ind),1)), squeeze(nanmean(centroid_mat_start(prewin_frames+1:end,2,ind),1)),'or')
-        plot(squeeze(nanmean(centroid_mat_start(prewin_frames+1:end,1,ind_i),1)), squeeze(nanmean(centroid_mat_start(prewin_frames+1:end,2,ind_i),1)),'ok')
-        title([num2str(edges(ii)) '- ' num2str(length(find(bin== i(ii))))])
-    end
-    sgtitle('Example eye image by distance from median')
-    print(fullfile(SG_base, 'Analysis\2P', [date '_' mouse], [date '_' mouse '_' run_str], [date '_' mouse '_' run_str '_pupilImgByDist.pdf']),'-dpdf','-fillpage');
-    movegui('center')
-
-    save(fullfile(SG_base, 'Analysis\2P', [date '_' mouse], [date '_' mouse '_' run_str], [date '_' mouse '_' run_str '_pupil.mat']), 'rect', 'Area', 'Centroid', 'SNR', 'Val', 'frame_rate' , 'rad_mat_start','centroid_mat_start', 'cStimOn', 'rad_base','rad_stim','centroid_base', 'centroid_stim', 'centroid_dist', 'centroid_med');
-
-end
-
 %%
     
+
+
 
 % Check each chunk has exactly 30 frames
     dt              = diff(timestamps(:));   % Compute frame-to-frame time differences

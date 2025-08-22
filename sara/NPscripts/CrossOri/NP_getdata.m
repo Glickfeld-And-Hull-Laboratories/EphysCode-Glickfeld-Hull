@@ -1,24 +1,28 @@
 clear all; close all; clc
-base = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
-iexp = 17; % Choose experiment
+baseDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
+iexp = 11; % Choose experiment
 
 [exptStruct] = createExptStruct(iexp); % Load relevant times and directories for this experiment
 
-%% Run CatGT to extract sync pulse times from nidaq and imec data
+%% Crop pupil video
 
-runCatGT_SG(exptStruct.date)
+cropPupil(exptStruct)
+
+%% Extract and sync nidaq signals to the imec sync pulse in the neural data stream
+
+runCatGT_SG(exptStruct.date)    % Run CatGT to extract sync pulse times from nidaq and imec data
+runTPrime_SG(exptStruct.date)   % Run TPrime to sync photodiode signal to spikes
+
 % Wait like 30 minutes for this to finish running before continuing
-
-%% Run TPrime to sync photodiode signal to spikes
-
-runTPrime_SG(exptStruct.date)
 
 %% Extract units from KS output
 
-cd(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, 'KS_Output\')) % Navigate to KS_Output folder
+cd(fullfile(baseDir, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, 'KS_Output\')) % Navigate to KS_Output folder
 
 % Choose imec0.ap.bin file (I just choose the CatGT bin file)
 [allUnitStruct, goodUnitStruct] = importKSdata_SG();
+save(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStruct.date '_' exptStruct.mouse '_unitStructs.mat']), 'allUnitStruct', 'goodUnitStruct');
+
 
 %% Load stimulus "on" timestamps
 
@@ -31,10 +35,14 @@ b = 1;  % What stimulus presentation block to use for layer mapping?
 
 
 %% Sort spikes into trials and bins
-
-b = 5; % What stimulus presentation block to use for RandDirFourPhase analysis?
+if iexp == 11 
+    b = 4;
+else
+    b = 5; % What stimulus presentation block to use for RandDirFourPhase analysis?
+end
 [trialStruct, gratingRespMatrix, gratingRespOFFMatrix, resp, base] = createTrialStruct12Dir4Phase(stimStruct, goodUnitStruct, b);     
 [f0mat, f1mat, f1overf0mat] = getF1_SG(gratingRespMatrix);
+save(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStruct.date '_' exptStruct.mouse '_F1F0.mat']), 'f0mat', 'f1mat', 'f1overf0mat');
 
 % gratingRespMatrix: This is a nUnits x nDirections cell array, where each element 
 % contains a cell array of spike times for each trial. For example, 
@@ -99,34 +107,75 @@ figure;
     close all
 end
 
+
+
 %% Extract information about waveform
 % Get mean and std waveform over time, calculate peak-to-trough time of the
-% max amplitude waveform across contact sites. Using fast-spiking
-% threshold, sort units into fast-spiking or regular-spiking.
+% max amplitude waveform across contact sites.
 
-ksDir           = ([cd '\KS_Output']);    % Navigate back to KS directory
-imecFile         = ([cd '\catgt_i2746-250211-12DirTest-1sOn1sOff_g0\i2746-250211-12DirTest-1sOn1sOff_g0_tcat.imec0.ap.bin']); 
-fs_threshold    = 0.35;
-num_samples     = 50; 
+%fs_threshold    = 0.35;
+num_samples     = 100;
+refractoryViolationThresh = 0.002;  % 2 ms
 
-[waveformStruct] = createWaveformStruct(ksDir, imecFile, fs_threshold, num_samples);
-
-
-%% Analyzing spiking activity and waveforms for each cell
+[spikingStruct, waveformStruct] = singleCellSpikeAnalysis(exptStruct, goodUnitStruct, refractoryViolationThresh, num_samples);
+save(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStruct.date '_' exptStruct.mouse '_spikeAnalysis.mat']), 'spikingStruct', 'waveformStruct');
 
 
-[spikingStruct, waveformStruct] = singleCellSpikeAnalysis(icell, goodUnitStruct);
+% Plot single cell spike analysis
+if ~exist(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\' exptStruct.mouse '-' exptStruct.date '_singleCellSpikeAnalysis']), 'dir')
+        mkdir(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\' exptStruct.mouse '-' exptStruct.date '_singleCellSpikeAnalysis']));
+    end
+outDir=(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\' exptStruct.mouse '-' exptStruct.date '_singleCellSpikeAnalysis']);
 
-
-
-
-
-
-
-unitIdx = 5;
-
+% Plot single cell spike analyses
+nCells = length(waveformStruct);
 figure;
-plotWaveform_SG(waveformStruct,unitIdx);
+x = 1:size(waveformStruct(1).allsamps,1);
+i=1;
+for ic = 1:nCells
+    subplot(8,3,i)
+        isiProb     = spikingStruct(ic).isiProb;
+        isiEdges    = spikingStruct(ic).isiEdges;
+        bar(isiEdges(1:end-1), isiProb, 'histc'); hold on
+        xlabel('interspike interval (s)');
+        ylabel('probability');
+        title(['cell ' num2str(ic) '- interspike interval']);        
+    subplot(8,3,i+1)
+        acCounts        = spikingStruct(ic).acCounts;
+        acBinCenters    = spikingStruct(ic).acBins;
+        bar(acBinCenters, acCounts, 'hist'); hold on
+        xline(refractoryViolationThresh)
+        xline(-refractoryViolationThresh)
+        xlabel('time from spike');
+        ylabel('count');
+        title('autocorrelogram, no binning');
+        title([num2str(spikingStruct(ic).refViolations) '/' num2str(spikingStruct(ic).nSpikesUsed) ' spike violations'])
+    subplot(8,3,i+2)
+        waveforms   = [waveformStruct(ic).allsamps];
+        wvStd       = std(waveforms,0,2);
+        wvSEM       = wvStd/sqrt(num_samples);
+        wvAvg       = [waveformStruct(ic).average];
+        plot(wvAvg); hold on
+        shadedErrorBar(x,wvAvg,wvSEM)
+        xline([waveformStruct(ic).minIdx],'b')
+        xline([waveformStruct(ic).maxIdx],'r')
+        yline([waveformStruct(ic).baseline],'k')
+        title(['PtT dist = ' sprintf('%.2f ms', waveformStruct(ic).PtTdist * 1000)])   % I only want 2 decimal places after 0
+    i=i+3;
+    if i == 25
+        movegui('center')
+        print(fullfile([outDir, '\' exptStruct.mouse '-' exptStruct.date '-unit' num2str(ic-7) 'to' num2str(ic) '.pdf']),'-dpdf','-fillpage');
+        close all
+        i=1;
+        figure;
+    end
+    if ic == nCells
+        movegui('center')
+        print(fullfile([outDir, '\' exptStruct.mouse '-' exptStruct.date '-until' num2str(ic) '.pdf']),'-dpdf','-fillpage');
+        close all
+    end
+end
+
 
 
 

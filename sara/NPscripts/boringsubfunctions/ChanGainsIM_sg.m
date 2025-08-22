@@ -8,7 +8,7 @@
 function [APgain,LFgain] = ChanGainsIM(meta)
 
     if isfield(meta,'imDatPrb_dock')
-        [AP,LF,~] = ChannelCountsIM(meta);
+        [AP,LF,~] = ChannelCountsIM_sg(meta);
         % NP 2.0; APgain = 80 for all channels
         APgain = zeros(AP,1,'double');
         APgain = APgain + 80;

@@ -14,13 +14,13 @@
 function dataArray = GainCorrectIM(dataArray, chanList, meta)
 
     % Look up gain with acquired channel ID
-    chans = OriginalChans(meta);
-    [APgain,LFgain] = ChanGainsIM(meta);
+    chans = OriginalChans_sg(meta);
+    [APgain,LFgain] = ChanGainsIM_sg(meta);
     nAP = length(APgain);
     nNu = nAP * 2;
 
     % Common conversion factor
-    fI2V = Int2Volts(meta);
+    fI2V = Int2Volts_sg(meta);
 
     for i = 1:length(chanList)
         j = chanList(i);    % index into timepoint
