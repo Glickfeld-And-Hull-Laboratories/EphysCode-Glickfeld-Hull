@@ -1,4 +1,4 @@
-function get12Dir4PhaseFits(resp,base, exptStruct)
+function get12Dir4PhaseFits(resp,base, exptStruct, doPlot)
     
     mouse   = exptStruct.mouse;
     date    = exptStruct.date;
@@ -15,8 +15,13 @@ function get12Dir4PhaseFits(resp,base, exptStruct)
     p_resp          = NaN(nCells, nDirs, nPhas, 2);
     trialsperstim   = NaN(nDirs, nPhas, 2);
     
+    
+    mean_base_all = nan(nCells,1);  % Initialize for baseline means
+
     % Loop over all conditions
     for ic = 1:nCells
+        all_baselines = [];
+
         for id = 1:nDirs
             for ip = 1:nPhas
                 for is = 1:2 % Grating/Plaid
@@ -31,9 +36,15 @@ function get12Dir4PhaseFits(resp,base, exptStruct)
                         % Convert response and baseline data into spike rates (Hz)
                         resp_cell_trials = sum(resp{ic,id,ip,is}, 2);  % Responses in Hz
                         base_cell_trials = sum(base{ic,id,ip,is}, 2) * 5; % Baselines in Hz
+
+                        % Collect baseline spike rates for this condition
+                        % and append to all other conditions
+                        all_baselines    = [all_baselines; base_cell_trials];
     
                         % Perform t-test between response and baseline
-                        [h_resp(ic,id,ip,is), p_resp(ic,id,ip,is)] = ttest2(resp_cell_trials, base_cell_trials, 'dim', 1, 'tail', 'right', 'alpha', 0.05 / nStim);
+                        if is == 1
+                            [h_resp(ic,id,ip,is), p_resp(ic,id,ip,is)] = ttest(resp_cell_trials, base_cell_trials, 'tail', 'right', 'alpha', 0.05 / nDirs);
+                        end
                     else
                         % Assign NaNs when no trials exist
                         avg_resp_dir(ic,id,ip,is,:) = NaN;
@@ -43,8 +54,18 @@ function get12Dir4PhaseFits(resp,base, exptStruct)
                 end
             end
         end
+
+        % Compute mean baseline across all conditions for this cell
+        if ~isempty(all_baselines)
+            mean_base_all(ic) = mean(all_baselines);
+        end
+    
+        % Subtract from avg_resp_dir for this cell across all conditions
+        avg_resp_dir(ic,:,:,:,1) = avg_resp_dir(ic,:,:,:,1) - mean_base_all(ic);
     end
     
+
+
     % Find cells significantly responsive to gratings
     resp_ind_dir = find(sum(h_resp(:,:,1,1), 2)); 
     
@@ -88,7 +109,7 @@ function get12Dir4PhaseFits(resp,base, exptStruct)
     save(fullfile(baseDir, 'Analysis\Neuropixel', date, [date '_' mouse '_stimData.mat']), 'resp_cell_trials', 'base_cell_trials', 'trialsperstim','DSI_ind', 'DSI_maxInd', 'resp_ind_dir'); %'p_dir
 
 %% set inclusion criteria
-resp_ind = 1:nCells;
+resp_ind = intersect(resp_ind_dir,find(DSI>0.5));
 %resp_ind = intersect(resp_ind_dir,find(DSI>0.5));
 
 ind = ZpZcStruct.PDSind_byphase;
@@ -104,7 +125,7 @@ for i = 1:4
     subplot(4,4,i)
     scatter(Zc(i,resp_ind), Zp(i,resp_ind),'.')
     hold on
-    scatter(Zc(i,ind{1}),Zp(i,ind{1}),'.');
+    scatter(Zc(i,intersect(ind{1},resp_ind)),Zp(i,intersect(ind{1},resp_ind)),'.');
     xlabel('Zc')
     ylabel('Zp')
     ylim([-4 8])
@@ -117,7 +138,7 @@ for i = 1:4
     subplot(4,4,i+4)
     scatter(Zc(i,resp_ind), Zp(i,resp_ind),'.')
     hold on
-    scatter(Zc(i,ind{2}),Zp(i,ind{2}),'.');
+    scatter(Zc(i,intersect(ind{2},resp_ind)),Zp(i,intersect(ind{2},resp_ind)),'.');
     xlabel('Zc')
     ylabel('Zp')
     ylim([-4 8])
@@ -130,7 +151,7 @@ for i = 1:4
     subplot(4,4,i+8)
     scatter(Zc(i,resp_ind), Zp(i,resp_ind),'.')
     hold on
-    scatter(Zc(i,ind{3}),Zp(i,ind{3}),'.');
+    scatter(Zc(i,intersect(ind{3},resp_ind)),Zp(i,intersect(ind{3},resp_ind)),'.');
     xlabel('Zc')
     ylabel('Zp')
     ylim([-4 8])
@@ -143,7 +164,7 @@ for i = 1:4
     subplot(4,4,i+12)
     scatter(Zc(i,resp_ind), Zp(i,resp_ind),'.')
     hold on
-    scatter(Zc(i,ind{4}),Zp(i,ind{4}),'.');
+    scatter(Zc(i,intersect(ind{4},resp_ind)),Zp(i,intersect(ind{4},resp_ind)),'.');
     xlabel('Zc')
     ylabel('Zp')
     ylim([-4 8])
@@ -263,6 +284,9 @@ end
 close all
 
 
-
+end
 
 end
+
+
+

@@ -1,6 +1,6 @@
 clear all; close all; clc
 base = '/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/';
-iexp = 17; % Choose experiment
+iexp = 22; % Choose experiment
 
 [exptStruct] = createExptStruct(iexp); % Load relevant times and directories for this experiment
 
@@ -31,7 +31,7 @@ cd(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, 'KS
         filteredPD = stimOnTimestampsPD;
 
     % Account for report of the monitor's refresh rate in the photodiode signal
-        minInterval = 0.045; % Define a minimum separation threshold (should be longer than a refresh cycle but shorter than ISI)     
+        minInterval = 0.035; % Define a minimum separation threshold (should be longer than a refresh cycle but shorter than ISI)     
         leadingEdgesPD = filteredPD([true; diff(filteredPD) > minInterval]); % Extract the leading edges (first timestamp of each stimulus period)
         % [true; ...] ensures that the very first timestamp is always included because otherwise diff() returns an array that is one element shorter than the original.
 
@@ -65,7 +65,11 @@ cd(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, 'KS
     end
 
     % Load downsampled noise stimuli
-    load(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', 'noiseStimuli/', '5min_2deg_4rep_imageMatrix.mat'))
+    if iexp == 11
+        load(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', 'noiseStimuli/', '5min_2deg_3rep_imageMatrix.mat'))
+    else
+        load(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', 'noiseStimuli/', '5min_2deg_4rep_imageMatrix.mat'))
+    end
 
     xDim = size(imageMatrix,3);
     yDim = size(imageMatrix,4);

@@ -78,7 +78,7 @@ data = data(rect(2):rect(2)+rect(4),rect(1):rect(1)+rect(3),:);
 sz   = size(data);
 
 % Run imfindcircles to detect the pupil
-    calib = 1/26.6; %mm per pixel
+    calib = 1/27.8; %mm per pixel
     rad_range = [3 20];
     warning off;
     A = cell(sz(3),1);
@@ -258,7 +258,15 @@ sz   = size(data);
     end
 
 
+
+    % geometry params (edit if you have better values)
+    f = 25;               % lens focal length (mm)
+    s = 145;              % lens-to-pupil distance (mm) -- you provided
+    R_eye = 1.5;          % eyeball radius (mm) -- change if you want
+    pixel_size = 4.8e-3;  % mm (4.8 um)
+    D = 230; % mm, eye-to-screen distance
     
+
     rad_mat_calib = bsxfun(@times, rad_mat_start, calib);
     centroid_mat_calib = bsxfun(@times,centroid_mat_start,calib);
 
@@ -274,7 +282,12 @@ sz   = size(data);
     
         % Average over the stimulus period
         rad_stim(itrial) = mean(rad_trial, 'omitnan');
-        centroid_stim(itrial,:) = mean(cent_trial, 1, 'omitnan') ./ 0.025;
+
+        % mean in mm, then convert to degrees of rotation
+        centroid_mm  = mean(cent_trial, 1, 'omitnan');
+        centroid_deg = atand(centroid_mm ./ D);
+        
+        centroid_stim(itrial,:) = centroid_deg;
     end
 
 

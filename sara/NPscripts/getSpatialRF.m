@@ -5,6 +5,7 @@
     mouse = exptStruct.mouse;
     date = exptStruct.date;
     base = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
+   
 
     % Load stim on information (both MWorks signal and photodiode)
         cd (['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\' exptStruct.loc '\Analysis\Neuropixel\' exptStruct.date])        % Move from KS_Output folder to ...\Analysis\neuropixel\date folder, where TPrime output is saved
@@ -20,7 +21,7 @@
         filteredPD = stimOnTimestampsPD;
 
     % Account for report of the monitor's refresh rate in the photodiode signal
-        minInterval = 0.045; % Define a minimum separation threshold (should be longer than a refresh cycle but shorter than ISI)     
+        minInterval = 0.03; % Define a minimum separation threshold (should be longer than a refresh cycle but shorter than ISI)     
         leadingEdgesPD = filteredPD([true; diff(filteredPD) > minInterval]); % Extract the leading edges (first timestamp of each stimulus period)
         % [true; ...] ensures that the very first timestamp is always included because otherwise diff() returns an array that is one element shorter than the original.
 
@@ -55,7 +56,11 @@
 
     % Load downsampled noise stimuli
     noiseDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\\home\sara\Analysis\Neuropixel\noiseStimuli';
-    load([noiseDir, '\5min_2deg_4rep_imageMatrix.mat'])
+    if iexp == 11
+        load([noiseDir, '\5min_2deg_3rep_imageMatrix.mat'])
+    else
+        load([noiseDir, '\5min_2deg_4rep_imageMatrix.mat'])
+    end
 
     xDim = size(imageMatrix,3);
     yDim = size(imageMatrix,4);
@@ -165,6 +170,7 @@ avgImageZscoreSmooth  = imgaussfilt(averageImageZscore, sigma);  % 2D Gaussian s
 
 %% find index of cells that have a cluster of 3 sig pixels within a 4 pixel square
 
+nCells = size(goodUnitStruct,2);
 cells_sigRFbyTime_On   = nan(nCells, length(beforeSpike));
 cells_sigRFbyTime_Off   = nan(nCells, length(beforeSpike));
 
@@ -315,7 +321,31 @@ for ic = 1:length(ind)
         fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs'], ...
         [mouse '-' date '_RFs_2dGaussianFits_cell' num2str(iCell) '.pdf']), ...
         '-dpdf', '-fillpage')
+    close all
 end        
+
+
+%% save
+
+save( ...
+    fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\', ...
+        [mouse '-' date '_spatialRFs.mat']]), ...
+    'totalSpikesUsed', ...
+    'averageImagesAll', ...
+    'averageImagesAll_shuffled', ...
+    'averageImageZscore', ...
+    'averageImageZscoreThresh', ...
+    'nboots', ...
+    'zthreshold', ...
+    'cells_sigRFbyTime_On', ...
+    'cells_sigRFbyTime_Off', ...
+    'ind_sigRF' ...
+    );
+
+
+
+stop
+
 
 
 %% Fit 2D gabor using FFT via fit()
@@ -340,27 +370,10 @@ end
 
 
 
-%% save
-
-save( ...
-    fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\', ...
-        [mouse '-' date '_spatialRFs.mat']]), ...
-    'totalSpikesUsed', ...
-    'averageImagesAll', ...
-    'averageImagesAll_shuffled', ...
-    'averageImageZscore', ...
-    'averageImageZscoreThresh', ...
-    'nboots', ...
-    'zthreshold', ...
-    'cells_sigRFbyTime_On', ...
-    'cells_sigRFbyTime_Off', ...
-    'ind_sigRF' ...
-    );
-
 %%
 close all;
 
-[m, bestTime] = max(squeeze(sum(sum(averageImageZscore,3),4)),[],2);
+[m, bestTime] = max(squeeze(sum(sum(abs(averageImageZscore),3),4)),[],2);
 
 listnc  = 1:nCells;
 ind     = listnc(sum(cells_sigRFbyTime_On,2)>0);

@@ -269,3 +269,89 @@ expt(17).exptTime = '1434';
 expt(17).eyetrack = {'y'};  
 expt(17).wheeltrack = {'n'};
 expt(17).saveLoc = 'sara';
+
+%% i2764 250826, V1    
+expt(18).mouse = 'i2764';
+expt(18).date = '250826';
+expt(18).loc  = {'V1'};
+expt(18).z = -2000;
+expt(18).probe = {'NP1'};
+expt(18).genotype = {'C57/CBA'};
+expt(18).sex = {'M'};
+expt(18).age = '111';
+expt(18).cog = {'awake'};
+expt(18).layerTime = '';
+expt(18).exptTime = '1458';
+expt(18).eyetrack = {'y'};  
+expt(18).wheeltrack = {'n'};
+expt(18).saveLoc = 'sara';
+
+%% i2764 250827, V1    
+expt(19).mouse = 'i2764';
+expt(19).date = '250827';
+expt(19).loc  = {'V1'};
+expt(19).z = -1700;
+expt(19).probe = {'NP1'};
+expt(19).genotype = {'C57/CBA'};
+expt(19).sex = {'M'};
+expt(19).age = '112';
+expt(19).cog = {'awake'};
+expt(19).layerTime = '';
+expt(19).exptTime = '1528';
+expt(19).eyetrack = {'y'};  
+expt(19).wheeltrack = {'n'};
+expt(19).saveLoc = 'sara';
+
+%% i2767 250904, V1    
+expt(20).mouse = 'i2767';
+expt(20).date = '250904';
+expt(20).loc  = {'V1'};
+expt(20).z = -2000;
+expt(20).probe = {'NP1'};
+expt(20).genotype = {'C57/CBA'};
+expt(20).sex = {'M'};
+expt(20).age = '82';
+expt(20).cog = {'awake'};
+expt(20).layerTime = '';
+expt(20).exptTime = '1624';
+expt(20).eyetrack = {'y'};  
+expt(20).wheeltrack = {'n'};
+expt(20).saveLoc = 'sara';
+
+%% i2768 250909, V1    
+expt(21).mouse = 'i2768';
+expt(21).date = '250909';
+expt(21).loc  = {'V1'};
+expt(21).z = -2000;
+expt(21).probe = {'NP1'};
+expt(21).genotype = {'C57/CBA'};
+expt(21).sex = {'M'};
+expt(21).age = '86';
+expt(21).cog = {'awake'};
+expt(21).layerTime = '';
+expt(21).exptTime = '1443';
+expt(21).eyetrack = {'y'};  
+expt(21).wheeltrack = {'n'};
+expt(21).saveLoc = 'sara';
+
+%% i2768 250910, V1    
+expt(22).mouse = 'i2768';
+expt(22).date = '250910';
+expt(22).loc  = {'V1'};
+expt(22).z = -2000;
+expt(22).probe = {'NP1'};
+expt(22).genotype = {'C57/CBA'};
+expt(22).sex = {'M'};
+expt(22).age = '87';
+expt(22).cog = {'awake'};
+expt(22).layerTime = '';
+expt(22).exptTime = '1450';
+expt(22).eyetrack = {'y'};  
+expt(22).wheeltrack = {'n'};
+expt(22).saveLoc = 'sara';
+
+
+
+
+
+

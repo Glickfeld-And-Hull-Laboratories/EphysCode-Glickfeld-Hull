@@ -278,7 +278,7 @@ for i_sp = 1:size(starts,1)
     end
     
     msg = ['Fetching ',int2str(fetch_idx),', ',int2str(passed),' above threshold'];
-    disp(msg)
+    % disp(msg)
     
     if options.visualize
         set(0,'CurrentFigure',fig)
@@ -360,7 +360,7 @@ for i = 1 : 4
             end
             
             msg = ['Fetching ',int2str(res_l + fetch_idx),', ',int2str(passed),'p above threshold'];
-            disp(msg)
+            % disp(msg)
             
             if options.visualize
                 set(0,'CurrentFigure',fig)

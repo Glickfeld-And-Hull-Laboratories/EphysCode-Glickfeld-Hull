@@ -1,6 +1,6 @@
 clear all; close all; clc
 baseDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
-iexp = 11; % Choose experiment
+iexp = 13; % Choose experiment
 
 [exptStruct] = createExptStruct(iexp); % Load relevant times and directories for this experiment
 
@@ -63,8 +63,8 @@ outDir=(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\An
 
 figure;
 subplot 221
-    depth_all   = -2100 + [goodUnitStruct.depth];
-    depth_resp  = -2100 + [goodUnitStruct(resp_ind_dir).depth];
+    depth_all   = exptStruct.depth + [goodUnitStruct.depth];
+    depth_resp  = exptStruct.depth + [goodUnitStruct(resp_ind_dir).depth];
     FR_all      = [goodUnitStruct.FR];
     FR_resp   = [goodUnitStruct(resp_ind_dir).FR];
     scatter(FR_all, depth_all, 15, 'filled')

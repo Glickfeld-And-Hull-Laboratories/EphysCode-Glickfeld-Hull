@@ -37,17 +37,99 @@ end
 % Filter each cell for spikes before lastTimestamp
 spiketimes = cellfun(@(t) t(t < lastTimestamp), allSpikeTimes, 'UniformOutput', false);
 
-cell = 130;
-spikeTimesCell = spiketimes{cell};
 
 
-binEdges = [stimTimes; stimTimes(end) + 0.1];  % bin edges for 10 Hz
-y = histcounts(spikeTimesCell, binEdges)';  % [nFrames x 1]
+figure;
+title('minlen [0.25; 0.25]')
+is=1;
+for ic = [121 123 125 127 129]
+    ncell = ic; %127
+    spikeTimesCell = spiketimes{ncell};
+   
+    binEdges = [stimTimes+0.04; stimTimes(end)+0.1 + 0.1];  % bin edges for 10 Hz
+    y = histcounts(spikeTimesCell, binEdges)';  % [nFrames x 1]
+    
+    minlen = [.25;.25];
+    nks = [xDim, yDim];
+    x = double(x);
+    
+    [kasd,asdstats] = fastASD(x,y,nks,minlen);
+
+    subplot(3,2,is)
+        imagesc(reshape(kasd,nks))
+        subtitle(['cell ' num2str(ic)])
+    is=is+1;
+end
 
 
 
-nks = [xDim, yDim, nTotalFrames];
-x = double(x);
+
+figure;
+title('x -1 to 1')
+is=1;
+for ic = [121 123 125 127 129]
+    ncell = ic; %127
+    spikeTimesCell = spiketimes{ncell};
+   
+    binEdges = [stimTimes+0.04; stimTimes(end)+0.1 + 0.1];  % bin edges for 10 Hz   
+    y = histcounts(spikeTimesCell, binEdges)';  % [nFrames x 1]
+
+    minlen = [.25;.25];
+    nks = [xDim, yDim];
+    ax = (x-128)./128;
+    
+    [kasd,asdstats] = fastASD(ax,y,nks,minlen);
+
+    subplot(3,2,is)
+        imagesc(reshape(kasd,nks))
+        subtitle(['cell ' num2str(ic)])
+    is=is+1;
+end
+
+
+figure;
+title('y in nicholas units')
+is=1;
+for ic = [121 123 125 127 129]
+    ncell = ic; %127
+    spikeTimesCell = spiketimes{ncell};
+   
+    binEdges = [stimTimes+0.04; stimTimes(end)+0.1 + 0.1];  % bin edges for 10 Hz   
+    y = histcounts(spikeTimesCell, binEdges)';  % [nFrames x 1]
+    ay = y*0.06;
+
+    minlen = [.25;.25];
+    nks = [xDim, yDim];
+    ax = (x-128)./128;
+    
+    [kasd,asdstats] = fastASD(ax,ay,nks,minlen);
+
+    subplot(3,2,is)
+        imagesc(reshape(kasd,nks))
+        subtitle(['cell ' num2str(ic)])
+    is=is+1;
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%
+
+
+
+
+
+
+
 
 
 
