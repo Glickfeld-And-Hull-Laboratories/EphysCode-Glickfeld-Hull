@@ -16,7 +16,7 @@ function cropPupil(exptStruct)
     mov = VideoReader(movieFiles.name);   % Load frames
 
 % Pull first frame to crop
-    firstframe      = rgb2gray(read(mov,1));
+    firstframe      = rgb2gray(read(mov,3000));
     [ffcrop, rect]  = imcrop(firstframe);
 
 % Initialize arrays and variables
@@ -58,7 +58,8 @@ function cropPupil(exptStruct)
 
     figure; 
         subplot 221; imagesc(framesmat(:,:,1)); subtitle('First frame')
-        subplot 222; imagesc(framesmat(:,:,end)); subtitle('Last frame')   
+        subplot 222; imagesc(framesmat(:,:,3000)); subtitle('Frame 3000 (used for cropping)')
+        subplot 223; imagesc(framesmat(:,:,end)); subtitle('Last frame')   
         sgtitle('Cropped pupil image')
 
 end

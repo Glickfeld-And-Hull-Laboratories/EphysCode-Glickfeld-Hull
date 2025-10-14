@@ -27,8 +27,8 @@ function runCatGT_SG(date)
 % Check if two folders are found (one retinotopy run, one experiment run)
     if isempty(runFolders)
         error('No run folder found in %s', fullDataPath);
-    elseif numel(runFolders) > 2
-        error('  *runCatGT_SG* Three run folders found in %s. Please check the data and experiment structure.', fullDataPath);
+    elseif numel(runFolders) > 3
+        error('  *runCatGT_SG* Four run folders found in %s. Please check the data and experiment structure.', fullDataPath);
     end
 
 % Get full experimental run folder and name

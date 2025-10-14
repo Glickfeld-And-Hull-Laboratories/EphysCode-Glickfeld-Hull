@@ -60,8 +60,10 @@ cells_sigRFbyTime_Off_all = [];
 
 % V1 -- 11 13 
 
+expts = [11 13 18 19 20 21 22];
+
 start=1;
-for iexp = [11 13 18 19 20 21 22]     % 11 13 14 16 17
+for iexp = expts     % 11 13 14 16 17
     mouse = expt(iexp).mouse;
     mouse_list = strvcat(mouse_list, mouse);
     date = expt(iexp).date;
@@ -338,12 +340,11 @@ indRFint = intersect(ind, ind_RF);
 
 
 
-figure;
 [ZpZcStruct] = getZpZcStruct(avg_resp_dir_all, 'alignedTestDir');
-plotZpZc4PhasePopulation(ZpZcStruct,indRFint,30)
+plotZpZc4PhasePopulation(ZpZcStruct,ind,5)
 sgtitle('Pattern direction selective cells at four phases')
 
-print(fullfile([outDir, '\randDirFourPhase_CrossOri_mouse_ZpZcpopulation_withRFs.pdf']),'-dpdf','-bestfit');
+print(fullfile([outDir, '\randDirFourPhase_CrossOri_mouse_ZpZcpopulation.pdf']),'-dpdf','-bestfit');
 
 
 
@@ -360,6 +361,7 @@ indF = indRFint;
     STAimage = zeros([length(indF) 29 52]);
     r = [];
     rsqAC = [];
+    rsqACsm = [];
     it_all = [];
     ACfit = [];
 
@@ -406,10 +408,15 @@ for ii = 1:length(indF)
     STAimage(ii,:,:)    = zscoreSTA_filt;
     it_all(ii)          = it_sigRF(it_best);
 
-    rsq  = getRsqLinearRegress_SG(zscoreSTA_filt, (Lon - Loff));
+    AC = (Lon - Loff);
+    AC_sm= medfilt2(AC);
 
-    ACfit(ii,:,:) = (Lon - Loff);
+    rsq  = getRsqLinearRegress_SG(zscoreSTA_filt, AC);
+    rsq_sm = getRsqLinearRegress_SG(zscoreSTA_filt, AC_sm);
+    ACfit(ii,:,:) = AC;
+    ACfitsm(ii,:,:) = AC_sm;
     rsqAC(ii) = rsq;
+    rsqACsm(ii) = rsq_sm;
 
 
     if doGabor == 1
@@ -453,12 +460,26 @@ for ii = 1:length(indF)
             imagesc(squeeze(ACfit(ii,:,:))); colormap('gray'); clim([-1 1])
             subtitle(['activecontour fit - rsq: ' num2str(round(rsqAC(ii),2))])
          subplot(6,3,8)
-            imagesc(medfilt2(squeeze(ACfit(ii,:,:)))); colormap('gray');  clim([-1 1]) 
-            subtitle(['activecontour fit smooth - rsq: ' num2str(round(rsqACsmth(ii),2))])
+            imagesc(squeeze(ACfitsm(ii,:,:))); colormap('gray');  clim([-1 1]) 
+            subtitle(['activecontour fit smooth - rsq: ' num2str(round(rsqACsm(ii),2))])
          subplot(6,3,9)
             imagesc(squeeze(gaborpatch(ii,:,:))); colormap('gray');   
             subtitle(['gabor fit - rsq: ' num2str(round(rsqGabor(ii),2))])
-         
+         subplot(6,3,10)
+            zthreshold=2.5;
+            threshImg = squeeze(avgImgZscore(it,:,:));
+            subImg = zeros(size(threshImg));
+                for ix = 1:size(threshImg,1)
+                    for iy = 1:size(threshImg,2)
+                       if threshImg(ix,iy) > zthreshold
+                           subImg(ix,iy) = 1;
+                       elseif threshImg(ix,iy) < -zthreshold
+                           subImg(ix,iy) = -1;
+                       end
+                    end
+                end
+            imagesc(subImg); colormap('gray');   
+            subtitle(['gabor fit - rsq: ' num2str(round(rsqGabor(ii),2))])
 
     movegui('center')
     sgtitle(['cell ' num2str(ic)])
@@ -478,7 +499,7 @@ PCI_max = max(PCI_yfit,[],2);
 
 
 figure;
-    subplot(3,3,1)
+    subplot(2,2,1)
         scatter(rsqAC,rsqGabor, 20, 'filled'); hold on
         subtitle('Rsq')
         xlabel('activecontour')
@@ -486,8 +507,8 @@ figure;
         ylim([0 1])
         xlim([0 1])
         refline(1)
-        set(gca, 'TickDir', 'out'); axis square
-    subplot(3,3,2)
+        set(gca, 'TickDir', 'out'); axis square;
+    subplot(2,2,2)
         scatter(rsqACsmth,rsqGabor, 20, 'filled'); hold on
         subtitle('Rsq')
         xlabel('activecontour smooth')
@@ -495,23 +516,26 @@ figure;
         ylim([0 1])
         xlim([0 1])
         refline(1)
-        set(gca, 'TickDir', 'out'); axis square
-    subplot(3,3,3)
-        scatter(totalSpikesUsed_all(indF)',rsqGabor, 20, 'filled'); hold on
-        subtitle('num spikes used for STA')
+        set(gca, 'TickDir', 'out'); axis square;
+    subplot(2,2,3)
+        scatter(totalSpikesUsed_all(indF)',rsqAC, 20, 'filled'); hold on
+        scatter(totalSpikesUsed_all(indF)',rsqGabor, 20, 'filled');
+        subtitle('num spikes used for STA - AC blue')
         xlabel('nspikes')
-        ylabel('gabor rsq')
+        ylabel('Rsq')
         ylim([0 1])
         set(gca, 'XScale', 'log')
-        set(gca, 'TickDir', 'out'); axis square
-    subplot(3,3,4)
-        scatter(refFrac(indF)',rsqGabor, 20, 'filled'); hold on
-        subtitle('% ref period violations')
+        set(gca, 'TickDir', 'out'); axis square; 
+    subplot(2,2,4)
+        scatter(refFrac(indF)',rsqAC, 20, 'filled'); hold on
+        scatter(refFrac(indF)',rsqGabor, 20, 'filled');
+        subtitle('% ref violations, AC blue')
         xlabel('% ref period violations')
-        ylabel('gabor rsq')
+        ylabel('rsq')
         ylim([0 1])
         set(gca, 'XScale', 'log')
-        set(gca, 'TickDir', 'out'); axis square
+        set(gca, 'TickDir', 'out'); axis square; 
+    movegui('center')
     print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs', ['controlanalyses.pdf']), '-dpdf','-fillpage')
 
  figure;
@@ -573,40 +597,7 @@ end
 sigmax_all = [fits(:).sigmax];
 sigmay_all = [fits(:).sigmay];
 gamma_all = max(sigmax_all, sigmay_all) ./ min(sigmax_all, sigmay_all);  % Aspect ratio always >= 1
-
-indGoodFit = find(rsqGabor>0.3);
-
-rsq_use = rsqGabor(indGoodFit)';
-figure;
-    sgtitle('gabor fits -- looking at aspect ratio (>4 are cells 36 & 39)')
-    subplot(3,2,1)
-        histogram(gamma_all,20); hold on
-        histogram(gamma_all(indGoodFit),20)
-        subtitle('gabor - aspect ratio, 1=circle')
-        xlabel('aspect ratio (gamma)')
-        set(gca, 'TickDir', 'out'); axis square
-    subplot(3,2,2)
-        scatter(gamma_all(indGoodFit),b_all(indF(indGoodFit)),20,rsq_use,'filled'); colormap('sky'); colorbar; hold on
-        subtitle('gabor - mean pattern index')
-        xlabel('aspect ratio (gamma)')
-        ylabel('fit baseline')
-        set(gca, 'TickDir', 'out'); axis square
-    subplot(3,2,3)
-        scatter(gamma_all(indGoodFit),PCI_max(indF(indGoodFit)),20,rsq_use,'filled'); colormap('sky'); colorbar; hold on
-        subtitle('gabor - peak pattern index')
-        xlabel('aspect ratio (gamma)')
-        ylabel('fit peak')
-        set(gca, 'TickDir', 'out'); axis square
-    subplot(3,2,4)
-        scatter(gamma_all(indGoodFit),amp_all(indF(indGoodFit)),20,rsq_use,'filled'); colormap('sky'); colorbar; hold on
-        subtitle('gabor - modulation amplitude')
-        xlabel('aspect ratio (gamma)')
-        ylabel('modulation amplitude')
-        set(gca, 'TickDir', 'out'); axis square
-    print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs', ['gabor_AspectRatio.pdf']), '-dpdf','-fillpage')
-
-
-    
+area_fwhm = 2 * pi * log(2) .* sigmax_all .* sigmay_all;
     
     clear props
     for ic = 1:length(indF)
@@ -638,57 +629,221 @@ figure;
     diam = [props.EquivDiameter];
     area = [props.FilledArea];
 
+
+
+
+
+    %%
+
+% gaborpatch - (nCells, xDim, yDim)
+% ACfit - (nCells, xDim, yDim)
+
+
+filts3 = find(indF<194);
+filts4 = find(indF>193);
+
+
+    [g3_STA] = convolveRFwithStim(STAimage(filts3,:,:),3);
+    [g4_STA] = convolveRFwithStim(STAimage(filts4,:,:),4);
+    [g3_AC] = convolveRFwithStim(ACfit(filts3,:,:),3);
+    [g4_AC] = convolveRFwithStim(ACfit(filts4,:,:),4);
+    [g3_ACsm] = convolveRFwithStim(ACfitsm(filts3,:,:),3);
+    [g4_ACsm] = convolveRFwithStim(ACfitsm(filts4,:,:),4);
+    [g3_Gabor] = convolveRFwithStim(gaborpatch(filts3,:,:),3);
+    [g4_Gabor] = convolveRFwithStim(gaborpatch(filts4,:,:),4);
+
+   
+beforeSpike = [0.25 0.1 0.07 0.04 0.01]; % Look 40 ms before the spike
+
+% iexp11
+    cells = indF(filts3); 
+    its = beforeSpike(it_all(filts3));
+    its(its==0.01) = 0.04;
+    [spkCounts{1}] = getSpkTimesForRFConvolution(cells,its,0.06,11);    % inputs: (cells,times,binsize,iexp)
+% iexp13 onwards
+    startCellcount = nCells_list(1);
+    for ie = 2:length(nCells_list)
+        nCells = nCells_list(ie);
+        cellsn = find((startCellcount < indF) & (indF < (startCellcount + nCells + 1)));
+        cells = indF(cellsn)-startCellcount;
+        its = beforeSpike(it_all(cellsn));
+        its(its==0.01) = 0.04;
+        startCellcount = startCellcount + nCells;
+        [spkCounts{ie}] = getSpkTimesForRFConvolution(cells,its,0.06,expts(ie));
+    end
+    
+spkCounts3 = [spkCounts{1}];     
+spkCounts4 = [spkCounts{2:7}];
+
+
+nCells = size(spkCounts4,2);
+r = zeros(1, nCells);
+for i = 1:nCells
+    C = corrcoef(g4_STA(:,i), spkCounts4(:,i));
+    r(i) = C(1,2);  % correlation coefficient for cell i
+end
+R2 = r.^2;
+
+nCells = size(spkCounts3,2);
+r_sta3 = zeros(1, nCells);
+r_gab3 = zeros(1, nCells);
+r_ac3 = zeros(1, nCells);
+r_acsm3 = zeros(1, nCells);
+for i = 1:nCells
+    C = corrcoef(g3_STA(:,i), spkCounts3(:,i));
+    r_sta3(i) = C(1,2);  % correlation coefficient for cell i
+    C = corrcoef(g3_Gabor(:,i), spkCounts3(:,i));
+    r_gab3(i) = C(1,2);  % correlation coefficient for cell i
+    C = corrcoef(g3_AC(:,i), spkCounts3(:,i));
+    r_ac3(i) = C(1,2);  % correlation coefficient for cell i
+    C = corrcoef(g3_ACsm(:,i), spkCounts3(:,i));
+    r_acsm3(i) = C(1,2);  % correlation coefficient for cell i
+end
+
+nCells = size(spkCounts4,2);
+r_sta4 = zeros(1, nCells);
+r_gab4 = zeros(1, nCells);
+r_ac4 = zeros(1, nCells);
+r_acsm4 = zeros(1, nCells);
+for i = 1:nCells
+    C = corrcoef(g4_STA(:,i), spkCounts4(:,i));
+    r_sta4(i) = C(1,2);  % correlation coefficient for cell i
+    C = corrcoef(g4_Gabor(:,i), spkCounts4(:,i));
+    r_gab4(i) = C(1,2);  % correlation coefficient for cell i
+    C = corrcoef(g4_AC(:,i), spkCounts4(:,i));
+    r_ac4(i) = C(1,2);  % correlation coefficient for cell i
+    C = corrcoef(g4_ACsm(:,i), spkCounts4(:,i));
+    r_acsm4(i) = C(1,2);  % correlation coefficient for cell i
+end
+
+r_sta = [r_sta3, r_sta4];
+r2_sta = [square(r_sta3), square(r_sta4)];
+r_gab = [r_gab3, r_gab4];
+r2_gab = [square(r_gab3), square(r_gab4)];
+r_ac = [r_ac3, r_ac4];
+r2_ac = [square(r_ac3), square(r_ac4)];
+r_acsm = [r_acsm3, r_acsm4];
+r2_acsm = [square(r_acsm3), square(r_acsm4)];
+
+
+% rsqAC
+% rsqACsm
+% rsqGabor
+
+diff_rsq = rsqGabor - rsqAC;       % positive if gabor is better
+rel_diff = diff_rsq ./ max(rsqGabor, rsqAC);  % normalized difference
+
+figure; 
+    cmap = redblue;
+    subplot(2,2,1)
+        scatter(r_ac,r_gab,20,rel_diff,'filled'); hold on; colormap(cmap); movegui('center'); clim(gca, [-.7 .7]);
+        xlabel('ac'); xlim([0 0.5]); ylabel('gabor'); ylim([0 0.5]); refline(1); axis square; set(gca, 'TickDir', 'out');
+    subplot(2,2,2)
+        scatter(r_acsm,r_gab,20,rel_diff,'filled'); hold on; colormap(cmap); colorbar; movegui('center'); clim(gca, [-.7 .7]);
+        xlabel('ac smooth'); xlim([0 0.5]); ylabel('gabor'); ylim([0 0.5]); refline(1); axis square; set(gca, 'TickDir', 'out');
+    print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs', ['filter_dotproducts.pdf']), '-dpdf','-fillpage')
+
+
+
+
+
+figure; scatter(r2_ac,r2_gab,20,r2_sta,'filled'); hold on; colorbar; movegui('center'); sgtitle(' Rsq')
+    xlabel('ac'); xlim([0 0.2]); ylabel('gabor'); ylim([0 0.2]); refline(1); 
+
+
+    
+
+
+%%
+
+% take minimum aspect ratio across the two fits
+aspRatioMin = min(gamma_all,aspRatio);
+
+indGoodFit = find(r_gab>0.1);
+indPlot = [1:10, 12:16, 18:52];
+
+
+rsq_use = rsqGabor(indGoodFit)';
+figure;
+    sgtitle('gabor fits -- looking at aspect ratio (>4 are cells 36 & 39)')
+    subplot(3,2,1)
+        scatter(gamma_all(indGoodFit),b_all(indF(indGoodFit)),20,rsq_use,'filled'); colormap('sky'); colorbar; hold on
+        subtitle('gabor - mean pattern index')
+        xlabel('aspect ratio (gamma)')
+        ylabel('fit baseline')
+        set(gca, 'TickDir', 'out'); axis square
+    subplot(3,2,2)
+        scatter(gamma_all(indGoodFit),PCI_max(indF(indGoodFit)),20,rsq_use,'filled'); colormap('sky'); colorbar; hold on
+        subtitle('gabor - peak pattern index')
+        xlabel('aspect ratio (gamma)')
+        ylabel('fit peak')
+        set(gca, 'TickDir', 'out'); axis square
+    subplot(3,2,3)
+        scatter(amp_all(indF(indPlot)).*-1,PCI_max(indF(indPlot)),20,gamma_all(indPlot),'filled'); colormap('sky'); hold on
+        scatter(amp_all(indF(indGoodFit)).*-1,PCI_max(indF(indGoodFit)),20,gamma_all(indGoodFit),'filled','MarkerEdgeColor','k','linewidth', 0.25); colorbar; hold on
+        subtitle('gabor - rf aspect ratio')
+        xlabel('modulation amplitude')
+        ylabel('fit peak')
+        ylim([-5 5])
+        xlim([-6 0])
+        set(gca, 'TickDir', 'out'); axis square
+     subplot(3,2,4)
+        scatter(amp_all(indF(indPlot)).*-1,PCI_max(indF(indPlot)),20,area_fwhm(indPlot),'filled'); colormap('sky'); hold on
+        scatter(amp_all(indF(indGoodFit)).*-1,PCI_max(indF(indGoodFit)),20,area_fwhm(indGoodFit),'filled','MarkerEdgeColor','k','linewidth', 0.25); colorbar; hold on
+        subtitle('gabor - rf size')
+        xlabel('modulation amplitude')
+        ylabel('fit peak')
+        ylim([-5 5])
+        xlim([-6 0])
+        set(gca, 'TickDir', 'out'); axis square
+     movegui('center')
+    print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs', ['gabor_AspectRatio.pdf']), '-dpdf','-fillpage')
+
+
+
 rsq_use = rsqAC(indGoodFit)';
 
 figure;
     sgtitle('AC fits -- looking at aspect ratio')
-    subplot(3,2,1)
-        histogram(aspRatio,20); hold on
-        histogram(aspRatio(indGoodFit),20)
-        subtitle('AC - aspect ratio, 1=circle')
-        xlabel('aspect ratio')
-        set(gca, 'TickDir', 'out'); axis square
-    subplot(3,2,2)
-        scatter(aspRatio(indGoodFit),b_all(indF(indGoodFit)),20,rsq_use,'filled'); colormap('sky'); colorbar; hold on
-        subtitle('AC - mean pattern index')
-        xlabel('aspect ratio')
-        ylabel('fit baseline')
-        set(gca, 'TickDir', 'out'); axis square
-    subplot(3,2,3)
+    subplot(2,2,1)
         scatter(aspRatio(indGoodFit),PCI_max(indF(indGoodFit)),20,rsq_use,'filled'); colormap('sky'); colorbar; hold on
         subtitle('AC - peak pattern index')
         xlabel('aspect ratio')
         ylabel('fit peak')
-        set(gca, 'TickDir', 'out'); axis square
-    subplot(3,2,4)
+        set(gca, 'TickDir', 'out'); axis square; 
+    subplot(2,2,2)
         scatter(aspRatio(indGoodFit),amp_all(indF(indGoodFit)),20,rsq_use,'filled'); colormap('sky'); colorbar; hold on
         subtitle('AC - modulation amplitude')
         xlabel('aspect ratio')
         ylabel('modulation amplitude')
-        set(gca, 'TickDir', 'out'); axis square
-    subplot(3,2,5)
+        set(gca, 'TickDir', 'out'); axis square; 
+    subplot(2,2,3)
         scatter(PCI_max(indF(indGoodFit)),rsqGabor(indGoodFit),20,'filled'); hold on    
         scatter(PCI_max(indF(indGoodFit)),rsqAC(indGoodFit),20,'filled'); hold on
         subtitle('AC - patterny-ness v. rsq')
         ylim([0 1])
         xlabel('fit peak')
         ylabel('rsq, red-AC')
-        set(gca, 'TickDir', 'out'); axis square
-    subplot(3,2,6)
-        scatter(amp_all(indF(indGoodFit)).*-1,PCI_max(indF(indGoodFit)),20,aspRatio(indGoodFit),'filled'); colormap('sky'); colorbar; hold on    
+        set(gca, 'TickDir', 'out'); axis square;
+    subplot(2,2,4)
+    scatter(amp_all(indF(indPlot)).*-1,PCI_max(indF(indPlot)),20,aspRatio(indPlot),'filled'); colormap('sky'); hold on
+        scatter(amp_all(indF(indGoodFit)).*-1,PCI_max(indF(indGoodFit)),20,aspRatio(indGoodFit),'filled','MarkerEdgeColor','k','linewidth', 0.25); colorbar; hold on    
         subtitle('amp x peak, aspect ratio')
         ylim([-5 5])
         xlim([-6 0])
         xlabel('modulation amp')
         ylabel('ft peak')
-        set(gca, 'TickDir', 'out'); axis square
+        set(gca, 'TickDir', 'out'); axis square;
+ movegui('center')
     print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs', ['activecontour_AspectRatio.pdf']), '-dpdf','-fillpage')
 
 
-
+ 
+ % look at RF size
 figure;
     subplot(3,2,1)
-        scatter(amp_all(indF(indGoodFit)).*-1,PCI_max(indF(indGoodFit)),20,diam(indGoodFit),'filled'); colormap('sky'); colorbar; hold on    
+        scatter(amp_all(indF(indPlot)).*-1,PCI_max(indF(indPlot)),20,diam(indPlot),'filled'); colormap('sky'); clim(gca, [3 15]);  colorbar; hold on 
+        scatter(amp_all(indF(indGoodFit)).*-1,PCI_max(indF(indGoodFit)),20,diam(indGoodFit),'filled','MarkerEdgeColor','k','linewidth', 0.25); colormap('sky'); clim(gca, [3 15]);  colorbar; hold on    
         subtitle('amp x peak, equivdiam')
         ylim([-5 5])
         xlim([-6 0])
@@ -704,23 +859,253 @@ figure;
         ylabel('ft peak')
         set(gca, 'TickDir', 'out'); axis square
     subplot(3,2,3)
-        scatter(amp_all(indF(indGoodFit)).*-1,PCI_max(indF(indGoodFit)),20,area(indGoodFit),'filled'); colormap('sky'); colorbar; hold on    
+        scatter(amp_all(indF(indPlot)).*-1,PCI_max(indF(indPlot)),20,area(indPlot),'filled'); colormap('sky'); hold on            
+        scatter(amp_all(indF(indGoodFit)).*-1,PCI_max(indF(indGoodFit)),20,area(indGoodFit),'filled','MarkerEdgeColor','k','linewidth', 0.25); colormap('sky'); colorbar; hold on    
         subtitle('amp x peak, filledarea')
         ylim([-5 5])
         xlim([-6 0])
         xlabel('modulation amp')
         ylabel('ft peak')
         set(gca, 'TickDir', 'out'); axis square
+         movegui('center')
     print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs', ['activecontour_AspectRatio2.pdf']), '-dpdf','-fillpage')
 
 
 
 
-    %%
+% multiple linear regression for aspect ratio and RF size
 
-% gaborpatch - (nCells, xDim, yDim)
-% ACfit - (nCells, xDim, yDim)
+    X = [ones(size(amp_all(indF(indPlot)))), amp_all(indF(indPlot)), PCI_max(indF(indPlot))]; % Add a column of ones for the intercept
+    [b, bint, r, rint, stats] = regress(aspRatio(indPlot)', X); % Fit model
+
+    stats = regstats(aspRatio(indPlot)', ...
+                 [amp_all(indF(indPlot)), PCI_max(indF(indPlot))], ...
+                 'linear', ...
+                 {'tstat'});
+    disp(stats.tstat)
+    %    amp pval - 0.35
+    %    pci pval - 0.35
+
+    stats = regstats(, [amp_all(indF(indPlot)).*-1, PCI_max(indF(indPlot))], ...
+                 'linear', ...
+                 {'tstat'});
+    disp(stats.tstat)
+    stats.tstat.pval
+    stats.tstat.beta
+    %    amp pval - 0.0121
+    %    pci pval - 0.0006
 
 
 
 
+
+
+    X = [ones(size(amp_all(indF(indPlot)))), amp_all(indF(indPlot)), PCI_max(indF(indPlot))]; % Add a column of ones for the intercept
+    [b, bint, r, rint, stats] = regress(diam(indPlot)', X); % Fit model
+
+    stats = regstats(diam(indPlot)', ...
+                 [amp_all(indF(indPlot)), PCI_max(indF(indPlot))], ...
+                 'linear', ...
+                 {'tstat'});
+    disp(stats.tstat)
+    %    amp pval - 0.50
+    %    pci pval - 0.82
+
+    stats = regstats(area_fwhm(indPlot)', ...
+                 [amp_all(indF(indPlot)).*-1, PCI_max(indF(indPlot))], ...
+                 'linear', ...
+                 {'tstat'});
+    disp(stats.tstat)
+    stats.tstat.pval
+    stats.tstat.beta
+    %    amp pval - 0.1068
+    %    pci pval - 0.0682
+
+
+
+
+    X = [ones(size(amp_all(indF(indPlot)))), diam(indPlot)', aspRatio(indPlot)']; % Add a column of ones for the intercept
+    [b, bint, r, rint, stats] = regress(PCI_max(indF(indPlot)), X); % Fit model
+
+
+
+xcells(1,:) = [40 10 11 2 41 24 37 26];
+xcells(2,:) = indF(xcells(1,:));
+xcells(3,:) = amp_all(xcells(2,:)).*-1;
+xcells(4,:) = PCI_max(xcells(2,:));
+xcells
+
+
+xcells(1,:) = [2 10  37 40 24 41 11 26];
+xcells(2,:) = indF(xcells(1,:));
+xcells(3,:) = amp_all(xcells(2,:)).*-1;
+xcells(4,:) = PCI_max(xcells(2,:));
+xcells
+
+
+
+
+amp_all(xcells).*-1
+
+
+
+colors= (amp_all(xcells).*-1);
+figure;
+    subplot 221
+        scatter((amp_all(xcells).*-1),PCI_max(xcells),20,colors,'filled'); colormap('winter');  hold on    
+        subtitle('amp x peak')
+        ylim([-5 5])
+        xlim([-6 0])
+        xlabel('modulation amp')
+        ylabel('ft peak')
+        set(gca, 'TickDir', 'out'); axis square
+    print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs', ['exampleCells_DeptRetreat2025.pdf']), '-dpdf','-fillpage')
+
+
+
+    x(1,:) = (amp_all(indF([41 2 10 24 37 26 11 40])).*-1);
+    x(2,:) = PCI_max(indF([41 2 10 24 37 26 11 40]));
+
+
+
+
+
+
+    %% trying out new plots
+
+
+    % DSI_prefdir
+    % avg_resp_grat
+
+avg_resp_grat =    squeeze(avg_resp_dir_all(:,:,1,1,1));
+
+% Get OSI pref 
+numCells = length(DSI_prefdir);
+rowIdx   = (1:numCells)';                         % column vector of row indices
+colIdxPref   = DSI_prefdir(:);                        % column vector of preferred dirs
+linearInd = sub2ind(size(avg_resp_grat), rowIdx, colIdxPref);
+OSI_pref = avg_resp_grat(linearInd);              % gives 869×1
+
+
+% Compute indices for calculating OSI 
+OSI_ind1 = mod(DSI_prefdir + 3 - 1, 12) + 1;   % +3 direction
+OSI_ind2 = mod(DSI_prefdir - 3 - 1, 12) + 1;   % -3 direction    
+
+colIdxNull1   = OSI_ind1(:);  
+colIdxNull2   = OSI_ind2(:); 
+linearInd1 = sub2ind(size(avg_resp_grat), rowIdx, colIdxNull1);
+OSI_null1 = avg_resp_grat(linearInd1);              % gives 869×1
+linearInd2 = sub2ind(size(avg_resp_grat), rowIdx, colIdxNull2);
+OSI_null2 = avg_resp_grat(linearInd2);              % gives 869×1
+OSI_null = (OSI_null1+OSI_null2)./2;
+OSI_null(find(OSI_null<0)) = 0;
+OSI_all = (OSI_pref-OSI_null)./(OSI_pref+OSI_null);
+
+% -1 and +1 shift ensures that it stay in MATLAB’s 1–12 indexing instead of 0–11
+
+figure;
+    sgtitle('OSI v patt peak and mod amp')
+    subplot 421; 
+        scatter(amp_all(indF).*-1,PCI_max(indF),20,OSI_all(indF),'filled'); colormap('sky'); colorbar;     
+        xlabel('amp'); 
+        ylabel('peak');
+        set(gca, 'TickDir', 'out'); axis square
+     subplot 422; 
+        indU = [1:38,40:52];
+        OSI_use = OSI_all(indF(indU));
+        scatter(amp_all(indF(indU)).*-1,PCI_max(indF(indU)),20,OSI_use,'filled'); colorbar; hold on            
+        xlabel('amp'); 
+        ylabel('peak');
+        set(gca, 'TickDir', 'out'); axis square
+    subplot 423; 
+        histogram(OSI_all(indF),30)
+        subtitle('osi')
+        set(gca, 'TickDir', 'out'); axis square 
+    subplot 424; 
+        indU = [1:2, 4:38,40:46, 48:52];
+        OSI_use = OSI_all(indF(indU));
+        scatter(amp_all(indF(indU)).*-1,PCI_max(indF(indU)),20,OSI_use,'filled'); colorbar; hold on            
+        xlabel('amp'); 
+        ylabel('peak');
+        set(gca, 'TickDir', 'out'); axis square   
+     subplot 425; 
+        scatter(amp_all(indF).*-1,OSI_all(indF),20,'filled'); colorbar; hold on            
+        xlabel('amp'); 
+        ylabel('OSI');
+        set(gca, 'TickDir', 'out'); axis square           
+     subplot 426; 
+        scatter(PCI_max(indF),OSI_all(indF),20,'filled'); colorbar; hold on            
+        xlabel('peak'); 
+        ylabel('OSI');
+        set(gca, 'TickDir', 'out'); axis square   
+    subplot 427; 
+        scatter(amp_all(indF).*-1,OSI_all(indF),20,'filled'); colorbar; hold on            
+        ylim([0 3])
+        xlabel('amp'); 
+        ylabel('OSI');
+        set(gca, 'TickDir', 'out'); axis square           
+     subplot 428; 
+        scatter(PCI_max(indF),OSI_all(indF),20,'filled'); colorbar; hold on 
+        ylim([0 3])           
+        xlabel('peak'); 
+        ylabel('OSI');
+        set(gca, 'TickDir', 'out'); axis square   
+
+
+ figure;
+    movegui('center')
+    sgtitle('OSI v aspect ratio')         
+    subplot 221; 
+        scatter(OSI_all(indF),aspRatioMin,20,'filled'); hold on 
+        % xlim([0 3])           
+        xlabel('osi'); 
+        ylabel('asp ratio (min)');
+        set(gca, 'TickDir', 'out'); axis square 
+    subplot 222; 
+        scatter(OSI_all(indF(indGoodFit)),aspRatioMin(indGoodFit),20,'filled'); colorbar; hold on 
+        xlabel('osi'); 
+        ylabel('asp ratio (min)');
+        set(gca, 'TickDir', 'out'); axis square;
+    subplot 223; 
+        scatter(PCI_max(indF),OSI_all(indF),20,aspRatioMin,'filled'); colorbar; hold on 
+        % ylim([0 3])           
+        xlabel('peak'); 
+        ylabel('OSI');
+        set(gca, 'TickDir', 'out'); axis square   
+     subplot 224; 
+        scatter(PCI_max(indF(indGoodFit)),OSI_all(indF(indGoodFit)),20,aspRatioMin(indGoodFit),'filled'); colorbar; hold on 
+        % ylim([0 3])           
+        xlabel('peak'); 
+        ylabel('OSI');
+        set(gca, 'TickDir', 'out'); axis square   
+
+  figure;
+    movegui('center')
+    subplot 421; 
+        scatter(amp_all(indF).*-1,PCI_max(indF),20,k1_all(indF),'filled'); colormap('sky'); colorbar;     
+        sgtitle('k1 all')
+        xlabel('amp'); 
+        ylabel('peak');
+        set(gca, 'TickDir', 'out'); axis square
+    subplot 422; 
+        scatter(k1_all(indF),aspRatioMin,20,'filled'); hold on 
+        % xlim([0 3])           
+        xlabel('osi'); 
+        ylabel('asp ratio (min)');
+        set(gca, 'TickDir', 'out'); axis square 
+    subplot 423; 
+        scatter(k1_all(indF(indGoodFit)),aspRatioMin(indGoodFit),20,'filled'); colorbar; hold on 
+        xlabel('osi'); 
+        ylabel('asp ratio (min)');
+        set(gca, 'TickDir', 'out'); axis square;
+
+   
+  figure;
+    movegui('center')
+    subplot 421; 
+        scatter(amp_all(indF(indGoodFit)).*-1,PCI_max(indF(indGoodFit)),20,k1_all(indF(indGoodFit)),'filled'); colormap('sky'); colorbar;     
+        sgtitle('k1 all')
+        xlabel('amp'); 
+        ylabel('peak');
+        set(gca, 'TickDir', 'out'); axis square
+        

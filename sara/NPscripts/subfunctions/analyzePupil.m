@@ -13,7 +13,8 @@
 %
 
 function analyzePupil(iexp, threshold)    
-    
+    threshold = 117;
+
     base = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
 
 %Get experiment info
@@ -39,7 +40,7 @@ function analyzePupil(iexp, threshold)
 
 % Threshold pixel values to pull out pupil
     framesThreshold                         = framesmat;
-    framesThreshold(framesThreshold>52)     = 100;
+    framesThreshold(framesThreshold>threshold)     = 100;
     data                                    = framesThreshold;
     dataSzLoop                              = 1:size(data,3);
 
@@ -188,8 +189,9 @@ sz   = size(data);
     trialStartIdx   = trialStartIdxAll(firstTrialToKeep:end); % Extract trial info starting from the first 30 hz on, 0 hz off trial
     trialEndIdx     = trialEndIdxAll(firstTrialToKeep:end);
     framesPerTrial  = framesPerTrialAll(firstTrialToKeep:end);
-    
+
     fprintf('Detected %d trials. First trial skipped.\n', length(trialStartIdx));
+
 
 % Look at random trials   
     rng("shuffle");

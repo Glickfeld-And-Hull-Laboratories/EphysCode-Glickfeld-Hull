@@ -40,14 +40,16 @@ function runTPrime_SG(date)
 % Construct paths for TPrime
     baseFileName        = fullfile(catgtFolder, [runName, '_tcat']);
     spikeSyncFile       = [baseFileName, '.imec0.ap.xd_384_6_500.txt'];
-    nidaqSync           = [baseFileName, '.nidq.xd_0_0_500.txt'];   % ndiaq clock signal
+    nidaqSync           = [baseFileName, '.nidq.xd_0_0_500.txt'];   % nidaq clock signal
     nidaqMWevents       = [baseFileName, '.nidq.xd_0_1_0.txt']; % mworks stim on events
+    nidaqPCtrigger      = [baseFileName, '.nidq.xd_0_2_0.txt']; % patch clamp trigger to MWorks computer
     nidaqPDevents       = [baseFileName, '.nidq.xd_0_5_0.txt']; % photodiode events
     mworksStimOnSync    = fullfile(fullAnalysisPath, [date, '_mworksStimOnSync.txt']);   % Output file for MWorks stim on signal
+    pcTriggerSync       = fullfile(fullAnalysisPath, [date, '_patchclampTriggerSync.txt']);   % Output file for MWorks stim on signal
     photodiodeSync      = fullfile(fullAnalysisPath, [date, '_photodiodeSync.txt']);   % Output file for photodiode stim on signal
 
 % Construct the TPrime command
-    cmd1 = sprintf(['TPrime -syncperiod=1.000000 ' '-tostream=%s ' '-fromstream=1,%s ' '-events=1,%s,%s ' '-events=1,%s,%s'], spikeSyncFile, nidaqSync, nidaqMWevents, mworksStimOnSync, nidaqPDevents, photodiodeSync);
+    cmd1 = sprintf(['TPrime -syncperiod=1.000000 ' '-tostream=%s ' '-fromstream=1,%s ' '-events=1,%s,%s ' '-events=1,%s,%s ' '-events=1,%s,%s'], spikeSyncFile, nidaqSync, nidaqMWevents, mworksStimOnSync, nidaqPCtrigger, pcTriggerSync, nidaqPDevents, photodiodeSync);
 
 % Execute the command in the Windows terminal
     cd('C:\Users\smg92\Desktop\TPrime-win');

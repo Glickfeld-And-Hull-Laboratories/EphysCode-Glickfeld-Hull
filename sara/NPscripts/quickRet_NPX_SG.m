@@ -2,10 +2,10 @@ clear all
 clear all global
 close all
 
-date = '250910';
-mouse = 'i2768';
-mwtime = '1351';   
-chnls = 1:2:220;
+date = '251008';
+mouse = 'i2782';
+mwtime = '1440';   
+chnls = 1:2:200;
 
 fprintf([date ' ' mouse ' \n'])
 
@@ -83,7 +83,6 @@ cutoffhigh  = 300;
 [bb, aa] = butter(4, cutoffhigh/(Fs/2), 'low'); % Design filter (Butterworth, 4th order)
 
 LFPdata1=LFPdata;
-%LFPdataNorm = (LFPdata-LFPdata(300,:));
 LFPdataFilt1 = filtfilt(b, a, LFPdata);
 %LFPdataFilt2 = filtfilt(bb, aa, LFPdata);
 

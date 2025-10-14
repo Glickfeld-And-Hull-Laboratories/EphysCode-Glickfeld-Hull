@@ -1,6 +1,6 @@
 clear all; close all; clc
 baseDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
-iexp = 13; % Choose experiment
+iexp = 25; % Choose experiment
 
 [exptStruct] = createExptStruct(iexp); % Load relevant times and directories for this experiment
 
@@ -72,7 +72,7 @@ subplot 221
     scatter(FR_resp, depth_resp, 15, 'filled')
     xlim([-5 50]); 
     xlabel('avg FR')
-    ylim([-2000 0])
+    ylim([-5000 0])
     movegui('center')
     sgtitle([exptStruct.mouse ' ' exptStruct.date ', FR by depth'])
     print(fullfile([outDir, '\' exptStruct.mouse '-' exptStruct.date '-FRbyDepth.pdf']),'-dpdf','-bestfit');

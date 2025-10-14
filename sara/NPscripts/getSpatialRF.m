@@ -343,7 +343,14 @@ save( ...
     );
 
 
+figure; 
+histogram(depth_all(ind),20)
+xlim([-4200 0])
+ylabel('num cells')
+xlabel('depth from surface')
+movegui('center')
 
+dx = [goodUnitStruct.depth];
 stop
 
 

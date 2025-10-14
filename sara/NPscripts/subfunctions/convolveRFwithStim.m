@@ -3,9 +3,9 @@
 
 function [resp] = convolveRFwithStim(filt,stimtype)
     
-    if stimtype == 1
+    if stimtype == 4
         load(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\', 'sara', 'Analysis', 'Neuropixel', 'noiseStimuli/', '5min_2deg_4rep_imageMatrix.mat'))
-    elseif stimtype == 2
+    elseif stimtype == 3
         load(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\', 'sara', 'Analysis', 'Neuropixel', 'noiseStimuli/', '5min_2deg_3rep_imageMatrix.mat'))
     end
 
@@ -16,7 +16,7 @@ function [resp] = convolveRFwithStim(filt,stimtype)
     stim_flat   = double(reshape(stim, T, X*Y));       % (ntrials x XY)
     filters_flat = reshape(filt, C, X*Y);  % (ncells x XY)
     
-    resp = stim_flat * filters_flat' ;          % (50 × T)
+    resp = stim_flat * filters_flat' ;          % (T × C)
 
 end
 
