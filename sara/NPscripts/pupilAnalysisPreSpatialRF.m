@@ -1,6 +1,6 @@
 
 
-    threshold = 117;
+    threshold = 80;
 
     base = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
 
@@ -217,13 +217,12 @@ sz   = size(data);
         warning('Some inter-trigger intervals are outside 0.098–0.102 seconds!');
         xx = find(~(dt > 0.099 & dt < 0.101));  % show indices of violations
         disp([num2str(length(xx)) ' intervals outside of the expected range.'])
-        % if xx > 0 
-        %     figure; histogram(dt(xx),length(xx)); sgtitle([num2str(length(xx)) 'intervals outside of the expected range'])
-        % end
     end
 
 
     % Build the list of individual frame times (5 frames per patchclamp leading edge signal, evenly spaced within the 100 ms)
+    frameSpacing = 0.02;
+    nFramesPerTrigger = 5;
     offsets = (0:frameSpacing:(nFramesPerTrigger-1)*frameSpacing);  % 1 x k
     nTriggers = numel(frameTriggerStartRFblock);
     nCamFrames = numel(offsets);
@@ -245,22 +244,186 @@ sz   = size(data);
         warning('Some frame-to-frame intervals are outside 0.018–0.021 seconds!');
         xx = find(~(dt > 0.019 & dt < 0.021));
         fprintf('%d intervals outside of the expected range.\n', numel(xx));
-        % if ~isempty(xx)
-        %     figure;
-        %     histogram(dt(xx), numel(xx));
-        %     sgtitle([num2str(numel(xx)) ' intervals outside of the expected range']);
-        % end
     end   
-    disp('The numver of intervals outside of the expected range should be equal for both checks.')
+    disp('The number of intervals outside of the expected range should be equal for both checks.')
         
+    % 
+    % 
+    % approxLastFrameForPCcomp = approxLastFrame - frameTimes(1);
+    % xxx= timestamps(timestamps<approxLastFrameForPCcomp);
 
-    
+
+    % Loop through each of the 4 white noise stimulus blocks
+    for ib = 1:4
+        PDsignal = RFstimBlocks{ib};  % Extract the photodiode (stim-on) timestamps for this block
+
+        % Initialize output variables for this block
+        % idx_in_PD:        a cell array where each cell contains indices of pupil frames that occurred between two consecutive photodiode events
+        % frameGroupBlock:  vector (same size as frameTimes) where each entry indicates which photodiode event that frame belongs to
+        idx_in_PD = cell(numel(PDsignal)-1, 1); 
+        frameGroupBlock = zeros(size(frameTimes)); 
+
+        % Loop through all photodiode signals in this block
+        for is = 1:numel(PDsignal)
+            if is ~= numel(PDsignal)
+                % For all but the last PD pulse:
+                % Find frames that occurred between PDsignal(is) and PDsignal(is+1)
+                idx_in_PD{is} = find(frameTimes >= PDsignal(is) & frameTimes < PDsignal(is+1));
+                inWindow = frameTimes >= PDsignal(is) & frameTimes < PDsignal(is+1);
+                frameGroupBlock(inWindow) = is;
+            else 
+                 % For the final PD pulse:
+                % There’s no next PDsignal, so assume this window extends 100 ms beyond
+                idx_in_PD{is} = find(frameTimes >= PDsignal(is) & frameTimes < (PDsignal(is)+0.101));
+                inWindow = frameTimes >= PDsignal(is) & frameTimes < (PDsignal(is)+0.101);
+                frameGroupBlcok(inWindow) = is;
+            end
+        end
+
+        % Store results for this block
+        pupilFrameIdx{ib} = idx_in_PD;  % which pupil frame indices belong to each PD interval
+        pupilFrameGroups{ib} = frameGroupBlock;  % for each pupil frame, which PD event it belongs to
+        pupilFrameCounts{ib} = histcounts(frameGroupBlock, 0.5:1:(max(frameGroupBlock)+0.5));  % how many pupil frames per PD event
+    end
+
+% Summary of outputs:
+% -------------------------------
+% pupilFrameIdx:    1x4 cell array
+%                   Each element: cell array (length ≈ number of white noise frames per trial, e.g. 3000)
+%                   Each sub-cell: list of pupil frame indices captured during that stimulus
+%
+% pupilFrameGroups: 1x4 cell array
+%                   Each element: numeric vector (same length as frameTimes)
+%                   Each entry: stimulus number that the pupil frame belongs to
+%
+% pupilFrameCounts: 1x4 cell array
+%                   Each element: numeric vector (# of frames per stimulus)
+%                   Used to verify consistent 5 frames per white noise stimulus
 
 
 
-
-
-    
 
 
 % ==================
+% Find points within 1 STD of mean
+    
+    figure; scatter(centroid(1:length(frameTimes),1),centroid(1:length(frameTimes),2)); movegui('center')
+    
+    meanX = mean(centroid(1:length(frameTimes),1),"omitmissing");
+    stdX = std(centroid(1:length(frameTimes),1),"omitmissing");
+    meanY = mean(centroid(1:length(frameTimes),2),"omitmissing");
+    stdY = std(centroid(1:length(frameTimes),2),"omitmissing");
+    
+    % Extract coordinates
+    X = centroid(1:length(frameTimes),1);
+    Y = centroid(1:length(frameTimes),2);
+    
+    % Using standard deviation as a scaling factor
+    % Option 1: Use average of stdX and stdY as 2D SD
+    radialStd = mean([stdX stdY]);
+    distFromMean = sqrt( (X - meanX).^2 + (Y - meanY).^2 );
+    
+    % Logical index of points within 1 radial SD
+    within1SD_radial = distFromMean <= radialStd;
+    
+    % Count and fraction
+    numWithin = sum(within1SD_radial);
+    fracWithin = numWithin / numel(X);
+    
+    fprintf('Points within 1 radial SD: %d (%.2f%%)\n', numWithin, fracWithin*100);
+
+% =========================
+
+
+    nPupilRFFrames = 1:length(frameTimes);
+    pupilFramesGoodCentroid = nPupilRFFrames(within1SD_radial);
+
+
+% =========================
+    
+    
+    for ib = 1:4
+        pupilFramesBlock = pupilFrameIdx{ib};
+        for is = 1:3000
+           pupilFramesStim = pupilFramesBlock{is};
+           pupilFramesStimGood = within1SD_radial(pupilFramesStim);
+           pupilFramesToInclude = pupilFramesStim.*pupilFramesStimGood;
+           nPupilFramesGood = sum(pupilFramesToInclude);
+           if nPupilFramesGood > 2 
+               imageMatrixPupilGood{ib}(is) = 1;
+           else
+               imageMatrixPupilGood{ib}(is) = 0;
+           end
+        end
+    end
+
+% =======================
+
+
+save( ...
+    fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\', ...
+        [mouse '-' date '_imageMatrixPupilGood.mat']]), ...
+    'imageMatrixPupilGood' ...
+    );
+    
+% =======================
+% Run on getSpatialRFPostPupilAnalysis_Wiesel.m on Wiesel
+% =======================
+
+load(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, [mouse '-' date '_spatialRFsPostPupil_Wiesel.mat']))
+
+% =======================
+% Plot STAs
+
+
+if ~exist(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFsPostPupil']), 'dir')
+    mkdir(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFsPostPupil']));
+end
+
+nCells  = length(goodUnitStruct);
+lastTimestamp = approxLastFrame; % Last timestamp plus 10 seconds
+
+figure;
+sp      = 1;   % subplot count
+start   = 1;    % cell count
+n       = 1;    % page count
+
+for iCell = 1:nCells
+    for it = 1:length(beforeSpike)
+        timeBeforeSpike     = beforeSpike(it); % Look [40 ms, etc.] before the spike
+        averageImageAtSpike = squeeze(averageImagesAll(iCell,it,:,:));
+
+        subplot(8,5,sp)
+            imagesc(averageImageAtSpike)
+            %imagesc(avgImageSmooth)
+            colormap('gray')
+            if it == 1
+               subtitle(['cell ' num2str(iCell) ',' num2str(totalSpikesUsed(iCell)) ', -' num2str(timeBeforeSpike) ' s'])
+            else
+                subtitle(['-' num2str(timeBeforeSpike) ' s'])
+            end
+            sp=sp+1;
+    end
+    start=start+1;
+    if start > 8
+         sgtitle(['noise trials = ' num2str(size(timestamps,1))])
+         print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFsPostPupil'], [mouse '-' date '_spatialRFs_cell' num2str(iCell-7) 'to' num2str(iCell) '.pdf']),'-dpdf', '-fillpage')       
+         figure;
+         movegui('center')
+         start   = 1;
+         n       = n+1;
+         sp      = 1;
+         close all
+     end
+     if iCell == nCells
+         sgtitle(['noise trials = ' num2str(size(timestamps,1))])
+         print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFsPostPupil'], [mouse '-' date '_spatialRFs_untilcell' num2str(iCell) '.pdf']), '-dpdf','-fillpage')
+         close all
+     end   
+end
+
+
+
+
+
+

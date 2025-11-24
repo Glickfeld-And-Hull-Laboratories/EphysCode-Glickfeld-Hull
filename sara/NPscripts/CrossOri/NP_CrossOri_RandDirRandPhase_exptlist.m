@@ -350,57 +350,51 @@ expt(22).eyetrack = {'y'};
 expt(22).wheeltrack = {'n'};
 expt(22).saveLoc = 'sara';
 
-
-%% i2781 250930, LGN    
-expt(23).mouse = 'i2781';
-expt(23).date = '250930';
-expt(23).loc  = {'LG'};
-expt(23).z = -4200;
+%% i2769 251030, V1
+expt(23).mouse = 'i2769';
+expt(23).date = '251030';
+expt(23).loc  = {'V1'};
+expt(23).z = -2000;
 expt(23).probe = {'NP1'};
 expt(23).genotype = {'C57/CBA'};
 expt(23).sex = {'M'};
-expt(23).age = '108';
+expt(23).age = '138';
 expt(23).cog = {'awake'};
 expt(23).layerTime = '';
-expt(23).exptTime = '1506';
+expt(23).exptTime = '1158';
 expt(23).eyetrack = {'y'};  
-expt(23).wheeltrack = {'n'};
+expt(23).wheeltrack = {'y'};
 expt(23).saveLoc = 'sara';
 
-%% i2782 251008, LGN    
-expt(24).mouse = 'i2782';
-expt(24).date = '251008';
-expt(24).loc  = {'LG'};
-expt(24).z = -4200;
+%% i2769 251031, V1
+expt(24).mouse = 'i2769';
+expt(24).date = '251031';
+expt(24).loc  = {'V1'};
+expt(24).z = -2000;
 expt(24).probe = {'NP1'};
 expt(24).genotype = {'C57/CBA'};
 expt(24).sex = {'M'};
-expt(24).age = '116';
+expt(24).age = '139';
 expt(24).cog = {'awake'};
 expt(24).layerTime = '';
-expt(24).exptTime = '';
+expt(24).exptTime = '1203';
 expt(24).eyetrack = {'y'};  
-expt(24).wheeltrack = {'n'};
+expt(24).wheeltrack = {'y'};
 expt(24).saveLoc = 'sara';
 
-%% i2784 251013, LGN    
-expt(25).mouse = 'i2784';
-expt(25).date = '251013';
-expt(25).loc  = {'LG'};
-expt(25).z = -4200;
+%% i2780 251106, V1
+expt(25).mouse = 'i2780';
+expt(25).date = '251106';
+expt(25).loc  = {'V1'};
+expt(25).z = -2100;
 expt(25).probe = {'NP1'};
 expt(25).genotype = {'C57/CBA'};
 expt(25).sex = {'F'};
-expt(25).age = '121';
+expt(25).age = '145';
 expt(25).cog = {'awake'};
 expt(25).layerTime = '';
-expt(25).exptTime = '';
+expt(25).exptTime = '1207';
 expt(25).eyetrack = {'y'};  
-expt(25).wheeltrack = {'n'};
+expt(25).wheeltrack = {'y'};
 expt(25).saveLoc = 'sara';
-
-
-
-
-
 

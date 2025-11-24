@@ -1,8 +1,9 @@
 clear all; close all; clc
 baseDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
-iexp = 25; % Choose experiment
+iexp = 16; % Choose experiment
+exptloc = 'LG';
 
-[exptStruct] = createExptStruct(iexp); % Load relevant times and directories for this experiment
+[exptStruct] = createExptStruct(iexp,exptloc); % Load relevant times and directories for this experiment
 
 %% Crop pupil video
 
@@ -17,7 +18,11 @@ runTPrime_SG(exptStruct.date)   % Run TPrime to sync photodiode signal to spikes
 
 %% Extract units from KS output
 
-cd(fullfile(baseDir, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, 'KS_Output\')) % Navigate to KS_Output folder
+if exptloc == "LG" || iexp > 22
+    cd(fullfile(baseDir, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, 'kilosort4\')) % Navigate to KS_Output folder
+else
+    cd(fullfile(baseDir, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, 'KS_Output\')) % Navigate to KS_Output folder
+end
 
 % Choose imec0.ap.bin file (I just choose the CatGT bin file)
 [allUnitStruct, goodUnitStruct] = importKSdata_SG();

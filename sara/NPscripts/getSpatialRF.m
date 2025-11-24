@@ -72,9 +72,14 @@
 
     timestamps = [];
     for it = 1:size(imageMatrix,1)
-        timestamps(it,:) = RFstimBlocks{it}(:);
+            timestamps(it,:) = RFstimBlocks{it}(:);
     end
 
+
+timestamps(1,:)=RFstimBlocks{2};
+timestamps(2,:)=RFstimBlocks{3};
+timestamps(3,:)=RFstimBlocks{4};
+timestamps(4,:)=RFstimBlocks{5};
 
 %% Load bootstrap shuffle
 

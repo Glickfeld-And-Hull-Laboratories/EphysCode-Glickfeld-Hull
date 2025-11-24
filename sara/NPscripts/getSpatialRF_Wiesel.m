@@ -1,12 +1,17 @@
 clear all; close all; clc
 base = '/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/';
-iexp = 25; % Choose experiment
+iexp = 16; % Choose experiment
+exptloc = 'LG';
+nboots = 1; %100
 
-[exptStruct] = createExptStruct(iexp); % Load relevant times and directories for this experiment
+[exptStruct] = createExptStruct(iexp,exptloc); % Load relevant times and directories for this experiment
 
 %% Extract units from KS output
-
-cd(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, 'KS_Output/')) % Navigate to KS_Output folder
+if exptloc == "LG" || iexp>22
+    cd(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, 'kilosort4/')) % Navigate to KS_Output folder
+elseif iexp<22
+    cd(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, 'KS_Output/')) % Navigate to KS_Output folder
+end
 
 % Choose imec0.ap.bin file (I just choose the CatGT bin file)
 [allUnitStruct, goodUnitStruct] = importKSdata_SG();
@@ -31,7 +36,7 @@ cd(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, 'KS
         filteredPD = stimOnTimestampsPD;
 
     % Account for report of the monitor's refresh rate in the photodiode signal
-        minInterval = 0.035; % Define a minimum separation threshold (should be longer than a refresh cycle but shorter than ISI)     
+        minInterval = 0.035; %0.035; % Define a minimum separation threshold (should be longer than a refresh cycle but shorter than ISI)     
         leadingEdgesPD = filteredPD([true; diff(filteredPD) > minInterval]); % Extract the leading edges (first timestamp of each stimulus period)
         % [true; ...] ensures that the very first timestamp is always included because otherwise diff() returns an array that is one element shorter than the original.
 
@@ -65,7 +70,7 @@ cd(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, 'KS
     end
 
     % Load downsampled noise stimuli
-    if iexp == 11
+    if exptloc == "V1" && iexp == 11
         load(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', 'noiseStimuli/', '5min_2deg_3rep_imageMatrix.mat'))
     else
         load(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', 'noiseStimuli/', '5min_2deg_4rep_imageMatrix.mat'))
@@ -81,7 +86,7 @@ cd(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, 'KS
 
     timestamps = [];
     for it = 1:size(imageMatrix,1)
-        timestamps(it,:) = RFstimBlocks{it}(:);
+         timestamps(it,:) = RFstimBlocks{it}(:);
     end
 
     beforeSpike = [0.25 0.1 0.07 0.04 0.01]; % Look 40 ms before the spike
@@ -130,7 +135,7 @@ delete(gcp("nocreate"));
 
 %% Bootstrap to get null distribution of pixel values
 
-nboots = 100;
+
 
 averageImagesAll_shuffled   = NaN(nboots, nCells, numel(beforeSpike), xDim, yDim);
 imageMatrix_list            = reshape(imageMatrix, [], size(imageMatrix,3), size(imageMatrix,4));   % Reshape from nTrials x nFrames to one dimension of all trials (nTrials*nFrames)
