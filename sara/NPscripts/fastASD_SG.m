@@ -39,29 +39,184 @@ spiketimes = cellfun(@(t) t(t < lastTimestamp), allSpikeTimes, 'UniformOutput', 
 
 
 
+
+
+% take a square region of the white noise stimulus, approximately where the RF will be 
+xRange = 5:24;
+yRange = 13:32;
+nks = [20, 20];
+% xRange = 1:29;
+% yRange = 5:33;
+% nks = [29, 29];
+
+binStart = stimTimes + 0.04;   % 40 ms after onset
+binEnd   = stimTimes + 0.14;   % 140 ms after onset
+
+imageMatrix2 = imageMatrix(:,:,xRange,yRange);
+x2 = reshape(permute(imageMatrix2, [2 1 3 4]), [], size(imageMatrix2,3)*size(imageMatrix2,4));     % Reshape stacks by column, not by row. So we switch the rows and columns to have it perform the correct function (the goal: stacking going frame1_trial1, frame2_trial1, ..., frame1_trial2)
+
 figure;
-title('minlen [0.25; 0.25]')
 is=1;
-for ic = [121 123 125 127 129]
-    ncell = ic; %127
+for ic = [130 131 107 133 135 137] %123 147 151 154 155 158
+    ncell = ic; 
+    spikeTimesCell = spiketimes{ncell};
+
+    y = arrayfun(@(s,e) sum(spikeTimesCell >= s & spikeTimesCell < e), binStart, binEnd).*2.5;
+    x = double(x2);
+
+    subplot(6,6,is)
+        imagesc(squeeze(averageImagesAll(ic,3,xRange,yRange))); colormap('gray'); axis square 
+        subtitle(['cell' num2str(ic) ', ' num2str(totalSpikesUsed(ic))])
+    subplot(6,6,is+12)
+        minlen = [.25;.25];
+        [kasd,asdstats] = fastASD(x,y,nks,minlen);
+        imagesc(reshape(kasd,nks)); axis square     
+    subplot(6,6,is+18)
+        minlen = [2;2];
+        [kasd,asdstats] = fastASD(x,y,nks,minlen);
+        imagesc(reshape(kasd,nks)); axis square    
+    subplot(6,6,is+24)
+        minlen = [5;5];
+        [kasd,asdstats] = fastASD(x,y,nks,minlen);
+        imagesc(reshape(kasd,nks)); axis square    
+    subplot(6,6,is+30)
+        minlen = [10;10];
+        [kasd,asdstats] = fastASD(x,y,nks,minlen);
+        imagesc(reshape(kasd,nks)); axis square  
+    is=is+1;
+end
+movegui('center')
+sgtitle('STA, minlen .25, 2, 5, and 10')
+
+
+
+figure;
+is=1;
+for ic = [143 144 127 126 125 124] %135 137 138 141 144 145
+    ncell = ic;
     spikeTimesCell = spiketimes{ncell};
    
-    binEdges = [stimTimes+0.04; stimTimes(end)+0.1 + 0.1];  % bin edges for 10 Hz
-    y = histcounts(spikeTimesCell, binEdges)';  % [nFrames x 1]
-    
-    minlen = [.25;.25];
-    nks = [xDim, yDim];
-    x = double(x);
-    
-    [kasd,asdstats] = fastASD(x,y,nks,minlen);
+    y = arrayfun(@(s,e) sum(spikeTimesCell >= s & spikeTimesCell < e), binStart, binEnd).*2.5;
+    x = double(x2);
 
-    subplot(3,2,is)
-        imagesc(reshape(kasd,nks))
-        subtitle(['cell ' num2str(ic)])
+    subplot(6,6,is)
+        imagesc(squeeze(averageImagesAll(ic,3,xRange,yRange))); colormap('gray'); axis square
+        subtitle(['cell' num2str(ic) ', ' num2str(totalSpikesUsed(ic))])
+    subplot(6,6,is+12)
+        minlen = [.25;.25];
+        [kasd,asdstats] = fastASD(x,y,nks,minlen);
+        imagesc(reshape(kasd,nks)); axis square    
+    subplot(6,6,is+18)
+        minlen = [2;2];
+        [kasd,asdstats] = fastASD(x,y,nks,minlen);
+        imagesc(reshape(kasd,nks)); axis square   
+    subplot(6,6,is+24)
+        minlen = [5;5];
+        [kasd,asdstats] = fastASD(x,y,nks,minlen);
+        imagesc(reshape(kasd,nks)); axis square   
+    subplot(6,6,is+30)
+        minlen = [10;10];
+        [kasd,asdstats] = fastASD(x,y,nks,minlen);
+        imagesc(reshape(kasd,nks)); axis square 
     is=is+1;
+end
+movegui('center')
+sgtitle('STA, minlen .25, 2, 5, and 10')
+
+
+
+
+figure;
+is=1;
+for ic = [94 96 145 110 120 118] %119 121 125 127 133 136
+    ncell = ic; 
+    spikeTimesCell = spiketimes{ncell};
+   
+    y = arrayfun(@(s,e) sum(spikeTimesCell >= s & spikeTimesCell < e), binStart, binEnd).*2.5;
+    x = double(x2);
+
+    subplot(6,6,is)
+        imagesc(squeeze(averageImagesAll(ic,3,xRange,yRange))); colormap('gray'); axis square 
+        subtitle(['cell' num2str(ic) ', ' num2str(totalSpikesUsed(ic))])
+    subplot(6,6,is+12)
+        minlen = [.25;.25];
+        [kasd,asdstats] = fastASD(x,y,nks,minlen);
+        imagesc(reshape(kasd,nks)); axis square     
+    subplot(6,6,is+18)
+        minlen = [2;2];
+        [kasd,asdstats] = fastASD(x,y,nks,minlen);
+        imagesc(reshape(kasd,nks)); axis square    
+    subplot(6,6,is+24)
+        minlen = [5;5];
+        [kasd,asdstats] = fastASD(x,y,nks,minlen);
+        imagesc(reshape(kasd,nks)); axis square    
+    subplot(6,6,is+30)
+        minlen = [10;10];
+        [kasd,asdstats] = fastASD(x,y,nks,minlen);
+        imagesc(reshape(kasd,nks)); axis square  
+    is=is+1;
+end
+movegui('center')
+sgtitle('STA, minlen .25, 2, 5, and 10')
+
+
+
+
+
+figure(1); print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs'], [mouse '-' date '_fastASD_X40msto140ms_20degSquare_VaryMinlens_1.pdf']), '-dpdf','-fillpage')
+figure(2); print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs'], [mouse '-' date '_fastASD_X40msto140ms_20degSquare_VaryMinlens_2.pdf']), '-dpdf','-fillpage')
+figure(3); print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs'], [mouse '-' date '_fastASD_X40msto140ms_20degSquare_VaryMinlens_3.pdf']), '-dpdf','-fillpage')
+close all
+
+
+
+
+
+
+
+
+
+
+
+for ic = [130 131 107 133 135 137] %123 147 151 154 155 158
+    figure;
+    for it = 1:5
+        subplot(6,6,it)
+            rf = squeeze(averageImageZscore(ic,it,xRange,yRange));
+            rf_smooth = imgaussfilt(rf, 1);
+            imagesc(rf_smooth); colormap('gray'); axis square 
+            subtitle(['cell' num2str(ic) ', ' num2str(totalSpikesUsed(ic))])
+    end
+    sgtitle('avg image zscore smooth')
+    print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs'], [mouse '-' date '_fastASD_exampleCells_ ' num2str(ic) '_AvgSTAZscoreSmooth.pdf']), '-dpdf','-fillpage')
+    close all
 end
 
 
+
+
+
+
+
+%%
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% additional stuff to try
 
 
 figure;
@@ -109,6 +264,40 @@ for ic = [121 123 125 127 129]
         subtitle(['cell ' num2str(ic)])
     is=is+1;
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -394,7 +583,7 @@ spiketimes = cellfun(@(t) t(t < lastTimestamp), ...
     arrayfun(@(g) g.timestamps(), goodUnitStruct, 'UniformOutput', false), ...
     'UniformOutput', false);
 
-icell = 131;
+icell = 91;
 spikeTimesCell = spiketimes{icell};
 
 % Define bin edges from first stimulus time (in seconds) for 100 Hz bins
@@ -465,7 +654,7 @@ spiketimes = cellfun(@(t) t(t < lastTimestamp), ...
     arrayfun(@(g) g.timestamps(), goodUnitStruct, 'UniformOutput', false), ...
     'UniformOutput', false);
 
-icell = 125;
+icell = 91;
 spikeTimesCell = spiketimes{icell};
 
 % Define bin edges from first stimulus time (in seconds) for 100 Hz bins

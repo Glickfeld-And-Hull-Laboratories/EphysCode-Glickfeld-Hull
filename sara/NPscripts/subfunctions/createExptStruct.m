@@ -1,7 +1,11 @@
 
-function [exptStruct] = createExptStruct(iexp);
+function [exptStruct] = createExptStruct(iexp,type);
 
-    ds = 'NP_CrossOri_RandDirRandPhase_exptlist';
+    if type == 'V1'
+        ds = 'NP_CrossOri_RandDirRandPhase_exptlist';
+    elseif type == 'LG'
+        ds = 'NP_ISN_ConSize_exptlist';
+    end
     eval(ds)
 
     exptStruct.mouse     = expt(iexp).mouse;

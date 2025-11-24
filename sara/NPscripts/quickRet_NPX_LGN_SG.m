@@ -1,11 +1,12 @@
+
 clear all
 clear all global
 close all
 
-date = '250930';
-mouse = 'i2781';
-mwtime = '1410';  %1440 
-chnls = 1:2:150;
+date = '251017';
+mouse = 'i2787';
+mwtime = '1204';  %1440 
+chnls = 60:2:100; %1:2:150
 
 fprintf([date ' ' mouse ' \n'])
 
@@ -104,6 +105,7 @@ LFPdata = (LFPdataFilt-LFPdataFilt(383,:));
         
         % Find baseline window
         baseIdx             = find(timestamps(is)>LFPtime & LFPtime>=(timestamps(is)-baseWin));
+        basebyTrial(:,:,is) = LFPdata(chnls,baseIdx);
         baseLFP             = mean(LFPdata(chnls,baseIdx),2);
         all_baseLFP(:,is)   = baseLFP;
 
@@ -126,6 +128,7 @@ LFPdata = (LFPdataFilt-LFPdataFilt(383,:));
 
     stims = [];
     LFPbyStim = zeros(length(chnls), size(LFPbyTrial,2), nStim);  % Initialize as [ nChannels x onWin samples x nStimuli ]
+    basebyStim = zeros(length(chnls), size(basebyTrial,2), nStim);  % Initialize as [ nChannels x onWin samples x nStimuli ]
 
     start=1;
     for ie = 1:nElevations
@@ -135,32 +138,55 @@ LFPdata = (LFPdataFilt-LFPdataFilt(383,:));
             indAz   = find(stimAzimuth == uniqueAz(ia));
             ind     = intersect(indEl,indAz);
             LFPbyStim(:,:,start) = mean(LFPbyTrial(:,:,ind),3);
+            basebyStim(:,:,start) = mean(basebyTrial(:,:,ind),3);
             start=start+1;
         end
     end
 
     
    xTime        = 1:size(LFPbyStim,2);  % Get length of time axis
+   bTime        = -size(basebyStim,2):-1;  % Get length of time axis
    yChannels    = 1:length(chnls);  % Get length of channel axis
 
    
+   % figure; % Line plots of absolute deflection, averaged across channels
+   % LFPbyStimAbs = squeeze(sum(abs(LFPbyStim), 1));  % [samples x stimuli]
+   % maxVal = max(LFPbyStimAbs(:));
+   % AUC = [];
+   % for is = 1:nStim
+   %      subplot(nElevations,nAzimuths,is)
+   %          plot(xTime,LFPbyStimAbs(:,is))
+   %          hold on
+   %          xlabel('time')
+   %          ylabel('uV'); ylim([0 maxVal+100])
+   %          AUC(is) = trapz(LFPbyStimAbs(125:375,is), 1); % AUC for for first 200 ms
+   %      title(num2str(stims(is,:)))
+   % end
+   % [bAUC iAUC] = sort(AUC, 'descend');
+   % sgtitle(['Based on absolute deflection from 50 to 150ms: ' num2str(stims(iAUC(1),:))])
+   % movegui('center')
+   % print(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\' date '\' date '_' mouse '_retinotopy_lineplot_HighFiltNormAfter.pdf'], '-dpdf','-bestfit')
+
+
    figure; % Line plots of absolute deflection, averaged across channels
-   LFPbyStimAbs = squeeze(sum(abs(LFPbyStim), 1));  % [samples x stimuli]
+   LFPbyStimAbs = squeeze(mean(abs(LFPbyStim), 1));  % [samples x stimuli]
+   basebyStimAbs = squeeze(mean(abs(basebyStim), 1));  % [samples x stimuli]
    maxVal = max(LFPbyStimAbs(:));
    AUC = [];
    for is = 1:nStim
         subplot(nElevations,nAzimuths,is)
             plot(xTime,LFPbyStimAbs(:,is))
             hold on
+            plot(bTime,basebyStimAbs(:,is))
             xlabel('time')
-            ylabel('uV'); ylim([0 maxVal+100])
+            ylabel('uV'); ylim([0 maxVal+10]); xlim([-1000 1000])
             AUC(is) = trapz(LFPbyStimAbs(125:375,is), 1); % AUC for for first 200 ms
         title(num2str(stims(is,:)))
    end
    [bAUC iAUC] = sort(AUC, 'descend');
    sgtitle(['Based on absolute deflection from 50 to 150ms: ' num2str(stims(iAUC(1),:))])
    movegui('center')
-   print(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\' date '\' date '_' mouse '_retinotopy_lineplot_HighFiltNormAfter.pdf'], '-dpdf','-bestfit')
+   print(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\' date '\' date '_' mouse '_retinotopy_lineplot_withBaseline_LGN.pdf'], '-dpdf','-bestfit')
 
 
  
