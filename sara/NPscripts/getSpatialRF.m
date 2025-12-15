@@ -1,3 +1,15 @@
+%% optional - load data
+
+clear all; close all; clc
+baseDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
+iexp = 15; % Choose experiment
+exptloc = 'LG'; %LG
+[exptStruct] = createExptStruct(iexp,exptloc); % Load relevant times and directories for this experiment
+
+load(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStruct.date '_' exptStruct.mouse '_unitStructs.mat']), 'allUnitStruct', 'goodUnitStruct');
+
+
+
 
 %% Run STA at multiple time points
 
@@ -48,7 +60,7 @@
     % Make sure all PD are stim-associated
     ibRF = 0;
     for ib = 1:length(stimBlocks)
-        if size(stimBlocks{ib},1) > 10  % If stimulus block has at least 10 trials...
+        if size(stimBlocks{ib},1) > 2500  % If stimulus block has at least 10 trials...
             ibRF = ibRF + 1;
             RFstimBlocks{ibRF} = stimBlocks{ib}(1:end-1); % Get rid of abherrant lonely PD signal at end of trial block
         end
@@ -76,14 +88,12 @@
     end
 
 
-timestamps(1,:)=RFstimBlocks{2};
-timestamps(2,:)=RFstimBlocks{3};
-timestamps(3,:)=RFstimBlocks{4};
-timestamps(4,:)=RFstimBlocks{5};
-
 %% Load bootstrap shuffle
 
 load(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, [mouse '-' date '_spatialRFs_Wiesel.mat']))
+
+nCells  = length(goodUnitStruct);
+lastTimestamp = timestamps(end)+10; % Last timestamp plus 10 seconds
 
 %% plot spatial RFs
 
@@ -91,8 +101,6 @@ if ~exist(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\h
     mkdir(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs']));
 end
 
-nCells  = length(goodUnitStruct);
-lastTimestamp = timestamps(end)+10; % Last timestamp plus 10 seconds
 
 figure;
 sp      = 1;   % subplot count
@@ -134,6 +142,8 @@ for iCell = 1:nCells
 end
 
 
+
+
 %% Generate zscore image, threshold
 
 % Set zThreshold
@@ -173,6 +183,8 @@ end
 sigma           = 2; % Standard deviation for smoothing (adjust if needed)
 avgImageZscoreSmooth  = imgaussfilt(averageImageZscore, sigma);  % 2D Gaussian smoothing; adjust the kernel size (final value, if needed)
 
+
+
 %% find index of cells that have a cluster of 3 sig pixels within a 4 pixel square
 
 nCells = size(goodUnitStruct,2);
@@ -206,6 +218,35 @@ for iCell = 1:nCells
 end
 
 ind_sigRF = sum(cells_sigRFbyTime_On,2)+sum(cells_sigRFbyTime_Off,2);
+
+
+ind_RF = find(ind_sigRF>0);
+MUA_avgSTA = squeeze(mean(abs(squeeze(averageImageZscore(ind_RF,4,:,:))),1));
+MUA_maxSTA = squeeze(max(abs(squeeze(averageImageZscore(ind_RF,4,:,:))),[],1));
+MUA_sumSTA = squeeze(max(sum(squeeze(averageImageZscore(ind_RF,4,:,:))),1));
+figure;movegui('center')
+    subplot 321
+        imagesc(MUA_avgSTA); set(gca,'CLim',[0 2])
+        subtitle(['avg zscore of cells w RF, n=' num2str(length(ind_RF))]); set(gca,'CLim',[0 2])
+    subplot 322
+        imagesc(imgaussfilt(MUA_avgSTA,1)); colormap('parula'); set(gca,'CLim',[0 2])
+        subtitle('imguassfilt, sigma 1')
+    subplot 323
+        imagesc(medfilt2(MUA_avgSTA)); colormap('parula'); set(gca,'CLim',[0 2])
+        subtitle('median filter')
+   subplot 324
+        imagesc(medfilt2(MUA_maxSTA)); colormap('parula'); set(gca,'CLim',[0 11]); colorbar
+        subtitle('max STA, median filter')
+  subplot 325
+        imagesc(medfilt2(MUA_sumSTA)); colormap('parula'); set(gca,'CLim',[0 13]); colorbar
+        subtitle('sum STA, median filter')
+    sgtitle('clim [0 2]')
+    print( ...
+            fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs'], ...
+            [mouse '-' date '_RFs_populationMUA_HeatMap.pdf']), ...
+            '-dpdf')
+
+
 
 %% Plot cell zscore image, threshold, and result of 4x4 pixel test
 
@@ -262,12 +303,77 @@ for iCell = 1:nCells
 end
 
 
-
- %% Get 2D gaussian fit of subunits
-close all
+%% get list of cells with detected RF
 
 listnc  = 1:nCells;
 ind     = listnc(ind_sigRF>0);
+
+%% Local contrast analysis to choose best beforeSpikeTimepoint  
+
+for ic = 1:nCells
+    con_beforeSpike = beforeSpike(2:4);
+    % figure;
+    % movegui('center')
+    is=1;
+        for it = [2 3 4]
+            xtempz(:,:) = medfilt2(imgaussfilt(squeeze(averageImageZscore(ic,it,:,:)),1)); %3:27,12:36
+            jtempz(:,:) = rangefilt(xtempz(:,:),ones(5));
+
+            subplot(5,3,is)
+                imagesc(squeeze(xtempz(:,:))); colormap('gray'); clim([-5 5]) %axis square;
+                subtitle(['zscore STA,' num2str(beforeSpike(it)) ' ms'])
+            subplot(5,3,is+1)
+                imagesc(squeeze(jtempz(:,:))); colormap('gray'); clim([0 10]) %axis square
+                subtitle('local contrast map')
+            subplot(5,3,is+2)
+                j = squeeze(jtempz(:,:));
+                q(it) = quantile(j(:),0.9);
+                histogram(j); xlim([0 15])
+                xline(q(it))
+                subtitle([num2str(q(it))])
+        
+            localConMap_data(ic,it,:,:) = xtempz;
+            localConMap_map(ic,it,:,:) = jtempz;
+            is=is+3;        
+        end
+
+        [m,i] = max(q);
+        bestTimePoint(ic,1) = i; % best time point
+        bestTimePoint(ic,2) = m; % max q90 value
+        sgtitle([num2str(ic) '- best STA, ' num2str(beforeSpike(i)) ' ms'])
+    %     print( ...
+    %         fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs'], ...
+    %         [mouse '-' date '_RFs_testLocalContrastAnalysis_smooth_cell' num2str(ic) '.pdf']), ...
+    %         '-dpdf', '-fillpage')
+    % close all
+    clear xtempz jtempz q m i
+end
+
+
+%% save
+
+save( ...
+    fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\', ...
+        [mouse '-' date '_spatialRFs.mat']]), ...
+    'totalSpikesUsed', ...
+    'averageImagesAll', ...
+    'averageImagesAll_shuffled', ...
+    'averageImageZscore', ...
+    'averageImageZscoreThresh', ...
+    'nboots', ...
+    'zthreshold', ...
+    'cells_sigRFbyTime_On', ...
+    'cells_sigRFbyTime_Off', ...
+    'ind_sigRF', ...
+    'localConMap_data', ...
+    'localConMap_map', ...
+    'bestTimePoint' ...
+    );
+
+stop
+
+
+ %% Get 2D gaussian fit of subunits
 
 for ic = 1:length(ind)
     iCell = ind(ic);
@@ -330,33 +436,6 @@ for ic = 1:length(ind)
 end        
 
 
-%% save
-
-save( ...
-    fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\', ...
-        [mouse '-' date '_spatialRFs.mat']]), ...
-    'totalSpikesUsed', ...
-    'averageImagesAll', ...
-    'averageImagesAll_shuffled', ...
-    'averageImageZscore', ...
-    'averageImageZscoreThresh', ...
-    'nboots', ...
-    'zthreshold', ...
-    'cells_sigRFbyTime_On', ...
-    'cells_sigRFbyTime_Off', ...
-    'ind_sigRF' ...
-    );
-
-
-figure; 
-histogram(depth_all(ind),20)
-xlim([-4200 0])
-ylabel('num cells')
-xlabel('depth from surface')
-movegui('center')
-
-dx = [goodUnitStruct.depth];
-stop
 
 
 
@@ -405,7 +484,7 @@ for ic = 1:nc
     figure;
         subplot(4,4,1); imagesc(xx); colormap('gray'); subtitle('Zscore'); clim([-7 7])
     
-    xmask(10:20,10:30) = 1;
+    xmask(10:20,10:30) = 1; 
     bw = activecontour(maskOn,xmask);
     cc = bwconncomp(bw);
     p = regionprops(cc,"Area");
@@ -549,44 +628,101 @@ figure;
     
 
 
-%% old bootstrap code
-% nboots = 2;
-% 
-% averageImagesAll_shuffled = [];
-% imageMatrix_list    = reshape(imageMatrix, [], size(imageMatrix,3), size(imageMatrix,4));   % Reshape from nTrials x nFrames to one dimension of all trials (nTrials*nFrames)
-% 
-% parpool("Threads",20)   % Start parallel pool processing
-% tic
-% for ib = 1:nboots
-%     fprintf(['boot ' num2str(ib) '/' num2str(nboots) '\n'])
-%     randOrder           = randperm(size(imageMatrix,1)*size(imageMatrix,2));  % Random permutation of the integers from 1 to number of total trials without repeating elements
-%     imageMatrix_shuf    = reshape(imageMatrix_list(randOrder,:,:), [], size(imageMatrix,2), size(imageMatrix,3), size(imageMatrix,4));   % Resample with the random permutation and then reshape into expected matrix size
-%     for iCell = 1:nCells
-%         exCellSpikeTimes = goodUnitStruct(iCell).timestamps(find(goodUnitStruct(iCell).timestamps<lastTimestamp));  % Only take spikes during the RF run (for speed of processing)  
-%             for it = 1:length(beforeSpike)
-%                 timeBeforeSpike = beforeSpike(it); % Look [40 ms, etc.] before the spike
-%                 nSpikes = length(exCellSpikeTimes);
-%                 imagesAtSpikesCell = cell(nSpikes, 1);
-%                 % Parallelize looping over spike times
-%                 parfor is = 1:nSpikes
-%                     spikeTime = exCellSpikeTimes(is);
-%                     [trialIdx, frameIdx] = findNoiseStimAtSpike(spikeTime, timestamps, timeBeforeSpike);
-%                     if ~isnan(trialIdx) && ~isnan(frameIdx)
-%                         frameAtSpike = squeeze(imageMatrix_shuf(trialIdx, frameIdx, :, :));
-%                         imagesAtSpikesCell{is} = frameAtSpike;
-%                     else
-%                         imagesAtSpikesCell{is} = NaN(xDim, yDim);
-%                     end
-%                 end
-%                 % Convert back to 3D array
-%                 imagesAtSpikes = NaN(nSpikes, xDim, yDim);
-%                 for is = 1:nSpikes
-%                     imagesAtSpikes(is, :, :) = imagesAtSpikesCell{is};
-%                 end
-%                 averageImageAtSpike = squeeze(nanmean(imagesAtSpikes, 1));
-%                 averageImagesAll_shuffled(ib,iCell,it,:,:)  = averageImageAtSpike;  % Put in matrix to use later. Size: [nBoots x nCells x nTimePointsBeforeSpike x xDim x yDim]
-%             end
-%     end
-% end
-% toc
-% delete(gcp("nocreate"));    % Stop parallel pool processing
+
+
+
+
+
+
+%%  testing local contrast analysis
+
+
+% for exp 13 -- zscore does look the best
+xtemp = squeeze(averageImagesAll(133,3,3:27,10:34));
+xtempz = squeeze(averageImageZscore(133,3,3:27,10:34));
+xtempsm = imgaussfilt(xtemp,1);
+jtemp = rangefilt(xtemp,ones(5));
+jtempz = rangefilt(xtempz,ones(5));
+jtempsm = rangefilt(xtempsm,ones(5));
+
+
+figure; 
+    subplot 331
+        imagesc(xtemp); colormap('gray'); axis square; movegui('center')
+        subtitle('unsmoothed STA')
+    subplot 332
+        imagesc(jtemp); colormap('gray'); axis square
+        subtitle('local contrast map')
+    subplot 333
+        histogram(jtemp(:)); movegui('center')
+    subplot 334
+        imagesc(xtempz); colormap('gray'); axis square; movegui('center')
+        subtitle('zscore STA')
+    subplot 335
+        imagesc(jtempz); colormap('gray'); axis square
+        subtitle('local contrast map')
+    subplot 336
+        histogram(jtempz(:))
+    subplot 337
+        imagesc(xtempsm); colormap('gray'); axis square
+        subtitle('smoothed zscore STA')
+    subplot 338
+        imagesc(jtempsm); colormap('gray'); axis square
+        subtitle('local contrast map')
+    subplot 339
+        histogram(jtempsm(:))
+
+
+
+% how come in Matteucci paper their colobar is the same across STA and
+% contrast map? taking the absolute value of the zscored image doesn't do
+% this
+jtempabs = rangefilt(xtempz,ones(5));
+
+figure;
+    subplot 331
+        imagesc(xtempz); colormap('gray'); axis square; movegui('center'); colorbar
+        subtitle('zscore STA')
+    subplot 332
+        imagesc(jtempz); colormap('gray'); axis square; colorbar
+        subtitle('local contrast map')
+    subplot 333
+        histogram(jtempz(:))
+    subplot 334
+        imagesc(abs(xtempz)); colormap('gray'); axis square; movegui('center'); colorbar
+        subtitle('zscore STA')
+    subplot 335
+        imagesc(jtempabs); colormap('gray'); axis square; colorbar
+        subtitle('local contrast map')
+    subplot 336
+        histogram(jtempabs(:))
+
+
+% does it choose the correct STA time point?
+
+clear xtempz jtempz
+for it = 1:5
+    xtempz(it,:,:) = squeeze(averageImageZscore(133,it,3:27,10:34));
+    jtempz(it,:,:) = rangefilt(squeeze(xtempz(it,:,:)),ones(5));
+end
+
+figure;
+movegui('center')
+is=1;
+    for it = 1:5
+        subplot(5,3,is)
+            imagesc(squeeze(xtempz(it,:,:))); colormap('gray'); axis square;
+            subtitle('zscore STA')
+        subplot(5,3,is+1)
+            imagesc(squeeze(jtempz(it,:,:))); colormap('gray'); axis square
+            subtitle('local contrast map')
+        subplot(5,3,is+2)
+            j = squeeze(jtempz(it,:,:));
+            q(it) = quantile(j(:),0.9);
+            histogram(j); xlim([0 15])
+            xline(q(it))
+            subtitle([num2str(q(it))])
+        is=is+3;
+    end
+    [m,i] = max(q);
+    sgtitle(['best STA, ' num2str(beforeSpike(i)) ' ms'])

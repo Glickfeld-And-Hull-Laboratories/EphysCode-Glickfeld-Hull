@@ -1,8 +1,8 @@
 clear all; close all; clc
 base = '/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/';
-iexp = 16; % Choose experiment
+iexp = 15; % Choose experiment
 exptloc = 'LG';
-nboots = 1; %100
+nboots = 100; %100
 
 [exptStruct] = createExptStruct(iexp,exptloc); % Load relevant times and directories for this experiment
 
@@ -63,7 +63,7 @@ end
     % Make sure all PD are stim-associated
     ibRF = 0;
     for ib = 1:length(stimBlocks)
-        if size(stimBlocks{ib},1) > 10  % If stimulus block has at least 10 trials...
+        if size(stimBlocks{ib},1) > 20  % If stimulus block has at least 10 trials...
             ibRF = ibRF + 1;
             RFstimBlocks{ibRF} = stimBlocks{ib}(1:end-1); % Get rid of abherrant lonely PD signal at end of trial block
         end

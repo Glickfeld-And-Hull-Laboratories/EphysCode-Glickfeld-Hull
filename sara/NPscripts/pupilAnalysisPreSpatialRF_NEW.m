@@ -1,11 +1,11 @@
-
+%% Use this code for experiments that have a PD signal associated with each frame
 
     threshold = 80;
 
     base = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
 
 %Get experiment info
-    [exptStruct]    = createExptStruct(iexp,'V1'); 
+    [exptStruct]    = createExptStruct(iexp,'LG'); 
     mouse           = exptStruct.mouse;
     date            = exptStruct.date;
     loc             = exptStruct.loc;
@@ -199,61 +199,53 @@ sz   = size(data);
     % Make sure all PD are stim-associated
     ibRF = 0;
     for ib = 1:length(stimBlocks)
-        if size(stimBlocks{ib},1) > 2980 && size(stimBlocks{ib},1) < 3010  % If stimulus block has at least 10 trials...
+        if size(stimBlocks{ib},1) > 2980 && size(stimBlocks{ib},1) < 3010   % If stimulus block has at least 10 trials...
             ibRF = ibRF + 1;
             RFstimBlocks{ibRF} = stimBlocks{ib}(1:end-1); % Get rid of abherrant lonely PD signal at end of trial block
         end
     end
+    
+
+    % Find RF stimulus block of pupil trigger timestamps 
+        threshold_PC       = 5; % Time gap to define a break (in seconds)
+        breakIndices_PC    = find(diff(stimOnTimestampsPC) > threshold_PC); % Find the indices where the gap between timestamps exceeds the threshold
+        stimBlocks_PC      = cell(length(breakIndices_PC) + 1, 1); % Initialize a cell array to store stimulus blocks
+        
+        startIdx = 1;
+        for i = 1:length(breakIndices_PC) % Extract stimulus blocks
+            endIdx              = breakIndices_PC(i);
+            stimBlocks_PC{i}    = stimOnTimestampsPC(startIdx:endIdx);
+            startIdx            = endIdx + 1;
+        end
+        stimBlocks_PC{end} = stimOnTimestampsPC(startIdx:end); % Store the last block
+
+        ibRF = 0;
+        for ib = 1:length(stimBlocks_PC)
+            if size(stimBlocks_PC{ib},1) > 15000  % If stimulus block has at least 10 trials...
+                ibRF = ibRF + 1;
+                pupilFrameRFBlock{ibRF} = stimBlocks_PC{ib}(1:end-1); % Get rid of abherrant lonely PD signal at end of trial block
+            end
+        end
+
+        if size(pupilFrameRFBlock,2) == 1
+            pupilFrameRF_timestamps = pupilFrameRFBlock{ibRF};
+        else
+            error('Found multiple blocks of pupil trigger timestamps using stimOnTimestampsPC. Expected to find 1.')
+        end
 
 
 
-    frameTriggerStart = stimOnTimestampsPC(2:2:end);  % Trigger to MWorks is the second pulse of 2. This is what the 5 camera frames are aligned to, so we only want that signal
-    approxLastFrame = stimOnTimestampsMW(4)+30;
-    frameTriggerStartRFblock = frameTriggerStart(frameTriggerStart<approxLastFrame);
-
-% Verify that all intervals between frameTriggerStart are within your expected range
-    dt = diff(frameTriggerStartRFblock);
-    if all(dt > 0.099 & dt < 0.101)
+% Verify that all intervals between pupil frame triggers are within the expected range
+    dt = diff(pupilFrameRF_timestamps);
+    if all(dt > 0.019 & dt < 0.021)
         disp('All inter-trigger intervals are within expected range.');
     else
-        warning('Some inter-trigger intervals are outside 0.098–0.102 seconds!');
-        xx = find(~(dt > 0.099 & dt < 0.101));  % show indices of violations
-        disp([num2str(length(xx)) ' intervals outside of the expected range.'])
+        warning('Some inter-trigger intervals are outside 0.019–0.021 seconds!');
+        xx = find(~(dt > 0.019 & dt < 0.021));  % show indices of violations
+        disp([num2str(size(xx,1)) ' intervals outside of the expected range. First interval is ' num2str(dt(xx(1))) 's long.'])
     end
 
-
-    % Build the list of individual frame times (5 frames per patchclamp leading edge signal, evenly spaced within the 100 ms)
-    frameSpacing = 0.02;
-    nFramesPerTrigger = 5;
-    offsets = (0:frameSpacing:(nFramesPerTrigger-1)*frameSpacing);  % 1 x k
-    nTriggers = numel(frameTriggerStartRFblock);
-    nCamFrames = numel(offsets);
-    
-    frameTimes = zeros(nTriggers*nCamFrames,1);  % preallocate
-    for i = 1:nTriggers
-        idx = (i-1)*nCamFrames + (1:nCamFrames);                      % indices for trigger i
-        frameTimes(idx) = frameTriggerStartRFblock(i) + offsets;
-    end
-    
-    % Display first few to visually inspect
-    %frameTimes(1:15)
-
-    % Check timing consistency
-    dt = diff(frameTimes);
-    if all(dt > 0.019 & dt < 0.021)
-        disp('All frame-to-frame intervals are within expected range.');
-    else
-        warning('Some frame-to-frame intervals are outside 0.018–0.021 seconds!');
-        xx = find(~(dt > 0.019 & dt < 0.021));
-        fprintf('%d intervals outside of the expected range.\n', numel(xx));
-    end   
-    disp('The number of intervals outside of the expected range should be equal for both checks.')
-        
-    % 
-    % 
-    % approxLastFrameForPCcomp = approxLastFrame - frameTimes(1);
-    % xxx= timestamps(timestamps<approxLastFrameForPCcomp);
-
+    frameTimes = pupilFrameRF_timestamps;
 
     % Loop through each of the 4 white noise stimulus blocks
     for ib = 1:4
@@ -278,7 +270,7 @@ sz   = size(data);
                 % There’s no next PDsignal, so assume this window extends 100 ms beyond
                 idx_in_PD{is} = find(frameTimes >= PDsignal(is) & frameTimes < (PDsignal(is)+0.101));
                 inWindow = frameTimes >= PDsignal(is) & frameTimes < (PDsignal(is)+0.101);
-                frameGroupBlcok(inWindow) = is;
+                frameGroupBlock(inWindow) = is;
             end
         end
 
@@ -287,6 +279,10 @@ sz   = size(data);
         pupilFrameGroups{ib} = frameGroupBlock;  % for each pupil frame, which PD event it belongs to
         pupilFrameCounts{ib} = histcounts(frameGroupBlock, 0.5:1:(max(frameGroupBlock)+0.5));  % how many pupil frames per PD event
     end
+
+
+
+
 
 % Summary of outputs:
 % -------------------------------
@@ -383,7 +379,7 @@ if ~exist(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\h
 end
 
 nCells  = length(goodUnitStruct);
-lastTimestamp = approxLastFrame; % Last timestamp plus 10 seconds
+lastTimestamp = frameTimes(end)+10; % Last timestamp plus 10 seconds
 
 figure;
 sp      = 1;   % subplot count
@@ -416,7 +412,7 @@ for iCell = 1:nCells
          n       = n+1;
          sp      = 1;
          close all
-     end
+    end
      if iCell == nCells
          sgtitle(['noise trials = ' num2str(size(timestamps,1))])
          print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFsPostPupil'], [mouse '-' date '_spatialRFs_untilcell' num2str(iCell) '.pdf']), '-dpdf','-fillpage')

@@ -31,7 +31,7 @@ function get12Dir4PhaseFits(resp,base, exptStruct, doPlot)
                     if nTrials > 0
                         % Compute mean and SEM for response period
                         avg_resp_dir(ic,id,ip,is,1) = mean(sum(resp{ic,id,ip,is}, 2)); % Avg response in Hz
-                        avg_resp_dir(ic,id,ip,is,2) = std(sum(resp{ic,id,ip,is}, 2)) / sqrt(nTrials); % Avg response in Hz
+                        avg_resp_dir(ic,id,ip,is,2) = std(sum(resp{ic,id,ip,is}, 2)) / sqrt(nTrials); % SEM in Hz
     
                         % Convert response and baseline data into spike rates (Hz)
                         resp_cell_trials = sum(resp{ic,id,ip,is}, 2);  % Responses in Hz
@@ -43,7 +43,7 @@ function get12Dir4PhaseFits(resp,base, exptStruct, doPlot)
     
                         % Perform t-test between response and baseline
                         if is == 1
-                            [h_resp(ic,id,ip,is), p_resp(ic,id,ip,is)] = ttest(resp_cell_trials, base_cell_trials, 'tail', 'right', 'alpha', 0.05 / nDirs);
+                            [h_resp(ic,id,ip,is), p_resp(ic,id,ip,is)] = ttest(resp_cell_trials, base_cell_trials, 'tail', 'both', 'alpha', 0.05 / nDirs);
                         end
                     else
                         % Assign NaNs when no trials exist
@@ -115,7 +115,7 @@ resp_ind = intersect(resp_ind_dir,find(DSI>0.5));
 ind = ZpZcStruct.PDSind_byphase;
 
 %%
-[avg_resp_grat, avg_resp_plaid] = getAlignedGratPlaidTuning(avg_resp_dir);
+[avg_resp_grat, avg_resp_plaid, sem_resp_grat, sem_resp_plaid] = getAlignedGratPlaidTuning(avg_resp_dir);
 
 if doPlot == 1
 %%
@@ -282,6 +282,40 @@ for iCell = 1:nCells
     end        
 end
 close all
+
+
+
+
+%% 
+
+stop
+
+colors = getColors;
+
+figure;
+n=1;
+x=[-150:30:180];
+    for iCell = [150 151 152]
+        subplot(6,4,n)
+            plot(x, avg_resp_grat(iCell,:),'k') 
+            shadedErrorBar(x,avg_resp_grat(iCell,:),sem_resp_grat(iCell,:))
+            xlabel('grating direction')
+            ylabel('hz')
+            subtitle(['cell ' num2str(iCell)])
+        subplot(6,4,n+1)
+            for im = 1:4
+                plot(x, avg_resp_plaid(iCell,:,im),'Color',colors(im,:)); hold on
+                shadedErrorBar(x,avg_resp_plaid(iCell,:,im),sem_resp_plaid(iCell,:,im),'lineProps', {'Color', colors(im,:)})
+                xlabel('plaid direction')
+                ylabel('hz')
+                subtitle(['cell ' num2str(iCell)])
+            end
+        n=n+2;
+    end
+    movegui('center')
+    sgtitle([num2str(mouse) ' ' num2str(date) ' expt' num2str(iexp)])
+    % print(fullfile(base, ['Figures/Lab_meeting/240905_joint/directiontuningplots.pdf']),'-dpdf', '-fillpage') 
+
 
 
 end

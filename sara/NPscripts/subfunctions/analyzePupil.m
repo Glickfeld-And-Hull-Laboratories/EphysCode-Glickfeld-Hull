@@ -12,13 +12,14 @@
 %
 %
 
-function analyzePupil(iexp, threshold)    
-    threshold = 117;
+function analyzePupil(iexp, exptloc, threshold)    
+   exptloc='V1';
+    threshold = 80;
 
     base = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
 
 %Get experiment info
-    [exptStruct]    = createExptStruct(iexp); 
+    [exptStruct]    = createExptStruct(iexp,exptloc); 
     mouse           = exptStruct.mouse;
     date            = exptStruct.date;
     loc             = exptStruct.loc;

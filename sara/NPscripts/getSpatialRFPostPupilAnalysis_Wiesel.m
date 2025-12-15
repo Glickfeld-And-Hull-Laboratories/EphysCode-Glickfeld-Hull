@@ -1,12 +1,17 @@
 clear all; close all; clc
 base = '/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/';
-iexp = 25; % Choose experiment
+iexp = 23; % Choose experiment
+exptloc = 'V1'; %LG
 
-[exptStruct] = createExptStruct(iexp); % Load relevant times and directories for this experiment
+[exptStruct] = createExptStruct(iexp,exptloc); % Load relevant times and directories for this experiment
 
 %% Extract units from KS output
 
-cd(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, 'KS_Output/')) % Navigate to KS_Output folder
+if exptloc == "LG" || iexp>22
+    cd(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, 'kilosort4/')) % Navigate to KS_Output folder
+elseif iexp<22
+    cd(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, 'KS_Output/')) % Navigate to KS_Output folder
+end
 
 % Choose imec0.ap.bin file (I just choose the CatGT bin file)
 [allUnitStruct, goodUnitStruct] = importKSdata_SG();
@@ -58,7 +63,7 @@ cd(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, 'KS
     % Make sure all PD are stim-associated
     ibRF = 0;
     for ib = 1:length(stimBlocks)
-        if size(stimBlocks{ib},1) > 10  % If stimulus block has at least 10 trials...
+        if size(stimBlocks{ib},1) > 20  % If stimulus block has at least 10 trials...
             ibRF = ibRF + 1;
             RFstimBlocks{ibRF} = stimBlocks{ib}(1:end-1); % Get rid of abherrant lonely PD signal at end of trial block
         end
@@ -94,6 +99,7 @@ load(fullfile([base 'sara/Analysis/Neuropixel/' exptStruct.date '/', [mouse '-' 
 nCells  = length(goodUnitStruct);
 lastTimestamp = timestamps(end)+10; % Last timestamp plus 10 seconds
 
+totalSpikes = [];
 totalSpikesUsed = [];
 averageImagesAll = [];
 
@@ -102,10 +108,11 @@ tic
 for iCell = 1:nCells
     fprintf(['cell ' num2str(iCell) '/' num2str(nCells) '\n'])
     exCellSpikeTimes = goodUnitStruct(iCell).timestamps(find(goodUnitStruct(iCell).timestamps<lastTimestamp));  % Only take spikes during the RF run (for speed of processing)  
-    totalSpikesUsed(iCell) = length(exCellSpikeTimes);
+    totalSpikes(iCell) = length(exCellSpikeTimes);
         for it = 1:length(beforeSpike)
             timeBeforeSpike = beforeSpike(it); % Look [40 ms, etc.] before the spike
             nSpikes = length(exCellSpikeTimes);
+            spikesUsed = 0;
             imagesAtSpikesCell = cell(nSpikes, 1);
             % Parallelize looping over spike times
             parfor is = 1:nSpikes
@@ -117,16 +124,19 @@ for iCell = 1:nCells
                     else
                         frameAtSpike = squeeze(imageMatrix(trialIdx, frameIdx, :, :));
                         imagesAtSpikesCell{is} = frameAtSpike;
+                        spikesUsed = spikesUsed+1;
                     end
                 else
                     imagesAtSpikesCell{is} = NaN(xDim, yDim);
                 end
             end
+
             % Convert back to 3D array
             imagesAtSpikes = NaN(nSpikes, xDim, yDim);
             for is = 1:nSpikes
                 imagesAtSpikes(is, :, :) = imagesAtSpikesCell{is};
             end
+            totalSpikesUsed(iCell,1) = spikesUsed;
             averageImageAtSpike = squeeze(nanmean(imagesAtSpikes, 1));
             averageImagesAll(iCell,it,:,:)  = averageImageAtSpike;  % Put in matrix to use later. Size: [nBoots x nCells x nTimePointsBeforeSpike x xDim x yDim]
         end

@@ -53,14 +53,19 @@ avg_resp_dir_all = [];
 
 ind_sigRF_all = [];
 totalSpikesUsed_all = [];
+avgImgs_all = [];
 avgImgZscore_all = [];
+avgImgZscoreThresh_all = [];
 cells_sigRFbyTime_On_all = [];
 cells_sigRFbyTime_Off_all = [];
+localConMap_data_all = [];
+localConMap_map_all = [];
+bestTimePoint_all = [];
 
 
-% V1 -- 11 13 
+% V1 -- 11 13 18 19 20 21 22 23 24 25
 
-expts = [11 13 18 19 20 21 22];
+expts = [11 13 18 19 20 21 22 23 24 25];
 
 start=1;
 for iexp = expts     % 11 13 14 16 17
@@ -75,60 +80,68 @@ for iexp = expts     % 11 13 14 16 17
     load(fullfile(base, 'Analysis\Neuropixel', date, [date '_' mouse '_stimData.mat']))
     load(fullfile(base, 'Analysis\Neuropixel', date, [mouse '-' date '_spatialRFs.mat']))
 
-    fprintf([mouse ' ' date ', nCells=' num2str(nCells) '\n'])
+    indexpt = intersect(resp_ind_dir, find(DSI>.5));
 
-    ind_sigRF_all       = [ind_sigRF_all; ind_sigRF];
-    cells_sigRFbyTime_On_all = [cells_sigRFbyTime_On_all; cells_sigRFbyTime_On];
-    cells_sigRFbyTime_Off_all = [cells_sigRFbyTime_Off_all; cells_sigRFbyTime_Off];
-    totalSpikesUsed_all = [totalSpikesUsed_all, totalSpikesUsed];
-    avgImgZscore_all    = [avgImgZscore_all; averageImageZscore];
+    fprintf([mouse ' ' date ', nCells=' num2str(length(indexpt)) ', totCells=' num2str(nCells) '\n'])
+
+    ind_sigRF_all               = [ind_sigRF_all; ind_sigRF];
+    cells_sigRFbyTime_On_all    = [cells_sigRFbyTime_On_all; cells_sigRFbyTime_On];
+    cells_sigRFbyTime_Off_all   = [cells_sigRFbyTime_Off_all; cells_sigRFbyTime_Off];
+    totalSpikesUsed_all         = [totalSpikesUsed_all, totalSpikesUsed];
+    avgImgs_all                 = [avgImgs_all; averageImagesAll];
+    avgImgZscore_all            = [avgImgZscore_all; averageImageZscore];
+    avgImgZscoreThresh_all      = [avgImgZscoreThresh_all; averageImageZscoreThresh];
+    localConMap_data_all        = [localConMap_data_all; localConMap_data];
+    localConMap_map_all         = [localConMap_map_all; localConMap_map];
+    bestTimePoint_all           = [bestTimePoint_all; bestTimePoint];
 
     
-    nCells_list         = [nCells_list, nCells];
-    totCells = sum(nCells_list(1:end-1));
+    nCells_list                 = [nCells_list, nCells];
+    totCells                    = sum(nCells_list(1:end-1));
 
-    PtTratio_all    = [PtTratio_all, waveformStruct.PtTratio];
-    PtTdist_all     = [PtTdist_all, waveformStruct.PtTdist];
-    slope_all       = [slope_all, waveformStruct.slope];
+    PtTratio_all                = [PtTratio_all, waveformStruct.PtTratio];
+    PtTdist_all                 = [PtTdist_all, waveformStruct.PtTdist];
+    slope_all                   = [slope_all, waveformStruct.slope];
 
-    refViolations_all   = [refViolations_all, spikingStruct.refViolations];
-    nSpikesUsed_all     = [nSpikesUsed_all, spikingStruct.nSpikesUsed];
+    refViolations_all           = [refViolations_all, spikingStruct.refViolations];
+    nSpikesUsed_all             = [nSpikesUsed_all, spikingStruct.nSpikesUsed];
     
-    depth_all   = [depth_all, goodUnitStruct.depth];
-    channel_all = [channel_all, goodUnitStruct.channel];
+    depth_all                   = [depth_all, goodUnitStruct.depth];
+    channel_all                 = [channel_all, goodUnitStruct.channel];
 
-    F1F0_all = [F1F0_all; f1overf0mat];
+    F1F0_all                    = [F1F0_all; f1overf0mat];
 
-    Rp_all      = [Rp_all, Rp];
-    Rc_all      = [Rc_all, Rc];
-    Zp_all      = [Zp_all, Zp];
-    Zc_all      = [Zc_all, Zc];
+    Rp_all                      = [Rp_all, Rp];
+    Rc_all                      = [Rc_all, Rc];
+    Zp_all                      = [Zp_all, Zp];
+    Zc_all                      = [Zc_all, Zc];
 
-    amp_all     = [amp_all; amp_hat_all];
-    b_all       = [b_all; b_hat_all];
-    PCI_yfit    = [PCI_yfit; yfit_all];
-    PCI_sse     = [PCI_sse; sse_all];
-    PCI_rsq     = [PCI_rsq; R_square_all];
+    amp_all                     = [amp_all; amp_hat_all];
+    b_all                       = [b_all; b_hat_all];
+    PCI_yfit                    = [PCI_yfit; yfit_all];
+    PCI_sse                     = [PCI_sse; sse_all];
+    PCI_rsq                     = [PCI_rsq; R_square_all];
 
-    ZpZcPWdist_all = [ZpZcPWdist_all, ZpZcPWdist];
-    plaid_corr_all = [plaid_corr_all, plaid_corr];
+    ZpZcPWdist_all              = [ZpZcPWdist_all, ZpZcPWdist];
+    plaid_corr_all              = [plaid_corr_all, plaid_corr];
 
-    gDSI_all    = [gDSI_all, gDSI];
-    DSI_all     = [DSI_all, DSI];
-    DSI_prefdir = [DSI_prefdir, DSI_maxInd];
-    dir_yfit    = [dir_yfit, dir_yfit_all];
-    dir_sse     = [dir_sse; dir_sse_all];
-    dir_rsq     = [dir_rsq; dir_R_square_all];
-    k1_all      = [k1_all; k1_hat_all];
+    gDSI_all                    = [gDSI_all, gDSI];
+    DSI_all                     = [DSI_all, DSI];
+    DSI_prefdir                 = [DSI_prefdir, DSI_maxInd];
+    dir_yfit                    = [dir_yfit, dir_yfit_all];
+    dir_sse                     = [dir_sse; dir_sse_all];
+    dir_rsq                     = [dir_rsq; dir_R_square_all];
+    k1_all                      = [k1_all; k1_hat_all];
 
-    resp_ind_dir_all = [resp_ind_dir_all; totCells+resp_ind_dir];
-    avg_resp_dir_all = [avg_resp_dir_all; avg_resp_dir];
+    resp_ind_dir_all            = [resp_ind_dir_all; totCells+resp_ind_dir];
+    avg_resp_dir_all            = [avg_resp_dir_all; avg_resp_dir];
 
+    
     %start = start+1;
 end
 
 
-
+totalCells = totCells+nCells;
 
 ind = intersect(resp_ind_dir_all, find(DSI_all>.5));
 outDir=('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase');
@@ -205,7 +218,7 @@ figure;
 
 %% Fast spiking v regular spiking 
 
-ind_depth = find(depth_all<800);
+ind_depth = find(depth_all>800);
 
 
 figure;
@@ -332,27 +345,192 @@ print(fullfile([outDir, '\randDirFourPhase_CrossOri_mouse_SummaryLikeNicholas.pd
 
 
 
-%%
+%% Which cells have an RF?
 
-ind_RF = find(ind_sigRF_all>0);
+indCortex = find(depth_all>800);
 
-indRFint = intersect(ind, ind_RF);
+ind_sigRF = sum(cells_sigRFbyTime_On_all,2)+sum(cells_sigRFbyTime_Off_all,2);
+listnc  = 1:size(cells_sigRFbyTime_On_all,1);
+indRF_pix     = listnc(ind_sigRF>0)';
+indRF_con = find(bestTimePoint_all(:,2)>1);
 
-
-
-[ZpZcStruct] = getZpZcStruct(avg_resp_dir_all, 'alignedTestDir');
-plotZpZc4PhasePopulation(ZpZcStruct,ind,5)
-sgtitle('Pattern direction selective cells at four phases')
-
-print(fullfile([outDir, '\randDirFourPhase_CrossOri_mouse_ZpZcpopulation.pdf']),'-dpdf','-bestfit');
+indRF_pix = intersect(indRF_pix,indCortex);
+indRF_con = intersect(indRF_con,indCortex);
 
 
+indRFint = unique([indRF_pix; indRF_con]);
 
-%%
+idxInt = intersect(indRF_pix, indRF_con);
+idxMask = setdiff(indRF_pix, indRF_con);
+idxCon = setdiff(indRF_con,indRF_pix);
+
+pie_int = length(idxInt)/length(indCortex);
+pie_mask = length(idxMask)/length(indCortex);
+pie_con = length(idxCon)/length(indCortex);
+pie_non = (length(indCortex) - (length(idxInt)+length(idxMask)+length(idxCon)))/length(indCortex);
+
+pie_data = [pie_mask; pie_int; pie_con; pie_non];
+pie_labl = ["mask"; "int"; "con"; "none"];
+tbl = table(pie_data,pie_labl);
+
+figure; subplot 331; piechart(tbl, "pie_data", "pie_labl")
+movegui('center')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs\best_STA_timepoint', 'RFdetection_piechart.pdf'), '-dpdf','-fillpage')
+
+
+
+% look specifically at cells included as direction-selective
+
+% indRF_pix     = listnc(ind_sigRF>0)';
+% indRF_con = find(bestTimePoint_all(:,2)>1);
+% 
+% indRF_pix = intersect(indRF_pix,ind);
+% indRF_con = intersect(indRF_con,ind);
+% 
+% indRFint = unique([indRF_pix; indRF_con]);
+% 
+% idxInt = intersect(indRF_pix, indRF_con);
+% idxMask = setdiff(indRF_pix, indRF_con);
+% idxCon = setdiff(indRF_con,indRF_pix);
+% 
+% pie_int = length(idxInt)/length(ind);
+% pie_mask = length(idxMask)/length(ind);
+% pie_con = length(idxCon)/length(ind);
+% pie_non = (length(ind) - (length(idxInt)+length(idxMask)+length(idxCon)))/length(ind);
+% 
+% pie_data = [pie_mask; pie_int; pie_con; pie_non];
+% pie_labl = ["mask"; "int"; "con"; "none"];
+% tbl = table(pie_data,pie_labl);
+% 
+% figure; subplot 331; piechart(tbl, "pie_data", "pie_labl")
+% movegui('center')
+% print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs\best_STA_timepoint', 'RFdetection_piechart.pdf'), '-dpdf','-fillpage')
+
+
+
+%% Which time point is the best RF?
+
+% Calculate best it by taking max zscore of how image
+for ic = 1:totalCells
+    for it = 2:4
+        avgImgZscore(it,:,:) = squeeze(avgImgZscore_all(ic,it,:,:));     % Grab avg zscore STA images for time points 0.04 0.07 and 0.1
+    end
+
+    % ==== FINDS BEST TIME WINDOW USING MAX ZSCORE ====  
+    [m, it_best] = max(sum(sum(abs(avgImgZscore(:,:,:)),2),3),[],1);      % which of the three has the max cumulative zscore?
+    
+    bestTimePoint_all(ic,3) = it_best;
+    bestTimePoint_all(ic,4) = m;
+end
+
+
+% Calculate best it by taking zscore threshold mask and taking highest
+% cumulative CI value
+for ic = 1:totalCells
+    for it = 2:4
+        pixMask             = imgaussfilt(abs(squeeze(avgImgZscoreThresh_all(ic,it,:,:))),3);
+        conMap              = squeeze(localConMap_map_all(ic, it, :,:));
+        maskMap             = pixMask.*conMap;
+        maskMap_sum(ic,it)  = mean(maskMap(:));
+    end
+    
+    [m, it_best] = max(maskMap_sum(ic,:),[],2);
+
+    bestTimePoint_all(ic,5) = it_best;
+    bestTimePoint_all(ic,6) = m;
+    
+end
+
+
+
+% Plot agreement of the 3 methods
+figure; 
+    subplot 421
+        A = bestTimePoint_all(indRFint, [1 3 5]);
+        M1 = A(:,1);  M2 = A(:,2);  M3 = A(:,3);
+        pairAgree = [
+            mean(M1 == M2 & M2 == M3);                 % all three agree
+            mean(M1 ~= M2 & M1 ~= M3 & M2 ~= M3);       % all three different
+            mean(M1 == M2);
+            mean(M1 == M3);
+            mean(M2 == M3);
+            ];
+        labels = ["All 3 same"; "All 3 different"; "M1=M2"; "M1=M3"; "M2=M3"];
+        bar(pairAgree);  ylim([0 1])
+        xticklabels(labels);
+        ylabel("Fraction of Units");
+    print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs\best_STA_timepoint', 'bargraph_agreementOfBestSTAtimeTechniques.pdf'), '-dpdf','-fillpage')
+
+idx_allAgree = find( ...
+    bestTimePoint_all(:,1) == bestTimePoint_all(:,3) & ...
+    bestTimePoint_all(:,3) == bestTimePoint_all(:,5) );
+best_idx = intersect(idxInt, idx_allAgree);
+
+
+
+
+% plot best STA timepoints for the 3 measurements
+for ii = 1:length(indRFint)
+    ic = indRFint(ii);
+
+    avgImgZscore = squeeze(avgImgZscore_all(ic,:,:,:));     % Grab avg zscore STA images for all time points
+
+    figure;
+        is = 1;
+        for it = 2:4
+            subplot(6,3,is)
+                imagesc(medfilt2(imgaussfilt(squeeze(avgImgZscore(it,:,:)),1))); colormap('gray'); clim([-4 4])
+                set(gca, 'XTick', [], 'YTick', [])
+                set(gca, 'Box', 'off')
+                is=is+1;
+        end
+
+    movegui('center')
+    sgtitle(['cell ' num2str(ic) ', itCon = ' num2str(bestTimePoint_all(ic,1)) ', itPix = ' num2str(bestTimePoint_all(ic,3)) ', itMask = ' num2str(bestTimePoint_all(ic,5))])
+    print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs\best_STA_timepoint', [num2str(ii) '_cell' num2str(ic) '.pdf']), '-dpdf','-fillpage')
+    close all
+end
+
+%% plot example cells for how the zscore threshold mask covers the local contrast map 
+
+for ic = 546
+    figure;
+    ax = gca;
+    movegui('center')
+    for it = 2:4
+        subplot(6,3,it-1)
+            imagesc(squeeze(localConMap_data_all(ic,it,:,:))); colormap('gray'); set(gca,'CLim',[-4 4])
+        subplot(6,3,it-1+3)
+            imagesc(squeeze(localConMap_map_all(ic,it,:,:))); colormap('gray');  set(gca,'CLim',[0 7])
+        subplot(6,3,it-1+6)
+            conmap = squeeze(localConMap_map_all(ic,it,:,:));
+            histogram(conmap(:),[0:.28:7]); hold on; xline(quantile(conmap(:),0.9)); axis square; ylim([0 700]); xlim([0 7])
+            subtitle([num2str(quantile(conmap(:),0.9))])
+        subplot(6,3,it-1+9)
+            imagesc(squeeze(avgImgZscoreThresh_all(ic,it,:,:))); colormap('gray'); 
+
+        pixMask             = imgaussfilt(abs(squeeze(avgImgZscoreThresh_all(ic,it,:,:))),3);
+        conMap              = squeeze(localConMap_map_all(ic, it, :,:));
+        maskMap             = pixMask.*conMap;
+        maskMap_sum(ic,it)  = mean(maskMap(:));
+
+        subplot(6,3,it-1+12)
+            imagesc(pixMask); colormap('gray'); set(gca,'CLim',[0 0.5])
+            if it == 2; colorbar; end
+        subplot(6,3,it-1+15)
+            imagesc(maskMap); colormap('gray'); set(gca,'CLim',[0 3])
+            if it == 2; colorbar; end
+    end
+    sgtitle(['cell ' num2str(ic)])
+    print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs\best_STA_timepoint', ['exampleCell' num2str(ic) '.pdf']), '-dpdf','-fillpage')
+    
+end
+
+%% fit RF with activecontour/Gabor filter and plot all cell information
 close all
 
 doGabor = 0;
-indF = indRFint;
+indF = idxInt;
 
 
 % Initialize for activecontour fit
@@ -380,24 +558,27 @@ for ii = 1:length(indF)
     ic = indF(ii);
     
     for it = 1:5
-        avgImgZscore(it,:,:) = medfilt2(squeeze(avgImgZscore_all(ic,it,:,:)));     % Grab avg zscore STA images for all time points
+        avgImgZscore(it,:,:) = squeeze(avgImgZscore_all(ic,it,:,:));     % Grab avg zscore STA images for all time points
     end
 
     it_sigRFon  = find(cells_sigRFbyTime_On_all(ic,:)>0);        % which time points did I find a RF subunit?
     it_sigRFoff = find(cells_sigRFbyTime_Off_all(ic,:)>0);
     it_sigRF    = unique([it_sigRFon, it_sigRFoff]);
     
-    [m, it_best] = max(sum(sum(abs(avgImgZscore(it_sigRF,:,:)),2),3),[],1);      % of the time points I found an RF subunit, which time point has the max zscore?
+    it_best = bestTimePoint_all(ic,5);
+    it_all(ii) = it_best;
 
-    zscoreSTA_bestit    = squeeze(avgImgZscore(it_sigRF(it_best),:,:));    
-    zscoreSTA_filt      = medfilt2(zscoreSTA_bestit);                        % zscore STA to use for fits, Rsq, etc
+    zscoreSTA_bestit    = squeeze(avgImgZscore(bestTimePoint_all(ic,1),:,:));  
 
-    if any(it_sigRF(it_best) == it_sigRFon)      % if there are any on subunits at the chosen time point...
+
+    zscoreSTA_filt      = medfilt2(imgaussfilt(zscoreSTA_bestit,1));                        % zscore STA to use for fits, Rsq, etc
+
+    if any(it_sigRF == it_best)      % if there are any on subunits at the chosen time point...
         [bw]           = findRFsubunit(zscoreSTA_filt,1);
         maskOn(ii,:,:)  = bw;
     end
 
-    if any(it_sigRF(it_best) == it_sigRFoff)
+    if any(it_sigRF == it_best)
         [bw]           = findRFsubunit(zscoreSTA_filt,2);
         maskOff(ii,:,:) = bw;
     end
@@ -406,10 +587,9 @@ for ii = 1:length(indF)
     [B,Loff]        = bwboundaries(squeeze(maskOff(ii,:,:)),'noholes');
 
     STAimage(ii,:,:)    = zscoreSTA_filt;
-    it_all(ii)          = it_sigRF(it_best);
 
     AC = (Lon - Loff);
-    AC_sm= medfilt2(AC);
+    AC_sm= imgaussfilt(AC,2);
 
     rsq  = getRsqLinearRegress_SG(zscoreSTA_filt, AC);
     rsq_sm = getRsqLinearRegress_SG(zscoreSTA_filt, AC_sm);
@@ -428,6 +608,19 @@ for ii = 1:length(indF)
 end
 
 
+save( ...
+    fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs\', ...
+        ['NPsummary_gaborFits_Contrast90STAtime.mat']]), ...
+        'gaborfit', ...
+        'gaborpatch', ...
+        'rsqGabor', ...
+        'ACfit', ...
+        'rsqAC'...
+    );
+
+% load( ...
+%     fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs\', ...
+%         ['NPsummary_gaborFits_Contrast90STAtime.mat']]));
 
 %% Plot STAs and fits
 
@@ -436,10 +629,9 @@ x       = [-150:30:180];
 x_rad   = deg2rad(x);
 [avg_resp_grat, avg_resp_plaid] = getAlignedGratPlaidTuning(avg_resp_dir_all);
 
-
 for ii = 1:length(indF)
     ic = indF(ii);
-
+ 
     avgImgZscore = squeeze(avgImgZscore_all(ic,:,:,:));     % Grab avg zscore STA images for all time points
 
     figure;
@@ -451,10 +643,7 @@ for ii = 1:length(indF)
             polarplot([x_rad x_rad(1)], [avg_resp_grat(ic,:) avg_resp_grat(ic,1)],'k', 'LineWidth',2) 
         for it = 1:5
             subplot(6,3,it+1)
-                imagesc(medfilt2(squeeze(avgImgZscore(it,:,:)))); colormap('gray'); clim([-6 6])
-                if it == it_all(ii)
-                    subtitle('best it','FontWeight', 'Bold')
-                end
+                imagesc(medfilt2(imgaussfilt(squeeze(avgImgZscore(it,:,:)),1))); colormap('gray');  set(gca,'CLim',[-4 4])
         end
         subplot(6,3,7)
             imagesc(squeeze(ACfit(ii,:,:))); colormap('gray'); clim([-1 1])
@@ -466,26 +655,24 @@ for ii = 1:length(indF)
             imagesc(squeeze(gaborpatch(ii,:,:))); colormap('gray');   
             subtitle(['gabor fit - rsq: ' num2str(round(rsqGabor(ii),2))])
          subplot(6,3,10)
-            zthreshold=2.5;
-            threshImg = squeeze(avgImgZscore(it,:,:));
-            subImg = zeros(size(threshImg));
-                for ix = 1:size(threshImg,1)
-                    for iy = 1:size(threshImg,2)
-                       if threshImg(ix,iy) > zthreshold
-                           subImg(ix,iy) = 1;
-                       elseif threshImg(ix,iy) < -zthreshold
-                           subImg(ix,iy) = -1;
-                       end
-                    end
-                end
-            imagesc(subImg); colormap('gray');   
-            subtitle(['gabor fit - rsq: ' num2str(round(rsqGabor(ii),2))])
+            threshImg = squeeze(avgImgZscoreThresh_all(ic,bestTimePoint_all(ic,1),:,:));
+            imagesc(threshImg); colormap('gray');   
+            subtitle(['timepoint ' num2str(bestTimePoint_all(ic,1))])
+         subplot(6,3,11)
+            threshImg = squeeze(avgImgs_all(ic,4,:,:));  set(gca,'CLim',[170 180]); colorbar
+            imagesc(threshImg); colormap('gray');   
+            subtitle(['STA, timepoint ' num2str(4)])
+         subplot(6,3,12)
+            threshImg = squeeze(avgImgZscore_all(ic,4,:,:));  set(gca,'CLim',[-7 7]); colorbar
+            imagesc(threshImg); colormap('gray');   
+            subtitle(['STA, timepoint ' num2str(4)])
 
     movegui('center')
-    sgtitle(['cell ' num2str(ic)])
+    sgtitle(['cell ' num2str(ic) ', nspikesUsed ' num2str(totalSpikesUsed_all(ic))])
     print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs', [num2str(ii) '_cell' num2str(ic) '.pdf']), '-dpdf','-fillpage')
     close all
 end
+
 
 
 %%
@@ -497,10 +684,13 @@ pref_F1F0 = F1F0_all(idx);
 
 PCI_max = max(PCI_yfit,[],2);
 
+[tf, loc] = ismember(best_idx, idxInt);
+best_idx_idxInt = loc(tf);  %best_idx and idxInt are from the same big list, so I needed to find which values to index in rsqAC which is made from idxInt not the original big list
 
 figure;
     subplot(2,2,1)
-        scatter(rsqAC,rsqGabor, 20, 'filled'); hold on
+        scatter(rsqAC(best_idx_idxInt),rsqGabor(best_idx_idxInt), 20, 'filled'); hold on
+
         subtitle('Rsq')
         xlabel('activecontour')
         ylabel('gabor')
@@ -508,33 +698,33 @@ figure;
         xlim([0 1])
         refline(1)
         set(gca, 'TickDir', 'out'); axis square;
-    subplot(2,2,2)
-        scatter(rsqACsmth,rsqGabor, 20, 'filled'); hold on
-        subtitle('Rsq')
-        xlabel('activecontour smooth')
-        ylabel('gabor')
-        ylim([0 1])
-        xlim([0 1])
-        refline(1)
+    % subplot(2,2,2)
+    %     scatter(rsqACsmth,rsqGabor, 20, 'filled'); hold on
+    %     subtitle('Rsq')
+    %     xlabel('activecontour smooth')
+    %     ylabel('gabor')
+    %     ylim([0 1])
+    %     xlim([0 1])
+    %     refline(1)
         set(gca, 'TickDir', 'out'); axis square;
     subplot(2,2,3)
-        scatter(totalSpikesUsed_all(indF)',rsqAC, 20, 'filled'); hold on
-        scatter(totalSpikesUsed_all(indF)',rsqGabor, 20, 'filled');
+        scatter(totalSpikesUsed_all(best_idx)',rsqAC(best_idx_idxInt), 20, 'filled'); hold on
+        scatter(totalSpikesUsed_all(best_idx)',rsqGabor(best_idx_idxInt), 20, 'filled');
         subtitle('num spikes used for STA - AC blue')
         xlabel('nspikes')
         ylabel('Rsq')
         ylim([0 1])
         set(gca, 'XScale', 'log')
         set(gca, 'TickDir', 'out'); axis square; 
-    subplot(2,2,4)
-        scatter(refFrac(indF)',rsqAC, 20, 'filled'); hold on
-        scatter(refFrac(indF)',rsqGabor, 20, 'filled');
-        subtitle('% ref violations, AC blue')
-        xlabel('% ref period violations')
-        ylabel('rsq')
-        ylim([0 1])
-        set(gca, 'XScale', 'log')
-        set(gca, 'TickDir', 'out'); axis square; 
+    % subplot(2,2,4)
+    %     scatter(refFrac(indF)',rsqAC, 20, 'filled'); hold on
+    %     scatter(refFrac(indF)',rsqGabor, 20, 'filled');
+    %     subtitle('% ref violations, AC blue')
+    %     xlabel('% ref period violations')
+    %     ylabel('rsq')
+    %     ylim([0 1])
+    %     set(gca, 'XScale', 'log')
+    %     set(gca, 'TickDir', 'out'); axis square; 
     movegui('center')
     print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs', ['controlanalyses.pdf']), '-dpdf','-fillpage')
 
@@ -638,7 +828,6 @@ area_fwhm = 2 * pi * log(2) .* sigmax_all .* sigmay_all;
 % gaborpatch - (nCells, xDim, yDim)
 % ACfit - (nCells, xDim, yDim)
 
-
 filts3 = find(indF<194);
 filts4 = find(indF>193);
 
@@ -673,7 +862,7 @@ beforeSpike = [0.25 0.1 0.07 0.04 0.01]; % Look 40 ms before the spike
     end
     
 spkCounts3 = [spkCounts{1}];     
-spkCounts4 = [spkCounts{2:7}];
+spkCounts4 = [spkCounts{2:10}];
 
 
 nCells = size(spkCounts4,2);
@@ -736,10 +925,10 @@ rel_diff = diff_rsq ./ max(rsqGabor, rsqAC);  % normalized difference
 figure; 
     cmap = redblue;
     subplot(2,2,1)
-        scatter(r_ac,r_gab,20,rel_diff,'filled'); hold on; colormap(cmap); movegui('center'); clim(gca, [-.7 .7]);
+        scatter(r_ac(best_idx_idxInt),r_gab(best_idx_idxInt),20,rel_diff(best_idx_idxInt),'filled'); hold on; colormap(cmap); movegui('center'); clim(gca, [-.7 .7]);colorbar;
         xlabel('ac'); xlim([0 0.5]); ylabel('gabor'); ylim([0 0.5]); refline(1); axis square; set(gca, 'TickDir', 'out');
     subplot(2,2,2)
-        scatter(r_acsm,r_gab,20,rel_diff,'filled'); hold on; colormap(cmap); colorbar; movegui('center'); clim(gca, [-.7 .7]);
+        scatter(r_acsm(best_idx_idxInt),r_gab(best_idx_idxInt),20,rel_diff(best_idx_idxInt),'filled'); hold on; colormap(cmap); colorbar; movegui('center'); clim(gca, [-.7 .7]);
         xlabel('ac smooth'); xlim([0 0.5]); ylabel('gabor'); ylim([0 0.5]); refline(1); axis square; set(gca, 'TickDir', 'out');
     print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs', ['filter_dotproducts.pdf']), '-dpdf','-fillpage')
 
@@ -1109,3 +1298,5 @@ figure;
         ylabel('peak');
         set(gca, 'TickDir', 'out'); axis square
         
+
+

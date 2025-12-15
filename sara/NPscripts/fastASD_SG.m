@@ -54,39 +54,49 @@ binEnd   = stimTimes + 0.14;   % 140 ms after onset
 
 imageMatrix2 = imageMatrix(:,:,xRange,yRange);
 x2 = reshape(permute(imageMatrix2, [2 1 3 4]), [], size(imageMatrix2,3)*size(imageMatrix2,4));     % Reshape stacks by column, not by row. So we switch the rows and columns to have it perform the correct function (the goal: stacking going frame1_trial1, frame2_trial1, ..., frame1_trial2)
+x = double(x2);
 
 figure;
 is=1;
+ii=1;
 for ic = [130 131 107 133 135 137] %123 147 151 154 155 158
     ncell = ic; 
     spikeTimesCell = spiketimes{ncell};
 
-    y = arrayfun(@(s,e) sum(spikeTimesCell >= s & spikeTimesCell < e), binStart, binEnd).*2.5;
-    x = double(x2);
-
+    y(:,ii) = arrayfun(@(s,e) sum(spikeTimesCell >= s & spikeTimesCell < e), binStart, binEnd).*2.5;
+    
     subplot(6,6,is)
         imagesc(squeeze(averageImagesAll(ic,3,xRange,yRange))); colormap('gray'); axis square 
         subtitle(['cell' num2str(ic) ', ' num2str(totalSpikesUsed(ic))])
     subplot(6,6,is+12)
         minlen = [.25;.25];
-        [kasd,asdstats] = fastASD(x,y,nks,minlen);
+        [kasd,asdstats] = fastASD(x,y(:,ii),nks,minlen);
         imagesc(reshape(kasd,nks)); axis square     
     subplot(6,6,is+18)
         minlen = [2;2];
-        [kasd,asdstats] = fastASD(x,y,nks,minlen);
+        [kasd,asdstats] = fastASD(x,y(:,ii),nks,minlen);
         imagesc(reshape(kasd,nks)); axis square    
     subplot(6,6,is+24)
         minlen = [5;5];
-        [kasd,asdstats] = fastASD(x,y,nks,minlen);
+        [kasd,asdstats] = fastASD(x,y(:,ii),nks,minlen);
         imagesc(reshape(kasd,nks)); axis square    
     subplot(6,6,is+30)
         minlen = [10;10];
-        [kasd,asdstats] = fastASD(x,y,nks,minlen);
+        [kasd,asdstats] = fastASD(x,y(:,ii),nks,minlen);
         imagesc(reshape(kasd,nks)); axis square  
     is=is+1;
+    ii=ii+1;
 end
 movegui('center')
 sgtitle('STA, minlen .25, 2, 5, and 10')
+
+save( ...
+    fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\', ...
+        [mouse '-' date '_fastASD_examplecells.mat']]), ...
+    'x',...
+    'y',...
+    'nks'...
+    );
 
 
 

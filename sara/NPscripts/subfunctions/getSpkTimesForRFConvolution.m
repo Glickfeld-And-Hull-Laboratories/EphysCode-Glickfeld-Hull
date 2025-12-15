@@ -11,11 +11,10 @@
 function [spikeCounts] = getSpkTimesForRFConvolution(cells,times,binsize,iexp)
     
     base = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
-    [exptStruct] = createExptStruct(iexp); % Load relevant times and directories for this experiment
+    [exptStruct] = createExptStruct(iexp,'V1'); % Load relevant times and directories for this experiment
     
     % Extract units from KS output
-        cd(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, 'KS_Output/')) % Navigate to KS_Output folder
-        [allUnitStruct, goodUnitStruct] = importKSdata_SG(); % Choose imec0.ap.bin file (I just choose the CatGT bin file)
+        load(fullfile(base, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStruct.date '_' exptStruct.mouse '_unitStructs.mat']), 'allUnitStruct', 'goodUnitStruct');
     
     % Load timestamps and downsampled white noise stimulus
         mouse = exptStruct.mouse;
