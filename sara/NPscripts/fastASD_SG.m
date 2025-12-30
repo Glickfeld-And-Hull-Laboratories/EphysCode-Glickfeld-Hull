@@ -42,19 +42,19 @@ spiketimes = cellfun(@(t) t(t < lastTimestamp), allSpikeTimes, 'UniformOutput', 
 
 
 % take a square region of the white noise stimulus, approximately where the RF will be 
-xRange = 5:24;
-yRange = 13:32;
-nks = [20, 20];
-% xRange = 1:29;
-% yRange = 5:33;
-% nks = [29, 29];
+% xRange = 5:24;
+% yRange = 13:32;
+% nks = [20, 20];
+xRange = 1:29;
+yRange = 5:33;
+nks = [29, 29];
 
 binStart = stimTimes + 0.04;   % 40 ms after onset
 binEnd   = stimTimes + 0.14;   % 140 ms after onset
 
 imageMatrix2 = imageMatrix(:,:,xRange,yRange);
 x2 = reshape(permute(imageMatrix2, [2 1 3 4]), [], size(imageMatrix2,3)*size(imageMatrix2,4));     % Reshape stacks by column, not by row. So we switch the rows and columns to have it perform the correct function (the goal: stacking going frame1_trial1, frame2_trial1, ..., frame1_trial2)
-x = double(x2);
+x = zscore(double(x2));
 
 figure;
 is=1;
