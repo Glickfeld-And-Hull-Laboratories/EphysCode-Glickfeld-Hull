@@ -12,6 +12,11 @@ function [rsq] = getRsqLinearRegress_SG(y,X)
     y = y(:);                     % response variable
     X = X(:);                   % predictor (binary mask)
 
+    if ~any(X)
+        rsq = NaN;
+        return
+    end
+
     % Perform linear regression: y = X*b + e
     b = X \ y;                      
     y_pred = X * b;
