@@ -534,8 +534,6 @@ indF = idxInt;
 
 
 % Initialize for activecontour fit
-    maskOn = zeros([length(indF) 29 52]);
-    maskOff = zeros([length(indF) 29 52]);
     STAimage = zeros([length(indF) 29 52]);
     r = [];
     rsqAC = [];
@@ -565,26 +563,28 @@ for ii = 1:length(indF)
     it_sigRFoff = find(cells_sigRFbyTime_Off_all(ic,:)>0);
     it_sigRF    = unique([it_sigRFon, it_sigRFoff]);
     
-    it_best = bestTimePoint_all(ic,5);
+    it_best = bestTimePoint_all(ic,1);
     it_all(ii) = it_best;
 
-    zscoreSTA_bestit    = squeeze(avgImgZscore(bestTimePoint_all(ic,1),:,:));  
-
-
+    zscoreSTA_bestit    = squeeze(avgImgZscore(it_all(ii),:,:));  
     zscoreSTA_filt      = medfilt2(imgaussfilt(zscoreSTA_bestit,1));                        % zscore STA to use for fits, Rsq, etc
 
-    if any(it_sigRF == it_best)      % if there are any on subunits at the chosen time point...
-        [bw]           = findRFsubunit(zscoreSTA_filt,1);
-        maskOn(ii,:,:)  = bw;
+    maskOn = zeros(29,52);
+    maskOff = zeros(29,52);
+    Lon = zeros(29,52);
+    Loff = zeros(29,52);
+
+    if ismember(it_best, it_sigRFon)      % if there are any on subunits at the chosen time point...
+        [bw]            = findRFsubunit(zscoreSTA_filt,1);
+        maskOn(:,:)     = bw;
+        [B,Lon]         = bwboundaries(maskOn,'noholes');
     end
 
-    if any(it_sigRF == it_best)
-        [bw]           = findRFsubunit(zscoreSTA_filt,2);
-        maskOff(ii,:,:) = bw;
+    if ismember(it_best, it_sigRFoff)
+        [bw]            = findRFsubunit(zscoreSTA_filt,2);
+        maskOff(:,:)    = bw;
+        [B,Loff]        = bwboundaries(maskOff,'noholes');
     end
-
-    [B,Lon]         = bwboundaries(squeeze(maskOn(ii,:,:)),'noholes');
-    [B,Loff]        = bwboundaries(squeeze(maskOff(ii,:,:)),'noholes');
 
     STAimage(ii,:,:)    = zscoreSTA_filt;
 
@@ -655,17 +655,17 @@ for ii = 1:length(indF)
             imagesc(squeeze(gaborpatch(ii,:,:))); colormap('gray');   
             subtitle(['gabor fit - rsq: ' num2str(round(rsqGabor(ii),2))])
          subplot(6,3,10)
-            threshImg = squeeze(avgImgZscoreThresh_all(ic,bestTimePoint_all(ic,1),:,:));
+            threshImg = squeeze(avgImgZscoreThresh_all(ic,it_all(ii),:,:));
             imagesc(threshImg); colormap('gray');   
-            subtitle(['timepoint ' num2str(bestTimePoint_all(ic,1))])
+            subtitle(['timepoint ' num2str(it_all(ii))])
          subplot(6,3,11)
-            threshImg = squeeze(avgImgs_all(ic,4,:,:));  set(gca,'CLim',[170 180]); colorbar
+            threshImg = squeeze(avgImgs_all(ic,it_all(ii),:,:));  set(gca,'CLim',[170 180]); colorbar
             imagesc(threshImg); colormap('gray');   
-            subtitle(['STA, timepoint ' num2str(4)])
+            subtitle(['STA, timepoint ' num2str(it_all(ii))])
          subplot(6,3,12)
-            threshImg = squeeze(avgImgZscore_all(ic,4,:,:));  set(gca,'CLim',[-7 7]); colorbar
+            threshImg = squeeze(avgImgZscore_all(ic,it_all(ii),:,:));  set(gca,'CLim',[-7 7]); colorbar
             imagesc(threshImg); colormap('gray');   
-            subtitle(['STA, timepoint ' num2str(4)])
+            subtitle(['STA, timepoint ' num2str(it_all(ii))])
 
     movegui('center')
     sgtitle(['cell ' num2str(ic) ', nspikesUsed ' num2str(totalSpikesUsed_all(ic))])
