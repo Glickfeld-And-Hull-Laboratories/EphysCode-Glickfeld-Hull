@@ -17,9 +17,12 @@ function [rsq] = getRsqLinearRegress_SG(y,X)
         return
     end
 
+     % Add intercept
+    Xreg = [ones(size(X)) X];
+
     % Perform linear regression: y = X*b + e
-    b = X \ y;                      
-    y_pred = X * b;
+    beta = Xreg \ y;
+    y_pred = Xreg * beta;
 
     % Compute regression R^2
     ss_res = sum((y - y_pred).^2);
