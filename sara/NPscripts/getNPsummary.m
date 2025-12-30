@@ -675,6 +675,8 @@ end
 
 
 
+
+
 %%
 
 avg_F1F0 = mean(F1F0_all,2);
@@ -941,6 +943,110 @@ figure; scatter(r2_ac,r2_gab,20,r2_sta,'filled'); hold on; colorbar; movegui('ce
 
 
     
+%% New plotting
+
+aspRatioGabor = gamma_all;
+indPlot = find(r_gab>0.1);
+
+figure; sgtitle('Gabor fit, measurements and analysis')
+    subplot(3,3,1)
+        histogram(gamma_all, 100)
+        subtitle(['Asp Ratio, ' num2str(length(gamma_all)) ' cells'])
+    subplot(3,3,2)
+        histogram(gamma_all(indPlot), 100)
+        subtitle(['Asp Ratio, ' num2str(length(indPlot)) ' cells'])
+      subplot(3,3,3)
+        histogram(area_fwhm, 100)
+        subtitle(['Area FWHM, ' num2str(length(gamma_all)) ' cells'])
+    subplot(3,3,4)
+        histogram(area_fwhm(indPlot), 100)
+        subtitle(['Area FWHM, ' num2str(length(indPlot)) ' cells'])
+    subplot(3,3,5)
+        scatter(area_fwhm,gamma_all,15,b_all(indF),'filled'); colorbar
+        xlabel('area fwhm'); ylabel('aspect ratio'); set(gca, 'TickDir', 'out');
+    subplot(3,3,6)
+        scatter(area_fwhm(indPlot),gamma_all(indPlot),15,b_all(indF(indPlot)),'filled'); colorbar
+        xlabel('area fwhm'); ylabel('aspect ratio'); set(gca, 'TickDir', 'out');
+        
+x = area_fwhm(indPlot);
+y = gamma_all(indPlot);
+z = b_all(indF(indPlot));   
+xEdges = linspace(min(x), max(x), 15);   % 15 bins
+yEdges = linspace(min(y), max(y), 15);
+
+[ix, ~] = discretize(x, xEdges); % For each x(i), tell me which interval of xEdges it falls into
+[iy, ~] = discretize(y, yEdges);
+
+% Convert 2D bins → linear index
+nx = numel(xEdges) - 1;
+linIdx = sub2ind([nx, numel(yEdges)-1], ix, iy);
+
+% Average Z per bin
+zMean = accumarray(linIdx(:), z(:), [], @mean, NaN);
+
+% Reshape into heatmap
+zmap = reshape(zMean, nx, []);
+
+
+% Plot
+xCenters = (xEdges(1:end-1) + xEdges(2:end)) / 2;
+yCenters = (yEdges(1:end-1) + yEdges(2:end)) / 2;
+
+figure;
+    subplot 221
+    imagesc(xCenters, yCenters, zmap')   % note transpose for x–y orientation
+    axis xy
+    colorbar
+    xlabel('RF area (FWHM)')
+    ylabel('Aspect ratio')
+    title('Mean baseline per bin')
+    cb = colorbar;
+    cb.Label.String = 'baseline';
+
+
+z = amp_all(indF);   
+zMean = accumarray(linIdx(:), z(:), [], @mean, NaN);
+zmap = reshape(zMean, nx, []);
+
+    subplot 222
+    imagesc(xCenters, yCenters, zmap')   % transpose for correct orientation
+    axis xy
+    colorbar
+    xlabel('RF area (FWHM)')
+    ylabel('Aspect ratio')
+    title('Mean amp per bin')
+    cb = colorbar;
+    cb.Label.String = 'mod amplitude';
+
+% Count number of cells per bin
+binCount = accumarray(linIdx(:), 1, [], @sum, 0);
+
+% Reshape into heatmap
+countMap = reshape(binCount, nx, []);
+
+subplot 223
+    imagesc(xCenters, yCenters, countMap')
+    axis xy
+    colorbar
+    xlabel('RF area (FWHM)')
+    ylabel('Aspect ratio')
+    title('Cell count per bin')
+    
+    cb = colorbar;
+    cb.Label.String = 'n cells';
+    for ix = 1:length(xCenters)
+        for iy = 1:length(yCenters)
+            n = countMap(ix, iy);
+            if n > 0
+                text(xCenters(ix), yCenters(iy), num2str(n), ...
+                    'HorizontalAlignment', 'center', ...
+                    'VerticalAlignment', 'middle', ...
+                    'Color', 'k', 'FontSize', 8);
+            end
+        end
+    end
+
+movegui('center')
 
 
 %%
@@ -949,7 +1055,7 @@ figure; scatter(r2_ac,r2_gab,20,r2_sta,'filled'); hold on; colorbar; movegui('ce
 aspRatioMin = min(gamma_all,aspRatio);
 
 indGoodFit = find(r_gab>0.1);
-indPlot = [1:10, 12:16, 18:52];
+indPlot = indGoodFit; %[1:10, 12:16, 18:52];
 
 
 rsq_use = rsqGabor(indGoodFit)';
