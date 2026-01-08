@@ -309,8 +309,8 @@ for ii = 1:length(indRFint)
 end
 
 %% plot example cells for how the zscore threshold mask covers the local contrast map 
-for ic = 1:nCells %%%%%%%%%%%% neeed a code automatically give nCells
 
+for ic = 546
     figure;
     ax = gca;
     movegui('center')
@@ -390,8 +390,6 @@ for ii = 1:length(indF)
 
     zscoreSTA_filt      = medfilt2(imgaussfilt(zscoreSTA_bestit,1));                        % zscore STA to use for fits, Rsq, etc
 
-
-    %%%%%%%%% bugs
     if ismember(it_best, it_sigRFon)      % if there are any on subunits at the chosen time point...
         [bw]            = findRFsubunit(zscoreSTA_filt,1);
         maskOn(:,:)     = bw;
