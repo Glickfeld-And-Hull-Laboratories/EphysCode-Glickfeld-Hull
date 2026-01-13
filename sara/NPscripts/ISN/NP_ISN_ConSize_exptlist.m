@@ -259,3 +259,36 @@ expt(15).saveLoc = 'sara';
 % expt(16).wheeltrack = {'y'};
 % expt(16).saveLoc = 'sara';
 % 
+
+%% ixxxx 260102, LGN Jenny    
+expt(17).mouse = 'ixxxx';
+expt(17).date = '260102_analogPDtest';
+expt(17).loc  = {'LG'};
+expt(17).z = 0;
+expt(17).probe = {'NP1'};
+expt(17).genotype = {' '};
+expt(17).sex = {' '};
+expt(17).age = ' ';
+expt(17).cog = {' '};
+expt(17).layerTime = '';
+expt(17).exptTime = ' ';
+expt(17).eyetrack = {' '};  
+expt(17).wheeltrack = {' '};
+expt(17).saveLoc = 'sara';
+
+%% ixxxx 260107, LGN Jenny    
+expt(18).mouse = 'ixxxx';
+expt(18).date = '260107_analogPDtest2';
+expt(18).loc  = {'LG'};
+expt(18).z = 0;
+expt(18).probe = {'NP1'};
+expt(18).genotype = {' '};
+expt(18).sex = {' '};
+expt(18).age = ' ';
+expt(18).cog = {' '};
+expt(18).layerTime = '';
+expt(18).exptTime = ' ';
+expt(18).eyetrack = {' '};  
+expt(18).wheeltrack = {' '};
+expt(18).saveLoc = 'sara';
+

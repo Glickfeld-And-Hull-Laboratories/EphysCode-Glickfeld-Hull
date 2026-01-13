@@ -1,7 +1,7 @@
 clear all; close all; clc
 baseDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
-iexp =5; % Choose experiment
-exptloc = 'LG'; %LG
+iexp = 25; % Choose experiment
+exptloc = 'V1'; %LG
 
 [exptStruct] = createExptStruct(iexp,exptloc); % Load relevant times and directories for this experiment
 
@@ -32,6 +32,8 @@ save(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStru
 %% Load stimulus "on" timestamps
 
 stimStruct = createStimStruct(exptStruct);
+save(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStruct.date '_' exptStruct.mouse '_stimStruct.mat']), 'stimStruct');
+
 
 %% Find layer boundaries using LFP data
 

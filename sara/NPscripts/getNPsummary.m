@@ -79,6 +79,7 @@ for iexp = expts     % 11 13 14 16 17
     load(fullfile(base, 'Analysis\Neuropixel', date, [mouse '_' date '_fitsSG.mat']))
     load(fullfile(base, 'Analysis\Neuropixel', date, [date '_' mouse '_stimData.mat']))
     load(fullfile(base, 'Analysis\Neuropixel', date, [mouse '-' date '_spatialRFs.mat']))
+    load(fullfile(base, 'Analysis\Neuropixel', date, [date '_' mouse '_stimStruct.mat']))
 
     indexpt = intersect(resp_ind_dir, find(DSI>.5));
 
@@ -95,6 +96,8 @@ for iexp = expts     % 11 13 14 16 17
     localConMap_map_all         = [localConMap_map_all; localConMap_map];
     bestTimePoint_all           = [bestTimePoint_all; bestTimePoint];
 
+    stimEl                      = stimStruct.stimElevation;
+    stimAz                      = stimStruct.stimAzimuth;
     
     nCells_list                 = [nCells_list, nCells];
     totCells                    = sum(nCells_list(1:end-1));
@@ -136,8 +139,33 @@ for iexp = expts     % 11 13 14 16 17
     resp_ind_dir_all            = [resp_ind_dir_all; totCells+resp_ind_dir];
     avg_resp_dir_all            = [avg_resp_dir_all; avg_resp_dir];
 
-    
-    %start = start+1;
+    % analyze RF locations per experiment 
+        ind_RF = find(ind_sigRF>0);
+
+        azAvg = mean(els(ind_RF))*2; % switch to get correct az and el
+        azStd = std(els(ind_RF))*2;
+        elAvg = mean(azs(ind_RF))*2;
+        elStd = std(els(ind_RF))*2;
+        elMax = 29*2;
+        elAvg_flip = elMax - elAvg;
+        D  = 30;   % stimulus diameter
+        r = D/2;
+
+        figure; movegui('center')
+            d = hypot((azAvg) - (stimAz+52), (elAvg_flip) - (stimEl+29));
+            subplot 211
+                h2 = scatter(azAvg,elAvg_flip);
+                hold on
+                ylim([0 29*2])
+                xlim([0 52*2])
+                errorbar(azAvg,elAvg_flip,azStd,'Color',[.7 .7 .7],"LineStyle","none")
+                errorbar(azAvg,elAvg_flip,elStd,"horizontal",'Color',[.7 .7 .7],"LineStyle","none")
+                set(gca,'TickDir','out'); box off;  grid off
+                sgtitle([mouse ', ' num2str(length(ind_RF)) '/' num2str(nCells) ' cells, ' num2str(round(d,1)) ' deg diff (hypot)'])
+                subtitle('st dev')
+                rectangle('Position',[(stimAz+52)-r, (stimEl+29)-r, D, D],'Curvature',[1 1], 'EdgeColor','k', 'LineWidth',1.5);
+
+
 end
 
 
@@ -491,6 +519,7 @@ for ii = 1:length(indRFint)
     close all
 end
 
+
 %% plot example cells for how the zscore threshold mask covers the local contrast map 
 
 for ic = 546
@@ -569,6 +598,10 @@ for ii = 1:length(indF)
     zscoreSTA_bestit    = squeeze(avgImgZscore(it_all(ii),:,:));  
     zscoreSTA_filt      = medfilt2(imgaussfilt(zscoreSTA_bestit,1));                        % zscore STA to use for fits, Rsq, etc
 
+    [az, el] = getRFcenter(zscoreSTA_filt);
+    azs(ii) = az;
+    els(ii) = el;
+
     maskOn = zeros(29,52);
     maskOff = zeros(29,52);
     Lon = zeros(29,52);
@@ -607,20 +640,20 @@ for ii = 1:length(indF)
     end
 end
 
-
-save( ...
-    fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs\', ...
-        ['NPsummary_gaborFits_Contrast90STAtime.mat']]), ...
-        'gaborfit', ...
-        'gaborpatch', ...
-        'rsqGabor', ...
-        'ACfit', ...
-        'rsqAC'...
-    );
-
-% load( ...
+% 
+% save( ...
 %     fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs\', ...
-%         ['NPsummary_gaborFits_Contrast90STAtime.mat']]));
+%         ['NPsummary_gaborFits_Contrast90STAtime.mat']]), ...
+%         'gaborfit', ...
+%         'gaborpatch', ...
+%         'rsqGabor', ...
+%         'ACfit', ...
+%         'rsqAC'...
+%     );
+
+load( ...
+    fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs\', ...
+        ['NPsummary_gaborFits_Contrast90STAtime.mat']]));
 
 %% Plot STAs and fits
 
@@ -674,7 +707,165 @@ for ii = 1:length(indF)
 end
 
 
+%% Crop STA
 
+ind = intersect(resp_ind_dir_all, find(DSI_all>.5));
+ind_DS = intersect(indF,ind);
+
+for ii = 1:(length(ind_DS))
+    ic = ind_DS(ii);
+    avgImgZscore = squeeze(avgImgZscore_all(ic,:,:,:));     % Grab avg zscore STA images for all time points
+    data = medfilt2(imgaussfilt(squeeze(avgImgZscore(bestTimePoint_all(ic,1),:,:)),1));
+    [el, az, elWM, azWM] = getRFcenter(data); % reversed because of how I had swapped xDim and yDim for the image
+    sideLength = 20;
+    [data_cropped] = cropRFtoCenter(azWM, elWM, data, sideLength);
+    STA_cropped(:,:,ii) = data_cropped;
+end
+
+%% Run gabor on cropped STAs
+% run gabor on cropped
+    gaborpatch = [];
+    gaborfit = struct();
+    rsqGabor = [];
+    options.visualize = 0;
+    options.parallel = 0;
+    options.shape   = 'elliptical';
+    options.runs    = 48;
+
+for ii = [1:38 40:length(ind_DS)]
+    % Initialize for gabor fit
+    results             = fit2dGabor_SG(STA_cropped(:,:,ii),options);
+    gaborfit(ii).fit    = results.fit;
+    gaborpatch(ii,:,:)  = results.patch;
+    rsqGabor(ii)        = results.r2;
+end
+
+results_crop    = results;
+gaborfit_crop   = gaborfit;
+gaborpatch_crop = gaborpatch;
+rsqGabor_crop   = rsqGabor;
+
+
+%% plot
+
+for ii = 1:length(ind_DS)
+    if ii~=39
+    ic = ind_DS(ii);
+ 
+    avgImgZscore = squeeze(avgImgZscore_all(ic,:,:,:));     % Grab avg zscore STA images for all time points
+
+    % figure;
+        subplot(7,3,1)
+            for im = 1:4
+                polarplot([x_rad x_rad(1)], [avg_resp_plaid(ic,:,im) avg_resp_plaid(ic,1,im)])
+                hold on
+            end
+            polarplot([x_rad x_rad(1)], [avg_resp_grat(ic,:) avg_resp_grat(ic,1)],'k', 'LineWidth',2) 
+        for it = 1:5
+            subplot(7,3,it+1)
+                imagesc(medfilt2(imgaussfilt(squeeze(avgImgZscore(it,:,:)),1))); colormap('gray'); set(gca,'CLim',[-4 4])
+        end
+        iif = find(indF == ic);
+        subplot(7,3,7)
+            imagesc(squeeze(ACfit(iif,:,:))); colormap('gray'); clim([-1 1])
+            subtitle(['activecontour fit - rsq: ' num2str(round(rsqAC(iif),2))])
+         subplot(7,3,8)
+            imagesc(squeeze(ACfitsm(iif,:,:))); colormap('gray');  clim([-1 1]) 
+            subtitle(['activecontour fit smooth - rsq: ' num2str(round(rsqACsm(iif),2))])
+         subplot(7,3,9)
+            imagesc(squeeze(gaborpatch(iif,:,:))); colormap('gray');   
+            subtitle(['gabor fit - rsq: ' num2str(round(rsqGabor(iif),2))])
+         subplot(7,3,10)
+            threshImg = squeeze(avgImgZscoreThresh_all(ic,it_all(iif),:,:));
+            imagesc(threshImg); colormap('gray');   
+            subtitle(['timepoint ' num2str(it_all(iif))])
+         subplot(7,3,11)
+            threshImg = squeeze(avgImgs_all(ic,it_all(iif),:,:));  set(gca,'CLim',[170 180]); colorbar
+            imagesc(threshImg); colormap('gray');   
+            subtitle(['STA, timepoint ' num2str(it_all(iif))])
+         subplot(7,3,12)
+            threshImg = squeeze(avgImgZscore_all(ic,it_all(iif),:,:));  set(gca,'CLim',[-7 7]); colorbar
+            imagesc(threshImg); colormap('gray');   
+            subtitle(['STA, timepoint ' num2str(it_all(iif))])
+         subplot(7,3,13)
+             data = medfilt2(imgaussfilt(squeeze(avgImgZscore(bestTimePoint_all(ic,1),:,:)),1));
+             imagesc(medfilt2(imgaussfilt(squeeze(avgImgZscore(bestTimePoint_all(ic,1),:,:)),1))); set(gca,'CLim',[-4 4])
+             [el, az] = getRFcenter(data); % reversed because of how I had swapped xDim and yDim for the image
+             hold on
+             plot(az, el, 'm.', 'MarkerSize', 10); hold on 
+         subplot(7,3,14)
+             sideLength = 20;
+             [data_cropped] = cropRFtoCenter(az, el, data, sideLength);
+             imagesc(data_cropped); colormap('gray'); set(gca,'CLim',[-4 4]); axis square
+             subtitle('weighted mean')
+             STA_cropped(:,:,ii) = data_cropped;
+        if ii ~= 39
+        subplot(7,3,15)
+            imagesc(squeeze(gaborpatch_crop(ii,:,:))); colormap('gray'); axis square
+            subtitle(['gabor fit - rsq: ' num2str(round(rsqGabor_crop(ii),2))])
+        subplot(7,3,16)
+            [params, DoGOn_modelRF(ii,:,:), fitInfo] = fitDoG2D(data_cropped);
+            DoGOn_rsq(ii)  = getRsqLinearRegress_SG(data_cropped, squeeze(DoGOn_modelRF(ii,:,:)));
+                 imagesc(squeeze(DoGOn_modelRF(ii,:,:))); colormap('gray'); set(gca,'CLim',[-2 2]); axis square
+                 subtitle(['DoG - rsq ' num2str(round(DoGOn_rsq(ii),2))])
+        subplot(7,3,17)
+            [params, DoGOff_modelRF(ii,:,:), fitInfo] = fitDoG2D(-data_cropped);
+            DoGOff_rsq(ii)  = getRsqLinearRegress_SG(data_cropped, -squeeze(DoGOff_modelRF(ii,:,:)));
+                 imagesc(-squeeze(DoGOff_modelRF(ii,:,:))); colormap('gray'); set(gca,'CLim',[-2 2]); axis square
+                 subtitle(['inv DoG - rsq ' num2str(round(DoGOff_rsq(ii),2))])
+        subplot(7,3,18)
+            [params, nonConDoG_modelRF(ii,:,:), fitInfo] = fitNonConcentricEllipticalDoG(data_cropped);
+            nonConDoG_rsq(ii)  = getRsqLinearRegress_SG(data_cropped, squeeze(nonConDoG_modelRF(ii,:,:)));
+                 imagesc(squeeze(nonConDoG_modelRF(ii,:,:))); colormap('gray'); set(gca,'CLim',[-2 2]); axis square
+                 subtitle(['noncon DoG - rsq ' num2str(round(nonConDoG_rsq(ii),2))])
+        end
+    movegui('center')
+    sgtitle(['cell ' num2str(ic) ', nspikesUsed ' num2str(totalSpikesUsed_all(ic))])
+    print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs\direction_selective', [num2str(ii) '_cell' num2str(ic) '.pdf']), '-dpdf','-fillpage')
+    close all
+    else
+    end
+end
+
+
+figure;
+    subplot(3,2,1)
+        scatter(nonConDoG_rsq([1:38 40:end]),rsqGabor_crop([1:38 40:end]), 20, 'filled'); hold on
+        subtitle('Rsq')
+        xlabel('nonconentric DoG')
+        ylabel('gabor')
+        ylim([0 1])
+        xlim([0 1])
+        refline(1)
+        set(gca, 'TickDir', 'out'); axis square;
+   subplot(3,2,2)
+        scatter(pref_F1F0(ind_DS([1:38 40:end])), rsqGabor_crop([1:38 40:end]), 20, 'filled'); hold on
+        subtitle('F1F0 preferred direction')
+        xlabel('F1F0 pref')
+        ylabel('gabor')
+        set(gca, 'TickDir', 'out'); axis square;
+    subplot(3,2,3)
+        scatter(pref_F1F0(ind_DS([1:38 40:end])), nonConDoG_rsq([1:38 40:end]), 20, 'filled'); hold on
+        subtitle('F1F0 preferred direction')
+        xlabel('F1F0 pref')
+        ylabel('nonconentric DoG')
+        set(gca, 'TickDir', 'out'); axis square;
+    subplot(3,2,4)
+        scatter(PCI_max(ind_DS([1:38 40:end])), nonConDoG_rsq([1:38 40:end]), 20, 'filled'); hold on
+        subtitle('PCI max')
+        xlabel('PCI max')
+        ylabel('nonconentric DoG')
+        set(gca, 'TickDir', 'out'); axis square;
+
+diff_rsq = rsqGabor_crop - nonConDoG_rsq;       % positive if gabor is better
+rel_diff = diff_rsq ./ max(rsqGabor_crop, nonConDoG_rsq);  % normalized difference
+
+    subplot(3,2,5)
+        scatter(-amp_all(ind_DS([1:38 40:end])), PCI_max(ind_DS([1:38 40:end])), 20, rel_diff([1:38 40:end]), 'filled'); colormap('cool'); clim([-0.5 0.5]); colorbar; hold on
+        subtitle('rel diff in Rsq (pink = gabor, cyan = DoG)')
+        xlabel('- modulation amp')
+        ylabel('PCI_max')
+        set(gca, 'TickDir', 'out'); axis square;
 
 
 %%
@@ -692,7 +883,6 @@ best_idx_idxInt = loc(tf);  %best_idx and idxInt are from the same big list, so 
 figure;
     subplot(2,2,1)
         scatter(rsqAC(best_idx_idxInt),rsqGabor(best_idx_idxInt), 20, 'filled'); hold on
-
         subtitle('Rsq')
         xlabel('activecontour')
         ylabel('gabor')
@@ -700,14 +890,14 @@ figure;
         xlim([0 1])
         refline(1)
         set(gca, 'TickDir', 'out'); axis square;
-    % subplot(2,2,2)
-    %     scatter(rsqACsmth,rsqGabor, 20, 'filled'); hold on
-    %     subtitle('Rsq')
-    %     xlabel('activecontour smooth')
-    %     ylabel('gabor')
-    %     ylim([0 1])
-    %     xlim([0 1])
-    %     refline(1)
+    subplot(2,2,2)
+        scatter(rsqACsm(best_idx_idxInt),rsqGabor(best_idx_idxInt), 20, 'filled'); hold on
+        subtitle('Rsq')
+        xlabel('activecontour smooth')
+        ylabel('gabor')
+        ylim([0 1])
+        xlim([0 1])
+        refline(1)
         set(gca, 'TickDir', 'out'); axis square;
     subplot(2,2,3)
         scatter(totalSpikesUsed_all(best_idx)',rsqAC(best_idx_idxInt), 20, 'filled'); hold on

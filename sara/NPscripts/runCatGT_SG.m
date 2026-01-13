@@ -75,3 +75,5 @@ function runCatGT_SG(date)
     system(cmd2);
 
 end
+
+
