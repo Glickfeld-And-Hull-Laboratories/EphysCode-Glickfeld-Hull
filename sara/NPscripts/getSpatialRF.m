@@ -2,8 +2,8 @@
 
 clear all; close all; clc
 baseDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
-iexp = 15; % Choose experiment
-exptloc = 'LG'; %LG
+iexp = 25; % Choose experiment
+exptloc = 'V1'; %LG
 [exptStruct] = createExptStruct(iexp,exptloc); % Load relevant times and directories for this experiment
 
 load(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStruct.date '_' exptStruct.mouse '_unitStructs.mat']), 'allUnitStruct', 'goodUnitStruct');
@@ -331,7 +331,7 @@ for ic = 1:nCells
                 histogram(j); xlim([0 15])
                 xline(q(it))
                 subtitle([num2str(q(it))])
-        
+
             localConMap_data(ic,it,:,:) = xtempz;
             localConMap_map(ic,it,:,:) = jtempz;
             is=is+3;        
@@ -340,6 +340,13 @@ for ic = 1:nCells
         [m,i] = max(q);
         bestTimePoint(ic,1) = i; % best time point
         bestTimePoint(ic,2) = m; % max q90 value
+
+        data = medfilt2(imgaussfilt(squeeze(averageImageZscore(ic,i,:,:)),1));
+        [az, el] = getRFcenter(data);
+        azs(ic) = az;
+        els(ic) = el;
+        
+
         sgtitle([num2str(ic) '- best STA, ' num2str(beforeSpike(i)) ' ms'])
     %     print( ...
     %         fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs'], ...
@@ -348,6 +355,9 @@ for ic = 1:nCells
     % close all
     clear xtempz jtempz q m i
 end
+
+
+
 
 
 %% save
@@ -367,7 +377,9 @@ save( ...
     'ind_sigRF', ...
     'localConMap_data', ...
     'localConMap_map', ...
-    'bestTimePoint' ...
+    'bestTimePoint', ...
+    'azs', ...
+    'els' ...
     );
 
 stop

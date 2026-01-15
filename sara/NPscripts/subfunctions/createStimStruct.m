@@ -9,6 +9,8 @@ function [stimStruct] = createStimStruct(exptStruct)
         bName = ['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\Behavior\Data\data-' mouse '-' date '-' mwtime '.mat'];
         load(bName);
     
+        stimElevation   = double(input.stimOneGratingElevationDeg);
+        stimAzimuth     = double(input.stimOneGratingAzimuthDeg);
         stimDirections  = cell2mat(input.tStimOneGratingDirectionDeg);
         maskDirections  = cell2mat(input.tMaskOneGratingDirectionDeg);
         maskPhase       = cell2mat(input.tMaskOneGratingPhaseDeg);
@@ -49,6 +51,8 @@ function [stimStruct] = createStimStruct(exptStruct)
  
     % Create stimStruct
         stimStruct.timestamps       = stimBlocks;   % Cell array (number of stim blocks long) containing all stim on timestamps within each block
+        stimStruct.stimElevation    = stimElevation;
+        stimStruct.stimAzimuth      = stimAzimuth;
         stimStruct.stimDirection    = stimDirections;
         stimStruct.maskDirection    = maskDirections;
         stimStruct.maskPhase        = maskPhase;

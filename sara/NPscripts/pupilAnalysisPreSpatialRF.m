@@ -31,7 +31,6 @@
     data                                    = framesThreshold;
     dataSzLoop                              = 1:size(data,3);
 
-
 % Get trial information for frames
     dt                  = diff(timestamps);
     gapThreshold        = 0.5;     % seconds

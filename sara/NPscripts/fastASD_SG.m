@@ -42,12 +42,12 @@ spiketimes = cellfun(@(t) t(t < lastTimestamp), allSpikeTimes, 'UniformOutput', 
 
 
 % take a square region of the white noise stimulus, approximately where the RF will be 
-% xRange = 5:24;
-% yRange = 13:32;
-% nks = [20, 20];
-xRange = 1:29;
-yRange = 5:33;
-nks = [29, 29];
+xRange = 5:24;
+yRange = 13:32;
+nks = [20, 20];
+% xRange = 1:29;
+% yRange = 5:33;
+% nks = [29, 29];
 
 binStart = stimTimes + 0.04;   % 40 ms after onset
 binEnd   = stimTimes + 0.14;   % 140 ms after onset
