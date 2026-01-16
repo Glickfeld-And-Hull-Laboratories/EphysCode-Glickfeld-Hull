@@ -5,7 +5,7 @@
 % 
 
 % For troubleshooting:
-data = squeeze(localConMap_data_all([990],4,:,:));
+% data = squeeze(localConMap_data_all([990],4,:,:));
 %
 % data=zscoreSTA_filt;
 
@@ -42,13 +42,10 @@ function [azs, els] = getRFcenter(data)
         end
 
     end
-end
-
-
-
-        figure;
+    figure; % all code should be inside function
             subplot 321; imagesc(dataCell); colormap('gray');
             subplot 322; imagesc(dataAbs); 
             subplot 323; imagesc(dataMask) 
             % subplot 324; imagesc(dataMaskSmooth)
-            subplot 325; imagesc(rfCenter); hold on; plot(elWM, azWM, 'c.', 'MarkerSize', 10) 
+            % subplot 325; imagesc(rfCenter); hold on; plot(elWM, azWM, 'c.', 'MarkerSize', 10) 
+end

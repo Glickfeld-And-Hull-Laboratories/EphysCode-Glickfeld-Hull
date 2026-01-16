@@ -9,6 +9,10 @@ function [data_cropped] = cropRFtoCenter(az, el, data, sideLength)
         return
     end
 
+    az = round(az);% enforce integer
+    el = round(el);
+
+
     [yDim, xDim] = size(data);
     
     halfSide = floor(sideLength / 2);
@@ -39,6 +43,6 @@ function [data_cropped] = cropRFtoCenter(az, el, data, sideLength)
     end
 
     % Final crop
-    data_cropped = data(yStart:yEnd, xStart:xEnd);
+    data_cropped = data(yStart:yEnd, xStart:xEnd); % need to be integrer
 
 end
