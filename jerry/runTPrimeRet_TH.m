@@ -13,11 +13,11 @@
 function runTPrimeRet_SG(date)
 
 % Set base directories
-    dataDir     = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Data\neuropixel\';
-    analysisDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\';
+    dataDir     = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\jerry\data\neuropixel\';
+    analysisDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\jerry\analysis\neuropixel\';
 
 % Construct full data path
-    mkdir(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\' date '\retinotopy'])
+    mkdir(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\jerry\analysis\neuropixel\' date '\retinotopy'])
     fullAnalysisPath    = fullfile(analysisDir, date);
 
 % Get list of folders in the specified date directory
@@ -50,7 +50,7 @@ function runTPrimeRet_SG(date)
     cmd = sprintf(['TPrime -syncperiod=1.000000 ' '-tostream=%s ' '-fromstream=1,%s ' '-events=1,%s,%s ' '-events=1,%s,%s'], spikeSyncFile, nidaqSync, nidaqMWevents, mworksStimOnSync, nidaqPDevents, photodiodeSync);
 
 % Execute the command in the Windows terminal
-    cd('C:\Users\smg92\Desktop\TPrime-win');
+    cd('C:\Users\th352\Desktop\TPrime-win');
     system(cmd);
 
 end
