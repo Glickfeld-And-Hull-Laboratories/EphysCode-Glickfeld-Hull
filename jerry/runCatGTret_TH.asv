@@ -29,20 +29,18 @@ function runCatGTret_TH(date,mouse)
         error('No run folder found in %s', fullDataPath);
     elseif numel(runFolders) > 1
         % error('  *runCatGT_SG* Multiple run folders found in %s. Please check the data and experiment structure.', fullDataPath);
-        disp('Multiple run folders detected!');
+        disp('Multiple run folders detected!\n');
         for i = 1:numel(runFolders)
-            disp([num2str(i) ': ' runFolders{i}]);
+            disp([i ': ' runFolders{i} '\n']);
         end
-        run2Analyze = input('Choose run to analyze: ');
-    else
-        run2Analyze = 1;
+        run2Analyze = input('Please input ')
     end
-    disp(['Analyzing run ' num2str(run2Analyze) ': ' runFolders{run2Analyze}]);
+
 % Get full run folder and name
-    runFolder = fullfile(fullDataPath, runFolders{run2Analyze});
+    runFolder = fullfile(fullDataPath, runFolders{1});
 
 % Get run name minus experimental run digits
-    runName = runFolders{run2Analyze};
+    runName = runFolders{1};
     runName = regexprep(runName, '(_imec0)$', '');    % Remove _imec0 ending on file name
     runName = regexprep(runName, '(_[gt]\d+)$', '');    % Remove '_gN' or '_tN' at the end if present
         % _ matches underscore
@@ -68,7 +66,7 @@ function runCatGTret_TH(date,mouse)
     tNum = exptdigits{1}{2}; % Extract tN
 
 % Construct terminal commands with detected gNum and tNum
-    cmd1 = sprintf('CatGT -dir=%s -run=%s -g=%s -t=%s -prb=0 -ni -xd=0,0,1,0,0 -xd=0,0,1,1,0 -xd=0,0,1,2,0 -xd=0,0,1,5,0 -dest=%s', fullDataPath, runName, gNum, tNum, fullfile(analysisDir, date));   % Pull nidaq channel timestamps
+    cmd1 = sprintf('CatGT -dir=%s -run=%s -g=%s -t=%s -prb=0 -ni -xd=0,0,0,0,0 -xd=0,0,0,1,0 -xd=0,0,0,2,0 -xd=0,0,0,5,0 -dest=%s', fullDataPath, runName, gNum, tNum, fullfile(analysisDir, date));   % Pull nidaq channel timestamps
         % channel 0 is chassis
         % channel 1 is mworks stim on signal
         % channel 2 is multiclamp protocol

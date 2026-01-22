@@ -10,14 +10,14 @@
 % Outputs located in Analysis/Neuropixel/date folder.
 %
 
-function runTPrimeRet_SG(date)
+function runTPrimeRet_TH(date,mouse)
 
 % Set base directories
-    dataDir     = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\jerry\data\neuropixel\';
-    analysisDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\jerry\analysis\neuropixel\';
+    dataDir     = fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\jerry\data\neuropixel\',mouse);
+    analysisDir = fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\jerry\analysis\neuropixel\',mouse);
 
 % Construct full data path
-    mkdir(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\jerry\analysis\neuropixel\' date '\retinotopy'])
+    mkdir(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\jerry\analysis\neuropixel\' mouse '\' date '\retinotopy'])
     fullAnalysisPath    = fullfile(analysisDir, date);
 
 % Get list of folders in the specified date directory
@@ -28,14 +28,20 @@ function runTPrimeRet_SG(date)
     if isempty(catgtFolders)
         error('No catgt folder found in %s', fullAnalysisPath);
     elseif numel(catgtFolders) > 1
-        error('*runTPrime_SG* Multiple catgt folders found in %s. Check analysis folder.', fullAnalysisPath);
+        % error('*runTPrime_SG* Multiple catgt folders found in %s. Check analysis folder.', fullAnalysisPath);
+        disp('Multiple run folders detected!');
+        for i = 1:numel(catgtFolders)
+            disp([num2str(i) ': ' catgtFolders{i}]);
+        end
+        cat2Analyze = input('Choose run to analyze: ');
+    else
+        cat2Analyze = 1;
     end
-
 % Use the detected catgt folder
-    catgtFolder = fullfile(fullAnalysisPath, catgtFolders{1});
+    catgtFolder = fullfile(fullAnalysisPath, catgtFolders{cat2Analyze});
 
 % Extract run name from catgt folder
-    runName = regexprep(catgtFolders{1}, '^catgt_', ''); % Remove 'catgt_' prefix
+    runName = regexprep(catgtFolders{cat2Analyze}, '^catgt_', ''); % Remove 'catgt_' prefix
 
 % Construct paths for TPrime
     baseFileName        = fullfile(catgtFolder, [runName, '_tcat']);
