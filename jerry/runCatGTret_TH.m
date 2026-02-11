@@ -68,7 +68,7 @@ function runCatGTret_TH(date,mouse)
     tNum = exptdigits{1}{2}; % Extract tN
 
 % Construct terminal commands with detected gNum and tNum
-    cmd1 = sprintf('CatGT -dir=%s -run=%s -g=%s -t=%s -prb=0 -ni -xd=0,0,1,0,0 -xd=0,0,1,1,0 -xd=0,0,1,2,0 -xd=0,0,1,5,0 -dest=%s', fullDataPath, runName, gNum, tNum, fullfile(analysisDir, date));   % Pull nidaq channel timestamps
+    cmd1 = sprintf('CatGT -dir=%s -run=%s -g=%s -t=%s -prb=0 -ni -xd=0,0,0,0,0 -xd=0,0,0,1,0 -xd=0,0,0,2,0 -xd=0,0,0,5,0 -dest=%s', fullDataPath, runName, gNum, tNum, fullfile(analysisDir, date));   % Pull nidaq channel timestamps
         % channel 0 is chassis
         % channel 1 is mworks stim on signal
         % channel 2 is multiclamp protocol
