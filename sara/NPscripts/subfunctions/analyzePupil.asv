@@ -8,12 +8,13 @@
 %
 %   Inputs
 %       - iexp (integer), experiment number 
-%       - exptloc (string), e.g. 'V1' or 'LG'
 %       - threshold (integer), pixel value to threshold the image at 
 %
 %
 
 function analyzePupil(iexp, exptloc, threshold)    
+   exptloc='V1';
+    threshold = 70; % 80
 
     base = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
 
@@ -221,6 +222,7 @@ sz   = size(data);
     print(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\' date '\' mouse '-' date '_Pupil_rand_trial_samp.pdf'], '-dpdf', '-fillpage')
 
 
+
     Rad_temp = radii;
     Centroid_temp = centroid;
     trialLength = trialEndIdx(1) - trialStartIdx(1) + 1;  % assume fixed trial length
@@ -265,12 +267,18 @@ sz   = size(data);
 
 
 
+
+
     calib = 1/29; %mm per pixel
 
     rad_mat_calib = bsxfun(@times, rad_mat_start, calib); % convert from pixels to mm
     centroid_mat_calib = bsxfun(@times,centroid_mat_start,calib);
     rad_stim = mean(rad_mat_calib,1);
     centroid_stim = squeeze(mean(centroid_mat_calib,1))./0.025; % convert from mm to visual degrees
+
+
+
+
 
     figure; subplot(2,1,1)
     scatter(centroid_stim(1,:),centroid_stim(2,:), [], rad_stim); colorbar
@@ -314,10 +322,35 @@ sz   = size(data);
 
 
 
-    save(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\' date '\' date '_' mouse '_pupil.mat']), 'threshold', 'rad_mat_start','centroid_mat_start', 'rad_stim', 'centroid_stim', 'centroid_dist', 'centroid_med');
+
+
+
+
+    save(fullfile(SG_base, 'Analysis\2P', [date '_' mouse], [date '_' mouse '_' run_str], [date '_' mouse '_' run_str '_pupil.mat']), 'rect', 'Area', 'Centroid', 'SNR', 'Val', 'frame_rate' , 'rad_mat_start','centroid_mat_start', 'cStimOn', 'rad_base','rad_stim','centroid_base', 'centroid_stim', 'centroid_dist', 'centroid_med');
+
+
+
+
 end
 
 
 
+
+
+
+    
+%%
+    
+
+
+
+% Check each chunk has exactly 30 frames
+    % dt              = diff(timestamps(:));   % Compute frame-to-frame time differences
+    % chunkBoundaries = [find(dt > 1); numel(timestamps) + 1];   % Find gaps > 1 sec to detect chunk boundaries
+    % chunkLengths    = diff(chunkBoundaries);
+    % assert(all(chunkLengths == 30), 'One or more chunks do not have exactly 30 frames.');
+    % shortChunks     = find(chunkLengths<30);
+    % longChunks      = find(chunkLengths>30);
+    % 
 
 

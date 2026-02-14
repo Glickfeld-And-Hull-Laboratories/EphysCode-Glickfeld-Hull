@@ -2,9 +2,9 @@ clear all
 clear all global
 close all
 
-date = '251106';
-mouse = 'i2780';
-mwtime = '1108';   
+date = '260213';
+mouse = 'i3903';
+mwtime = '1257';   
 chnls = 1:2:200;
 
 fprintf([date ' ' mouse ' \n'])

@@ -1,6 +1,6 @@
 clear all; close all; clc
 baseDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
-iexp = 25; % Choose experiment
+iexp = 24; % Choose experiment
 exptloc = 'V1'; %LG
 
 [exptStruct] = createExptStruct(iexp,exptloc); % Load relevant times and directories for this experiment
@@ -8,6 +8,10 @@ exptloc = 'V1'; %LG
 %% Crop pupil video
 
 cropPupil(exptStruct)
+
+%% Analyze pupil video
+
+analyzePupil(iexp, exptloc, 48)
 
 %% Extract and sync nidaq signals to the imec sync pulse in the neural data stream
 
@@ -27,7 +31,6 @@ end
 % Choose imec0.ap.bin file (I just choose the CatGT bin file)
 [allUnitStruct, goodUnitStruct] = importKSdata_SG();
 save(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStruct.date '_' exptStruct.mouse '_unitStructs.mat']), 'allUnitStruct', 'goodUnitStruct');
-
 
 %% Load stimulus "on" timestamps
 
@@ -49,7 +52,7 @@ else
 end
 [trialStruct, gratingRespMatrix, gratingRespOFFMatrix, resp, base] = createTrialStruct12Dir4Phase(stimStruct, goodUnitStruct, b);     
 [f0mat, f1mat, f1overf0mat] = getF1_SG(gratingRespMatrix);
-save(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStruct.date '_' exptStruct.mouse '_F1F0.mat']), 'f0mat', 'f1mat', 'f1overf0mat');
+save(fullfile(baseDir, '\Analysis\Neuropixel', [exptStruct.date], [exptStruct.date '_' exptStruct.mouse '_F1F0.mat']), 'f0mat', 'f1mat', 'f1overf0mat');
 
 % gratingRespMatrix: This is a nUnits x nDirections cell array, where each element 
 % contains a cell array of spike times for each trial. For example, 

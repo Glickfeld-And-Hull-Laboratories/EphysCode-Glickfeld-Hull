@@ -63,9 +63,12 @@ localConMap_map_all = [];
 bestTimePoint_all = [];
 
 
-% V1 -- 11 13 18 19 20 21 22 23 24 25
+% V1 -- 11 13 18 19 20 21 22 23 24 25 26
 
-expts = [11 13 18 19 20 21 22 23 24 25];
+% V1 -- 13 18 19 20 21 22 23 25 26, throwing out 11 for RF position,
+% throwing out 24 because eye camera frames collected ~= timestamps of frames
+
+expts = [13 18 19 20 21 22 23 25 26];
 
 start=1;
 for iexp = expts     % 11 13 14 16 17
@@ -142,28 +145,28 @@ for iexp = expts     % 11 13 14 16 17
     % analyze RF locations per experiment 
         ind_RF = find(ind_sigRF>0);
 
-        azAvg = mean(els(ind_RF))*2; % switch to get correct az and el
-        azStd = std(els(ind_RF))*2;
-        elAvg = mean(azs(ind_RF))*2;
-        elStd = std(els(ind_RF))*2;
-        elMax = 29*2;
-        elAvg_flip = elMax - elAvg;
-        D  = 30;   % stimulus diameter
-        r = D/2;
+        % azAvg = mean(els(ind_RF))*2; % switch to get correct az and el
+        % azStd = std(els(ind_RF))*2;
+        % elAvg = mean(azs(ind_RF))*2;
+        % elStd = std(els(ind_RF))*2;
+        % elMax = 29*2;
+        % elAvg_flip = elMax - elAvg;
+        % D  = 30;   % stimulus diameter
+        % r = D/2;
 
-        figure; movegui('center')
-            d = hypot((azAvg) - (stimAz+52), (elAvg_flip) - (stimEl+29));
-            subplot 211
-                h2 = scatter(azAvg,elAvg_flip);
-                hold on
-                ylim([0 29*2])
-                xlim([0 52*2])
-                errorbar(azAvg,elAvg_flip,azStd,'Color',[.7 .7 .7],"LineStyle","none")
-                errorbar(azAvg,elAvg_flip,elStd,"horizontal",'Color',[.7 .7 .7],"LineStyle","none")
-                set(gca,'TickDir','out'); box off;  grid off
-                sgtitle([mouse ', ' num2str(length(ind_RF)) '/' num2str(nCells) ' cells, ' num2str(round(d,1)) ' deg diff (hypot)'])
-                subtitle('st dev')
-                rectangle('Position',[(stimAz+52)-r, (stimEl+29)-r, D, D],'Curvature',[1 1], 'EdgeColor','k', 'LineWidth',1.5);
+        % figure; movegui('center')
+        %     d = hypot((azAvg) - (stimAz+52), (elAvg_flip) - (stimEl+29));
+        %     subplot 211
+        %         h2 = scatter(azAvg,elAvg_flip);
+        %         hold on
+        %         ylim([0 29*2])
+        %         xlim([0 52*2])
+        %         errorbar(azAvg,elAvg_flip,azStd,'Color',[.7 .7 .7],"LineStyle","none")
+        %         errorbar(azAvg,elAvg_flip,elStd,"horizontal",'Color',[.7 .7 .7],"LineStyle","none")
+        %         set(gca,'TickDir','out'); box off;  grid off
+        %         sgtitle([mouse ', ' num2str(length(ind_RF)) '/' num2str(nCells) ' cells, ' num2str(round(d,1)) ' deg diff (hypot)'])
+        %         subtitle('st dev')
+        %         rectangle('Position',[(stimAz+52)-r, (stimEl+29)-r, D, D],'Curvature',[1 1], 'EdgeColor','k', 'LineWidth',1.5);
 
 
 end
@@ -309,7 +312,7 @@ figure;
 
 [ZpZcStruct] = getZpZcStruct(avg_resp_dir_all, 'alignedTestDir');
 
-plotZpZc4PhasePopulation(ZpZcStruct,ind,30)
+plotZpZc4PhasePopulation(ZpZcStruct,ind,12)
 sgtitle('Pattern direction selective cells at four phases')
 
 print(fullfile([outDir, '\randDirFourPhase_CrossOri_mouse_ZpZcpopulation.pdf']),'-dpdf','-bestfit');

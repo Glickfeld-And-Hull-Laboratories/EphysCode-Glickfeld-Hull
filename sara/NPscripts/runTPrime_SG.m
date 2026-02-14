@@ -40,7 +40,7 @@ function runTPrime_SG(date)
 % Construct paths for TPrime
     baseFileName        = fullfile(catgtFolder, [runName, '_tcat']);
     spikeSyncFile       = [baseFileName, '.imec0.ap.xd_384_6_500.txt'];
-    nidaqSync           = [baseFileName, '.nidq.xd_1_0_500.txt'];   % nidaq clock signal
+    nidaqSync           = [baseFileName, '.nidq.xd_0_0_500.txt'];   % nidaq clock signal
     nidaqMWevents       = [baseFileName, '.nidq.xd_0_1_0.txt']; % mworks stim on events
     nidaqPCtrigger      = [baseFileName, '.nidq.xd_0_2_0.txt']; % patch clamp trigger to MWorks computer
     nidaqPDevents       = [baseFileName, '.nidq.xd_0_5_0.txt']; % photodiode events

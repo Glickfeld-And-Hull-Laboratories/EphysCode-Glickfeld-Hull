@@ -153,45 +153,6 @@ function [spikingStruct, waveformStruct] = singleCellSpikeAnalysis(exptStruct, g
         nSpikesUsed = length(spikeTimesISI);
         refViolationPct = refractoryCounts/nSpikesUsed;
 
-        % if refViolationPct >= 0.01
-        %     violPairs = [];
-        %     for i = 1:length(spikeTimesISI)
-        %         diffs = spikeTimesISI - spikeTimesISI(i);
-        %         % Find spikes within threshold (exclude self, >0 means later spikes only)
-        %         closeIdx = find(diffs > 0 & diffs < refractoryViolationThresh);
-        %         if ~isempty(closeIdx)
-        %             violPairs = [violPairs; [repmat(i, numel(closeIdx), 1), closeIdx(:)]];
-        %         end
-        %     end
-        %     violTimes = spikeTimesISI(violPairs); % Convert to original spike times
-        % 
-        %     % violPairs → indices of violating pairs (in spikeTimesISI)
-        %     % violTimes → actual timestamps of the two spikes in each violation
-        % 
-        %     if ~isempty(violTimes) 
-        %         nViol = size(violTimes,1);   % number of violation pairs
-        %         violWaveforms = zeros(nSamp, nViol, 2);
-        %         for v = 1:nViol
-        %             for s = 1:2   % two spikes in each pair
-        %                 samp0     = (violTimes(v,s) - dataLengthPreSpike) * sampRate;
-        %                 samp0     = int64(samp0);
-        %                 dataArray = ReadBin_sg(samp0, nSamp, meta, binName, path);
-        % 
-        %                 if strcmp(meta.typeThis, 'imec')
-        %                     dataArray = GainCorrectIM_sg(dataArray, [chan], meta);
-        %                 else
-        %                     dataArray = GainCorrectNI_sg(dataArray, [chan], meta);
-        %                 end
-        % 
-        %                 violWaveforms(:,v,s) = dataArray(chan,:);
-        %             end
-        %         end
-        %     else
-        %         violWaveforms = [];
-        %     end
-        % end
-        % 
-
     % Save output into structures
         spikingStruct(ic).isiProb       = isiProb;
         spikingStruct(ic).isiEdges      = isiEdges;

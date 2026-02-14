@@ -398,3 +398,18 @@ expt(25).eyetrack = {'y'};
 expt(25).wheeltrack = {'y'};
 expt(25).saveLoc = 'sara';
 
+%% i3901 260203, V1
+expt(26).mouse = 'i3901';
+expt(26).date = '260203';
+expt(26).loc  = {'V1'};
+expt(26).z = -1900;
+expt(26).probe = {'NP1'};
+expt(26).genotype = {'C57/CBA'};
+expt(26).sex = {'F'};
+expt(26).age = '104';
+expt(26).cog = {'awake'};
+expt(26).layerTime = '';
+expt(26).exptTime = '1306';
+expt(26).eyetrack = {'y'};  
+expt(26).wheeltrack = {'y'};
+expt(26).saveLoc = 'sara';

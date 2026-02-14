@@ -33,7 +33,7 @@ function [params, modelRF, fitInfo] = fitDoG2D(data, opts)
     XYdata = [X(:), Y(:)];
 
     % Initial parameter guesses
-    %
+    %y
     % Parameters:
     %   Ac     : center amplitude
     %   As     : surround amplitude
