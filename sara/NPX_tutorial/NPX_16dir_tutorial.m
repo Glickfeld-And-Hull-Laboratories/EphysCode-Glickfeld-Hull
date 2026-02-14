@@ -50,7 +50,7 @@ refractoryViolationThresh   = 0.002;  % 2 ms
 
 
 
-%% Let's pull spiking activity for an example unit
+% Pull spiking activity for an example unit
 
     cellIdx = [82];
     
@@ -71,7 +71,7 @@ refractoryViolationThresh   = 0.002;  % 2 ms
 
 
 
-%% Get interspike intervals and probabilities
+% Get interspike intervals and probabilities
     isi = diff(spikeTimesISI);
     isiEdges = 0:0.001:0.1;  % 1 ms bins from 0 to 100 ms
     [isiCounts, ~] = histcounts(isi, isiEdges);
@@ -79,7 +79,7 @@ refractoryViolationThresh   = 0.002;  % 2 ms
 
 
 
-%% Get autocorrelogram and violations
+% Get autocorrelogram and violations
     maxLag  = 0.025;  % +/- 25 ms, for plotting
     binSize = 0.001;  % 1 ms bins, for plotting
     acEdges   = -maxLag:binSize:maxLag;
@@ -98,7 +98,7 @@ refractoryViolationThresh   = 0.002;  % 2 ms
 
  
 
-%% Get sample waveforms
+% Get sample waveforms
 
     spikeTimes = timestamps;
     
@@ -176,7 +176,7 @@ refractoryViolationThresh   = 0.002;  % 2 ms
 
 
 
-%% Plot single cell spike analyses
+% Plot single cell spike analyses
     figure;
     x = 1:size(waveforms,1);
         subplot(3,1,1)
@@ -204,7 +204,7 @@ refractoryViolationThresh   = 0.002;  % 2 ms
             yline(waveformBaseline,'k')
             title(['Peak to Trough dist = ' sprintf('%.2f ms', PtTdist * 1000)])   % I only want 2 decimal places after 0
         sgtitle(['cell ' num2str(ic)])
-
+        movegui('center')
 
 
 
