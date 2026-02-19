@@ -81,7 +81,11 @@ load(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStru
 
 % For the sake of time, we don't need to compute ISIs for the entire
 % experimental recording, so we will limit the analysis to 10,000
+<<<<<<< HEAD
 % consecutive spikes
+=======
+% consequtive spikes
+>>>>>>> origin/main
     if length(timestamps) > 10000 % if there are more than 10,000 spikes, randomly sample 10,0000
         randSpikeTime    = randsample(length(timestamps)-10000,1); % choose a spike index randomly, with room to take the subsequent indices
         spikeTimesForISI = timestamps(randSpikeTime:randSpikeTime+9999); % then take that spike index plus the next 9,999
