@@ -266,7 +266,7 @@ load(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStru
 
 
 %% Now, do the same, but for all sorted units. 
-% This will take about 15 minutes to run. Here, we are using CPU threads to
+% This will take about 1-2 minutes to run. Here, we are using CPU threads to
 % parallel process multiple cells at a time so that this analysis runs more quickly.
 
 nCells = size(goodUnitStruct,2);
@@ -342,13 +342,15 @@ parfor ic  = cellIdx
             fprintf('\nNot enough spikes to perform planned calculation. %i spikes are averaged and plotted\n', length(timestamps))
         end
     end
-        
+     
+    fid = fopen(fullfile(path, binName), 'rb');
+
     if ~isempty(spikeStart)
         waveforms = zeros(nSamp, length(TSindex));
         for i = 1:length(TSindex)
             samp0       = int64(spikeStart(TSindex(i,1))*sampRate);
             SampleTS(i) = spikeStart(TSindex(i,1));
-            dataArray   = ReadBin_sg(samp0, nSamp, meta, binName, path);
+            dataArray   = ReadBin_tutorial(fid, samp0, nSamp, meta)
             % % % change y values to volts
             % For an analog channel: gain correct saved channel ch (1-based for MATLAB).
             ch = chan;
@@ -485,7 +487,6 @@ end
     PtTratio_all    = [waveformStruct.PtTratio];
     PtTdist_all     = [waveformStruct.PtTdist];
     slope_all       = [waveformStruct.slope];
-
 
 figure;
     subplot(1,2,1)
@@ -630,7 +631,6 @@ subplot 221
 %
 % This visualization very clearly shows visually responsive cells in V1, a
 % small gap, then a few more visually responsive cells in hippocampus.
-%
 
 
 
