@@ -1,6 +1,114 @@
+%% ========================================================================
+%  runRFModelComparison
+%
+%  Modular RF model comparison pipeline.
+%
+%  Fits multiple receptive field models to STA data, computes R² and AICc,
+%  and optionally visualizes or exports comparison figures.
+%
+%  ------------------------------------------------------------------------
+%  INPUTS
+%
+%  indLoop        : indices of cells to process (e.g., indLoop)
+%  ind_DS         : vector mapping index → actual cell ID
+%  STA_cropped    : 3D array (y × x × cellIndex) of cropped STA images
+%  modelRegistry  : struct array defining models to run (see example below)
+%  omitCells      : vector of cell IDs to skip (based on actual cell ID)
+%
+%  plotMode       : (optional) controls visualization behavior
+%                   'show'  → display figures only
+%                   'pdf'   → export figures to single PDF (no pop-up)
+%                   'both'  → display AND export
+%                   'none'  → no plotting (compute only)
+%
+%  pdfFile        : (optional) filename for PDF export (required if
+%                   plotMode = 'pdf' or 'both')
+%
+%  ------------------------------------------------------------------------
+%  OUTPUT
+%
+%  results : struct containing
+%       .cellIDs      → processed cell IDs
+%       .R2{m}        → R² per model
+%       .AIC{m}       → AICc per model
+%       .models{m}{k} → fitted RF images
+%
+%  ------------------------------------------------------------------------
+%  EXAMPLE USAGE
+%
+%  % --- Define models ---
+%  modelRegistry = [
+%      struct('name','Circular DoG', ...
+%             'type','standard', ...
+%             'fitFcn', @(STA) fitDoG2D_JM(STA,'unnormalized',20), ...
+%             'k',6)
+%
+%      struct('name','SG Gabor', ...
+%             'type','sg', ...
+%             'fitFcn', @(STA) fit2dGabor_SG(STA,options), ...
+%             'k',10)
+%  ];
+%
+%  % --- Cells to omit (by cell ID) ---
+%  omitCells = [39 102];
+%
+%  % --- Run and show only ---
+%  results = runRFModelComparison( ...
+%      indLoop, ind_DS, STA_cropped, ...
+%      modelRegistry, omitCells, 'show');
+%
+%  % --- Run and export to PDF ---
+%  results = runRFModelComparison( ...
+%      indLoop, ind_DS, STA_cropped, ...
+%      modelRegistry, omitCells, ...
+%      'pdf', 'RF_Comparison_AllCells.pdf');
+%
+%  ------------------------------------------------------------------------
+%  NOTES
+%
+%  • Models of type 'standard' must return:
+%        [params, RF, fitInfo]
+%
+%  • Models of type 'sg' must return struct with fields:
+%        .patch (fitted RF image)
+%        .r2    (R² value)
+%
+%  • AICc is computed internally using computeAIC.
+%
+%  • Omit list is based on actual cell ID (ic), NOT loop index (ii).
+%
+%  ========================================================================
 function results = runRFModelComparison( ...
     indLoop, ind_DS, STA_cropped, ...
-    modelRegistry, omitCells)
+    modelRegistry, omitCells, ...
+    plotMode, pdfFile)
+
+if nargin < 6 || isempty(plotMode)
+    plotMode = 'show';   % default behavior
+end
+
+%% -----------------------------
+% Setup results folder
+%% -----------------------------
+
+resultsFolder = fullfile(pwd, 'results');
+
+if ~exist(resultsFolder, 'dir')
+    mkdir(resultsFolder);
+end
+
+if strcmp(plotMode,'pdf') || strcmp(plotMode,'both')
+
+    if nargin < 7 || isempty(pdfFile)
+        pdfFile = 'RF_Model_Comparison.pdf';
+    end
+
+    pdfFile = fullfile(resultsFolder, pdfFile);
+
+    if exist(pdfFile,'file')
+        delete(pdfFile)
+    end
+end
 
 computeR2 = @(data, model) ...
     1 - sum((data(:) - model(:)).^2) / ...
@@ -74,7 +182,11 @@ for idx = 1:numel(indLoop)
     % Visualization
     %% ===============================
 
-    visualizeComparison(STA, results, modelRegistry, k, ic, ii)
+    if ~strcmp(plotMode,'none')
+        visualizeComparison( ...
+            STA, results, modelRegistry, ...
+            k, ic, ii, plotMode, pdfFile);
+    end
 
 end
 end
