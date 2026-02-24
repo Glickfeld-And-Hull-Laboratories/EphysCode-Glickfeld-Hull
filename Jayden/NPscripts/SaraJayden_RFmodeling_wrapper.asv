@@ -1,7 +1,7 @@
 close all; clearvars; clc;
 
 %% debug mode one cell test
-debugMode = false;
+debugMode = true;
 debugCell = 986;   % check indRFint
 %rng(0,'twister');   % randomness fully reproducible
 
@@ -162,6 +162,161 @@ omitCells = [634];   % cell(s) with NaN
 results = runRFModelComparison( ...
     indLoop, ind_DS, STA_cropped, ...
     modelRegistry, omitCells, 'pdf', 'RF_Comparison_DoG.pdf', ...
-    {'Noncon DoG', 'Elliptical DoG'},{'Noncon DoG', 'Elliptical DoG'});
+    ['']);
+
+%% Trim unused preallocations
+% R2_methodA = R2_methodA(1:k);
+% R2_methodB = R2_methodB(1:k);
+% R2_methodElliptic = R2_methodElliptic(1:k);
+% R2_noncon = R2_noncon(1:k);
+% cellIDs    = cellIDs(1:k);
+% polarityA  = polarityA(1:k);
+
+%% -------------------------------
+% Summary plot across cells
+%% -------------------------------
+
+% figure('Color','w');
+% movegui('center');
+% 
+% subplot(1,2,1)
+% scatter(R2_methodA, R2_methodB, 30, 'filled')
+% hold on
+% plot([0 1],[0 1],'k--','LineWidth',1)
+% axis square
+% xlim([0 1]); ylim([0 1])
+% xlabel('Method A: brute-force polarity')
+% ylabel('Method B: polarity-aware init')
+% title('Cell-by-cell R^2 comparison')
+% 
+% subplot(1,2,2)
+% deltaR2 = R2_methodB - R2_methodA;
+% histogram(deltaR2, 30)
+% xline(0,'k--','LineWidth',1)
+% xlabel('\Delta R^2 (Method B - Method A)')
+% ylabel('Number of cells')
+% title('Initialization performance difference')
+% 
+% sgtitle('Normal DoG - initialization strategy comparison')
+
+% dAIC_ell  = AIC_Ell  - AIC_Circ;
+% dAIC_non  = AIC_Non - AIC_Circ;
+% dAIC_none = AIC_Non - AIC_Ell;
+% dAIC_GaborSG   = AIC_G_SG    - AIC_Non;
+% dAIC_GaborCust = AIC_G_C - AIC_Non;
+% dAIC_GaborDiff = AIC_G_C - AIC_G_SG;
+% 
+% 
+% figure('Color','w');
+% movegui('center');
+% 
+% subplot(1,3,1)
+% histogram(dAIC_ell, 30);
+% xline(0,'k--');
+% xlabel('\DeltaAIC (Elliptical - Circular)');
+% ylabel('Cells');
+% title('Elliptical DoG vs Circular DoG');
+% 
+% subplot(1,3,2)
+% histogram(dAIC_non, 30);
+% xline(0,'k--');
+% xlabel('\DeltaAIC (Nonconcentric - Circular)');
+% ylabel('Cells');
+% title('Nonconcentric DoG vs Circular DoG');
+% 
+% subplot(1,3,3)
+% histogram(dAIC_none, 30);
+% xline(0,'k--');
+% xlabel('\DeltaAIC (Nonconcentric - Ellipitical)');
+% ylabel('Cells');
+% title('Nonconcentric DoG vs Elliptical DoG');
+% 
+% figure('Color','w');
+% movegui('center');
+% 
+% %% ---- SG Gabor vs Nonconcentric DoG ----
+% subplot(1,3,1)
+% histogram(dAIC_GaborSG, 30);
+% hold on
+% xline(0,'k--');
+% xlabel('\DeltaAIC (SG Gabor  Nonconcentric DoG)');
+% ylabel('Cells');
+% title('SG Gabor vs Nonconcentric DoG');
+% 
+% %% ---- Custom Gabor vs Nonconcentric DoG ----
+% subplot(1,3,2)
+% histogram(dAIC_GaborCust, 30);
+% hold on
+% xline(0,'k--');
+% xlabel('\DeltaAIC (Custom Gabor  Nonconcentric DoG)');
+% ylabel('Cells');
+% title('Custom Gabor vs Nonconcentric DoG');
+% 
+% %% ---- Custom vs SG Gabor ----
+% subplot(1,3,3)
+% histogram(dAIC_GaborDiff, 30);
+% hold on
+% xline(0,'k--');
+% xlabel('\DeltaAIC (Custom  SG)');
+% ylabel('Cells');
+% title('Custom vs SG Gabor');
+% 
+% sgtitle('Model comparison relative to nonconcentric DoG');
+% 
+% %% ===============================
+% % Gabor vs Gabor: R^2 comparison
+% %% ===============================
+% 
+% valid = isfinite(R2_G_SG) & isfinite(R2_G_Custom);
+% 
+% R2_SG = R2_G_SG(valid);
+% R2_C  = R2_G_Custom(valid);
+% 
+% figure('Color','w');
+% movegui('center');
+% 
+% %% ---- Scatter: cell-by-cell R^2 ----
+% subplot(1,2,1)
+% scatter(R2_SG, R2_C, 30, 'filled')
+% hold on
+% plot([0 1], [0 1], 'k--', 'LineWidth', 1)
+% 
+% axis square
+% xlim([0 1])
+% ylim([0 1])
+% 
+% xlabel('SG Gabor R^2')
+% ylabel('Custom Gabor R^2')
+% title('Cell-by-cell R^2 comparison')
+% 
+% % p = resSG.fit;
+% 
+% %% ---- Histogram: R^2 ----
+% subplot(1,2,2)
+% 
+% deltaR2 = R2_C - R2_SG;
+% 
+% histogram(deltaR2, 30)
+% hold on
+% xline(0, 'k--', 'LineWidth', 1)
+% 
+% xlabel('\Delta R^2 (Custom  SG)')
+% ylabel('Number of cells')
+% title('Gabor model performance difference')
+% 
+% sgtitle('Custom Gabor vs SG Gabor (R^2)')
+
+% outPDF = fullfile(pwd, 'RF_model_comparison_test.pdf');
+% 
+% figs = findall(0, 'Type', 'figure');
+% 
+% % Sort by figure number (important!)
+% [~, idx] = sort([figs.Number]);
+% figs = figs(idx);
+% 
+% for i = 1:numel(figs)
+%     exportgraphics(figs(i), outPDF, 'Append', true);
+% end
+% fprintf('PDF generated');
 
 
