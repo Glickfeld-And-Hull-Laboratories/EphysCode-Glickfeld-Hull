@@ -1,0 +1,131 @@
+function getPupilTrackingData(exptStruct)
+
+% Set base directories
+    dataDir     = (['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Data\neuropixel\' exptStruct.date]);
+    analysisDir = (['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date]);
+
+% Load camera frames
+    cd(dataDir)
+    movieFiles = dir(fullfile(dataDir, '*.avi'));   % Find all files ending in .avi
+    assert(numel(movieFiles) == 1, 'Error. Expected exactly one .avi file in dataDir.');    % Throw error if more or less than 1 movie file is found
+    mov = VideoReader(movieFiles.name);   % Load frames
+
+% Load frame timestamps
+    matFiles = dir(fullfile(dataDir, '*.mat'));   % Find all files ending in .mat
+    assert(numel(matFiles) == 1, 'Error. Expected exactly one .mat file in dataDir.');  % Throw error if more or less than 1 matlab file is found
+    load(fullfile(dataDir, matFiles.name));   % Load timestamps, should be  in variable 'ts'
+
+% Double check frame timestamps match number of frames collected
+    timestamps      = ts(find(ts>0));    % In pupil tracking code, timestamp array is initialized with zeroes and much larger than needed. We only want the recorded timestamps
+    framesCollected = mov.NumFrames;     % Get number of frames collected
+    assert(length(timestamps) == framesCollected, 'Error. Collected frames do not match collected timestamps.');    % Throw error if frames collected doesn't match timestamps collected
+
+% ======
+%
+% Double check each chunk of frames has exactly 30 frames
+    dt              = diff(timestamps(:));   % Compute frame-to-frame time differences
+    chunkBoundaries = [find(dt > 1); numel(timestamps) + 1];   % Find gaps > 1 sec to detect chunk boundaries
+
+% Check each chunk has exactly 30 frames
+    chunkLengths    = diff(chunkBoundaries);
+    assert(all(chunkLengths == 30), 'One or more chunks do not have exactly 30 frames.');
+    shortChunks     = find(chunkLengths<30);
+    longChunks      = find(chunkLengths>30);
+ 
+% ===== 
+% idk what to do about the chunking above. I'll come back to that.
+% Below I am just troubleshooting if I can use imfindcircles to extract the
+% pupil info from each frame
+%
+% =====
+
+
+% Get all frames from movie object
+    firstframe = rgb2gray(read(mov,1));
+    [ffcrop, rect] = imcrop(firstframe);
+    secondframe = imcrop(rgb2gray(read(mov,2)),rect);
+   
+    secondframe_TEST1 = adapthisteq(secondframe);
+    secondframe_TEST2 = edge(secondframe, 'Canny');
+    figure; imshow(secondframe_TEST2)
+
+    
+    [centers, radii, metric] = imfindcircles(secondframe_TEST2,[6 40],'ObjectPolarity','bright','Sensitivity',1); 
+
+
+
+
+    %%%%%%%%
+
+
+
+    % Find the Pupil boudary 
+    im = imread('example.jpg');
+    [minX, minY, minR, image] = daugmanCircleDetection();
+    imshow(image);
+
+
+    %%%%%%%
+
+% Pull first frame to crop
+    firstframe = rgb2gray(read(mov,1));
+    [ffcrop, rect] = imcrop(firstframe);
+
+% Initialize arrays and variables
+    nFrames         = mov.NumFrames;
+    xDim            = size(ffcrop,1);
+    yDim            = size(ffcrop,2);
+    framesToExtract = 1:nFrames; 
+    framesmat       = zeros(xDim,yDim,length(framesToExtract));
+
+% For all frames: read from movie object, turn to grayscale, crop
+
+tic
+    for ff = framesToExtract
+        frame = imcrop(rgb2gray(read(mov,ff)),rect);
+        framesmat(:,:,ff) = frame;
+
+        % Print progress every 100 frames
+        if mod(ff, 1000) == 0
+            fprintf('Processed frame %d/%d\n', ff, length(framesToExtract));
+        end
+    end
+toc
+fprintf(['Run complete. Extracted ' num2str(length(framesToExtract)) '/' num2str(nFrames) ' frames. \n'])
+
+
+% Find a chunk of frames that has the largest amount of change (i.e., rich
+% dataset for training DLC model
+    diffFrames  = diff(framesmat, 1, 3);    % Find differences in luminance
+    meanAbsDiff = squeeze(mean(mean(abs(diffFrames),1),2));
+
+    windowSize  = 2000;     % Training chunk size
+    halfWin     = floor(windowSize / 2);
+    movingAvg           = movmean(meanAbsDiff, windowSize);   % Window is automatically centered at index, so for starting and ending indices, the window cuts off
+    [maxVal, maxIdx]    = max(movingAvg);
+
+    startIdx = max(1, maxIdx - halfWin + 1);
+    endIdx   = min(size(framesmat,3), maxIdx + halfWin);
+    
+    trainingChunk = framesmat(:,:, startIdx:endIdx);
+    fprintf(['Window size: ' num2str(windowSize) ' frames \n' 'Training chunk size: ' num2str(size(trainingChunk, 3)) ' frames \nstartIdx: ' num2str(startIdx) '   endIdx: ' num2str(endIdx) ' \n'])
+
+
+
+    filename = 'training_chunk.mp4';
+    v = VideoWriter(filename, 'MPEG-4');
+    v.FrameRate = 30;  % Optional — adjust as needed
+    open(v);
+    
+    nFrames = size(trainingChunk, 3);
+    
+    for k = 1:nFrames
+        frame = trainingChunk(:,:,k);                   % double, likely > 1
+        frame_rgb = repmat(mat2gray(frame), [1 1 3]);   % convert to [0,1] RGB
+        writeVideo(v, frame_rgb);
+    end
+    
+    close(v);
+    disp(['Saved video: ', filename])
+
+end

@@ -1,0 +1,103 @@
+%%%%%%%%%%%
+% This script creates a training dataset to use for DeepLabCut by selecting
+% an "interesting" 3 minute-long period of stimulus presentation 
+
+function getPupilTrainingData(iexp)    
+    
+    base = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
+    
+    [exptStruct] = createExptStruct(iexp); % Load relevant times and directories for this experiment
+
+    load(fullfile([base, 'sara\Analysis\Neuropixel\', exptStruct.date], [exptStruct.mouse '_' exptStruct.date '_pupil_cropped.mat']))
+    framesmat = double(framesmat);
+
+% Find a chunk of frames that has the largest amount of change (i.e., rich
+% dataset for training DLC model
+    diffFrames  = diff(framesmat, 1, 3);    % Find differences in luminance
+    meanAbsDiff = squeeze(mean(mean(abs(diffFrames),1),2));
+
+    windowSize  = 5400;     % Training chunk size
+    halfWin     = floor(windowSize / 2);
+    movingAvg           = movmean(meanAbsDiff, windowSize);   % Window is automatically centered at index, so for starting and ending indices, the window cuts off
+    [maxVal, maxIdx]    = max(movingAvg);
+
+    startIdx = max(1, maxIdx - halfWin + 1);
+    endIdx   = min(size(framesmat,3), maxIdx + halfWin);
+    
+    trainingChunk = framesmat(:,:, startIdx:endIdx);
+    fprintf(['Window size: ' num2str(windowSize) ' frames \n' 'Training chunk size: ' num2str(size(trainingChunk, 3)) ' frames \nstartIdx: ' num2str(startIdx) '   endIdx: ' num2str(endIdx) ' \n'])
+
+
+% Save training chunk for DeepLabCut
+    saveFolder = [base 'sara\Analysis\Neuropixel\DeepLabCut\training_dataset'];
+    filename = fullfile(saveFolder, ['training_chunk_' exptStruct.mouse '_' exptStruct.date '_smooth0.5Bright.mp4']);
+    v = VideoWriter(filename, 'MPEG-4');
+    open(v);
+    
+    nFramesTrain = size(trainingChunk, 3);
+    globalMin = min(trainingChunk(:));
+    globalMax = max(trainingChunk(:));
+    
+    brightnessFactor = 2; % Brightening parameter
+
+    for k = 1:nFramesTrain
+        frame = trainingChunk(:,:,k);                   % double
+        Iblur = imgaussfilt(frame, 0.5);
+        Isharp = imsharpen(Iblur, 'Radius', 1.5, 'Amount', 0.5);
+        frame_scaled = (Isharp - globalMin) / (globalMax - globalMin);
+        frame_bright = brightnessFactor * frame_scaled;
+        frame_bright = max(0, min(1, frame_bright));   % clip to [0,1]
+        frame_rgb = repmat(frame_bright, [1 1 3]);   % convert to [0,1] RGB
+        %figure;subplot 221; imshow(frame);subplot 222; imshow(frame_rgb)
+        writeVideo(v, frame_rgb);
+    end
+
+
+
+    close(v);
+    disp(['Saved video: ', filename])
+
+end
+
+
+%% Before adding in preprocessing
+
+    % for k = 1:nFramesTrain
+    %     frame = trainingChunk(:,:,k);                   % double
+    %     frame_scaled = (frame - globalMin) / (globalMax - globalMin);
+    %     frame_bright = brightnessFactor * frame_scaled;
+    %     frame_bright = max(0, min(1, frame_bright));   % clip to [0,1]
+    %     frame_rgb = repmat(frame_bright, [1 1 3]);   % convert to [0,1] RGB
+    %     writeVideo(v, frame_rgb);
+    % end
+    %
+
+
+
+
+        frame = trainingChunk(:,:,50);                   % double
+        frame_thr = frame;
+        frame_thr(frame_thr>49) = 100;
+        figure; 
+        subplot 231; imagesc(frame);
+        subplot 233; imagesc(frame); 
+        subplot 232; imagesc(frame_thr);
+
+
+        [centers, radii] = imfindcircles(frame_thr,[5 20],'ObjectPolarity','dark', 'Sensitivity', 0.9);
+        subplot 232; viscircles(centers, radii,'Color','b');
+        subplot 233; viscircles(centers, radii,'Color','r');
+
+        frame = trainingChunk(:,:,3453);                   % double
+        frame_thr = frame;
+        frame_thr(frame_thr>49) = 100;
+        subplot 234; imagesc(frame);
+        subplot 236; imagesc(frame); 
+        subplot 235; imagesc(frame_thr);
+
+
+        [centers, radii] = imfindcircles(frame_thr,[5 20],'ObjectPolarity','dark', 'Sensitivity', 0.9);
+        subplot 235; viscircles(centers, radii,'Color','b');
+        subplot 236; viscircles(centers, radii,'Color','r');
+
+

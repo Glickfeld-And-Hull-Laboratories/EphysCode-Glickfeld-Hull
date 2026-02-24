@@ -1,0 +1,65 @@
+%%%%%%%%%%%
+% This script reads the .avi file, crops the images, and saves all frames
+% into a more manageable .mat file
+
+function cropPupil(exptStruct)
+
+% Set base directories
+    base        = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
+    dataDir     = ([base exptStruct.loc '\Data\neuropixel\' exptStruct.date]);
+    analysisDir = ([base exptStruct.loc '\Analysis\Neuropixel\' exptStruct.date]);
+
+% Load camera frames
+    cd(dataDir)
+    movieFiles = dir(fullfile(dataDir, '*.avi'));   % Find all files ending in .avi
+    assert(numel(movieFiles) == 1, 'Error. Expected exactly one .avi file in dataDir.');    % Throw error if more or less than 1 movie file is found
+    mov = VideoReader(movieFiles.name);   % Load frames
+
+% Pull first frame to crop
+    firstframe      = rgb2gray(read(mov,3000));
+    [ffcrop, rect]  = imcrop(firstframe);
+
+% Initialize arrays and variables
+    nFrames         = mov.NumFrames;
+    xDim            = size(ffcrop,1);
+    yDim            = size(ffcrop,2);
+    framesToExtract = 1:nFrames; 
+    framesmat       = uint8(zeros(xDim,yDim,length(framesToExtract)));
+
+% For all frames: read from movie object, turn to grayscale, crop
+    tic
+        for ff = framesToExtract
+            frame = imcrop(rgb2gray(read(mov,ff)),rect);
+            framesmat(:,:,ff) = frame;
+    
+            % Print progress every 100 frames
+            if mod(ff, 1000) == 0
+                fprintf('Processed frame %d/%d\n', ff, length(framesToExtract));
+            end
+        end
+    toc
+    fprintf(['Run complete. Extracted ' num2str(length(framesToExtract)) '/' num2str(nFrames) ' frames. \n'])
+
+    fprintf('Saving output, may take a few minutes...\n')
+    save( ...
+        fullfile( ...
+            [base, 'sara\Analysis\Neuropixel\', exptStruct.date], ...
+            [exptStruct.mouse '_' exptStruct.date '_pupil_cropped.mat'] ...
+            ), ...
+        'ffcrop', ...
+        'rect', ...
+        'mov', ...
+        'nFrames', ...
+        'framesToExtract', ...
+        'framesmat', ...
+        '-v7.3' ...
+        ) 
+    fprintf('Output saved\n')
+
+    figure; 
+        subplot 221; imagesc(framesmat(:,:,1)); subtitle('First frame')
+        subplot 222; imagesc(framesmat(:,:,3000)); subtitle('Frame 3000 (used for cropping)')
+        subplot 223; imagesc(framesmat(:,:,end)); subtitle('Last frame')   
+        sgtitle('Cropped pupil image')
+
+end
