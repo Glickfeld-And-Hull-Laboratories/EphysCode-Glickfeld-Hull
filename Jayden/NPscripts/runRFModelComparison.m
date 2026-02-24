@@ -81,10 +81,19 @@
 function results = runRFModelComparison( ...
     indLoop, ind_DS, STA_cropped, ...
     modelRegistry, omitCells, ...
-    plotMode, pdfFile)
+    plotMode, pdfFile, ...
+    compareR2Models, compareAICModels)
 
 if nargin < 6 || isempty(plotMode)
     plotMode = 'show';   % default behavior
+end
+
+if nargin < 8
+    compareR2Models = [];
+end
+
+if nargin < 9
+    compareAICModels = [];
 end
 
 %% -----------------------------
@@ -189,4 +198,95 @@ for idx = 1:numel(indLoop)
     end
 
 end
+modelNames = {modelRegistry.name};
+
+%% ============================================
+% R² Comparison (Display Only)
+%% ============================================
+
+if ~isempty(compareR2Models)
+
+    idx1 = find(strcmp(modelNames, compareR2Models{1}));
+    idx2 = find(strcmp(modelNames, compareR2Models{2}));
+
+    if isempty(idx1) || isempty(idx2)
+        error('Invalid model name in compareR2Models')
+    end
+
+    R2_1 = results.R2{idx1};
+    R2_2 = results.R2{idx2};
+
+    figure('Color','w');
+    scatter(R2_1, R2_2, 60, 'filled');
+    hold on
+    plot([0 1],[0 1],'k--','LineWidth',1.5)
+    xlabel(compareR2Models{1})
+    ylabel(compareR2Models{2})
+    title('R^2 Model Comparison')
+    axis square
+    grid on
+end
+
+%% ============================================
+% ΔAIC Histogram Comparison
+%% ============================================
+
+if ~isempty(compareAICModels)
+
+    idx1 = find(strcmp(modelNames, compareAICModels{1}));
+    idx2 = find(strcmp(modelNames, compareAICModels{2}));
+
+    if isempty(idx1) || isempty(idx2)
+        error('Invalid model name in compareAICModels')
+    end
+
+    AIC_1 = results.AIC{idx1};
+    AIC_2 = results.AIC{idx2};
+
+    % ΔAIC definition
+    deltaAIC = AIC_2 - AIC_1;
+
+    figure('Color','w');
+    histogram(deltaAIC, 20);
+    hold on
+    xline(0,'r','LineWidth',2)
+
+    xlabel(sprintf('\\DeltaAIC = %s − %s', ...
+        compareAICModels{2}, compareAICModels{1}))
+    ylabel('Number of Cells')
+    title('\DeltaAIC Model Comparison')
+    grid on
+
+    % Print summary
+    fprintf('\nAIC Comparison: %s vs %s\n', ...
+        compareAICModels{1}, compareAICModels{2});
+
+    fprintf('Mean ΔAIC: %.3f\n', mean(deltaAIC));
+    fprintf('Median ΔAIC: %.3f\n', median(deltaAIC));
+
+    fprintf('Cells where %s wins: %d / %d\n', ...
+        compareAICModels{1}, ...
+        sum(deltaAIC > 0), length(deltaAIC));
+
+    fprintf('Cells where %s wins: %d / %d\n\n', ...
+        compareAICModels{2}, ...
+        sum(deltaAIC < 0), length(deltaAIC));
+end
+
+validIdx = ~isnan(R2_1) & ~isnan(R2_2);
+
+R2_diff = R2_1(validIdx) - R2_2(validIdx);
+
+fprintf('\nR² mean difference: %.4f\n', mean(R2_diff));
+fprintf('R² median difference: %.4f\n', median(R2_diff));
+fprintf('Valid cells used: %d\n', sum(validIdx));
+
+validIdx = ~isnan(AIC_1) & ~isnan(AIC_2);
+
+AIC_diff = AIC_1(validIdx) - AIC_2(validIdx);
+
+fprintf('\nAIC mean difference: %.4f\n', mean(AIC_diff));
+fprintf('AIC median difference: %.4f\n', median(AIC_diff));
+fprintf('Valid cells used: %d\n', sum(validIdx));
+
 end
