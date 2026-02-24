@@ -157,11 +157,11 @@ modelRegistry = [
 
 ];
 
-omitCells = [634];   % any you want
+omitCells = [634];   % cell(s) with NaN
 
 results = runRFModelComparison( ...
     indLoop, ind_DS, STA_cropped, ...
-    modelRegistry, omitCells);
+    modelRegistry, omitCells, 'pdf', 'RF_Comparison_AllCells.pdf');
 
 %% Trim unused preallocations
 % R2_methodA = R2_methodA(1:k);
