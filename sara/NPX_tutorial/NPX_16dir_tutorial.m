@@ -182,7 +182,7 @@ load(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStru
 
 % First, initialize how many waveforms to sample and how long before/after
 % the spike you want to plot
-    num_samples                 = 100;       % How many waveforms do you want to sample for the waveform shape analysis?
+    num_samples                 = 1000;       % How many waveforms do you want to sample for the waveform shape analysis?
     dataLengthPreSpike          = 0.001;     % This is the data length that is subtracted from the spike time in order to see preceding baseline
     dataLengthTotal             = 0.003;     % This is the full data length that is pulled/plotted (x-axis)
 
@@ -266,7 +266,7 @@ load(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStru
 
 
 %% Now, do the same, but for all sorted units. 
-% This will take about 1-2 minutes to run. Here, we are using CPU threads to
+% This will take about 9 minutes to run. Here, we are using CPU threads to
 % parallel process multiple cells at a time so that this analysis runs more quickly.
 
 nCells = size(goodUnitStruct,2);
@@ -471,10 +471,9 @@ end
 %   - Narrow spikes → putative fast-spiking (FS) interneurons
 %   - Broad spikes  → putative regular-spiking (RS) pyramidal neurons
 %
-% Here we examine several waveform features commonly used to 
+% Here we examine a couple waveform features commonly used to 
 % classify cell types:
 %
-%   PtTratio  : peak-to-trough amplitude ratio
 %   PtTdist   : peak-to-trough time (waveform width)
 %   slope     : repolarization slope (rate of voltage change)
 %
@@ -483,30 +482,29 @@ end
 %   RS cells → longer peak-to-trough duration (broad spikes)
 
 
-% First, access these variables from the waveformStruct that we made
-    PtTratio_all    = [waveformStruct.PtTratio];
+% Access these variables from the waveformStruct that we made
     PtTdist_all     = [waveformStruct.PtTdist];
     slope_all       = [waveformStruct.slope];
 
 figure;
-    subplot(1,2,1)
-        scatter(PtTratio_all, PtTdist_all*1000, 10,'filled')
-        ylabel('peak to trough dist (ms)')
-        ylim([0 1])
-        xlabel('peak to trough ratio')
-   subplot(1,2,2)
-        scatter(PtTratio_all, slope_all*1000, 10, 'filled')
-        ylabel('slope')
-        xlabel('peak to trough ratio')
+    scatter(PtTdist_all*1000, slope_all*1000, 10, 'm', 'filled')
+    xlabel('peak to trough dist (ms)')
+    ylabel('slope at 0.5ms')
+    sgtitle('Identifying fast-spiking v. regular-spiking neurons')
+    set(gca,'TickDir','out');
+    movegui('center')
+    
 
 % Figure interpretation:
-% In both plots, you can see that there are two rough clusters of data. 
+% In this plot, you can see that there are roughly two clusters of data. 
 % Narrow-spiking (putative FS) neurons tend to cluster at lower 
 % peak-to-trough distances (~0.2–0.4 ms). Broad-spiking (putative RS) 
 % neurons typically appear above ~0.4–0.5 ms. 
-% Moreover, fast-spiking neurons typically show steeper repolarization 
-% slopes, reflecting rapid membrane kinetics whereas regular-spiking 
-% neurons exhibit slower repolarization.
+% Moreover, FS neurons typically show steeper repolarization slopes, 
+% reflecting rapid membrane kinetics whereas RS neurons exhibit slower 
+% repolarization. So at 0.5ms after the initial trough, FS cells are often 
+% already repolarizing (negative slope), whereas RS cells are are still 
+% depolarizing (positive slope).
 
 
 % Important disclaimer:
