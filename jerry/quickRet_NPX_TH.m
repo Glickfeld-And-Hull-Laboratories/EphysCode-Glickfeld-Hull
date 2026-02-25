@@ -2,8 +2,8 @@ clear all
 clear all global
 close all
 
-date = '260219';
-mouse = 'i3343';
+date = '260225';
+mouse = 'i3337';
 mwtime = '1513';   
 chnls = 1:2:200;
 
