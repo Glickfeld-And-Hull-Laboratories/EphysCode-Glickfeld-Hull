@@ -3,23 +3,23 @@
 %
 %  Modular RF model comparison pipeline.
 %
-%  Fits multiple receptive field models to STA data, computes R² and AICc,
+%  Fits multiple receptive field models to STA data, computes R� and AICc,
 %  and optionally visualizes or exports comparison figures.
 %
 %  ------------------------------------------------------------------------
 %  INPUTS
 %
 %  indLoop        : indices of cells to process (e.g., indLoop)
-%  ind_DS         : vector mapping index → actual cell ID
-%  STA_cropped    : 3D array (y × x × cellIndex) of cropped STA images
+%  ind_DS         : vector mapping index  actual cell ID
+%  STA_cropped    : 3D array (y � x � cellIndex) of cropped STA images
 %  modelRegistry  : struct array defining models to run (see example below)
 %  omitCells      : vector of cell IDs to skip (based on actual cell ID)
 %
 %  plotMode       : (optional) controls visualization behavior
-%                   'show'  → display figures only
-%                   'pdf'   → export figures to single PDF (no pop-up)
-%                   'both'  → display AND export
-%                   'none'  → no plotting (compute only)
+%                   'show'   display figures only
+%                   'pdf'    export figures to single PDF (no pop-up)
+%                   'both'   display AND export
+%                   'none'   no plotting (compute only)
 %
 %  pdfFile        : (optional) filename for PDF export (required if
 %                   plotMode = 'pdf' or 'both')
@@ -28,10 +28,10 @@
 %  OUTPUT
 %
 %  results : struct containing
-%       .cellIDs      → processed cell IDs
-%       .R2{m}        → R² per model
-%       .AIC{m}       → AICc per model
-%       .models{m}{k} → fitted RF images
+%       .cellIDs       processed cell IDs
+%       .R2{m}         R� per model
+%       .AIC{m}        AICc per model
+%       .models{m}{k}  fitted RF images
 %
 %  ------------------------------------------------------------------------
 %  EXAMPLE USAGE
@@ -66,16 +66,16 @@
 %  ------------------------------------------------------------------------
 %  NOTES
 %
-%  • Models of type 'standard' must return:
+%  � Models of type 'standard' must return:
 %        [params, RF, fitInfo]
 %
-%  • Models of type 'sg' must return struct with fields:
+%  � Models of type 'sg' must return struct with fields:
 %        .patch (fitted RF image)
-%        .r2    (R² value)
+%        .r2    (R� value)
 %
-%  • AICc is computed internally using computeAIC.
+%  � AICc is computed internally using computeAIC.
 %
-%  • Omit list is based on actual cell ID (ic), NOT loop index (ii).
+%  � Omit list is based on actual cell ID (ic), NOT loop index (ii).
 %
 %  ========================================================================
 function results = runRFModelComparison( ...
@@ -124,18 +124,31 @@ computeR2 = @(data, model) ...
         sum((data(:) - mean(data(:))).^2);
 
 nModels = numel(modelRegistry);
+%% Remove omitted cells first
+validMask = true(size(indLoop));
+
+for i = 1:numel(indLoop)
+    ic = ind_DS(indLoop(i));
+    if ismember(ic, omitCells)
+        validMask(i) = false;
+    end
+end
+
+indLoop = indLoop(validMask);
 nValid  = numel(indLoop);
 
 results = struct;
-results.cellIDs = [];
-results.R2  = cell(nModels,1);
-results.AIC = cell(nModels,1);
 results.models = cell(nModels,1);
+results.params = cell(nModels,1);
+results.R2     = cell(nModels,1);
+results.AIC    = cell(nModels,1);
+results.cellIDs = nan(nValid,1);
 
 for m = 1:nModels
-    results.R2{m}  = nan(nValid,1);
-    results.AIC{m} = nan(nValid,1);
     results.models{m} = cell(nValid,1);
+    results.params{m} = cell(nValid,1);
+    results.R2{m}     = nan(nValid,1);
+    results.AIC{m}    = nan(nValid,1);
 end
 
 k = 0;
@@ -163,28 +176,32 @@ for idx = 1:numel(indLoop)
     %% ===============================
 
     for m = 1:nModels
-
-        model = modelRegistry(m);
-
-        if strcmp(model.type, 'sg')
-
-            res = model.fitFcn(STA);
-            RF  = res.patch;
-            R2  = res.r2;
-
-        else
-
-            [~, RF, ~] = model.fitFcn(STA);
-            R2 = computeR2(STA, RF);
-
+    
+        switch modelRegistry(m).type
+    
+            case 'standard'
+    
+                [params, RF, fitInfo] = ...
+                    modelRegistry(m).fitFcn(STA);
+    
+                results.models{m}{k} = RF;
+                results.params{m}{k} = params;
+    
+            case 'sg'
+    
+                resSG = modelRegistry(m).fitFcn(STA);
+    
+                results.models{m}{k} = resSG.patch;
+                results.params{m}{k} = resSG.fit;   % store struct
+    
         end
-
-        RSS = sum((STA(:) - RF(:)).^2);
-
-        results.models{m}{k} = RF;
-        results.R2{m}(k)  = R2;
-        results.AIC{m}(k) = computeAIC(RSS, n, model.k);
-
+    
+        % ---- Compute metrics ----
+        RSS = sum((STA(:) - results.models{m}{k}(:)).^2);
+    
+        results.R2{m}(k) = computeR2(STA, results.models{m}{k});
+        results.AIC{m}(k) = computeAIC(RSS, n, modelRegistry(m).k);
+    
     end
 
     %% ===============================
@@ -201,7 +218,7 @@ end
 modelNames = {modelRegistry.name};
 
 %% ============================================
-% R² Comparison (Display Only)
+% R� Comparison (Display Only)
 %% ============================================
 
 if ~isempty(compareR2Models)
@@ -228,7 +245,7 @@ if ~isempty(compareR2Models)
 end
 
 %% ============================================
-% ΔAIC Histogram Comparison
+% AIC Histogram Comparison
 %% ============================================
 
 if ~isempty(compareAICModels)
@@ -243,7 +260,7 @@ if ~isempty(compareAICModels)
     AIC_1 = results.AIC{idx1};
     AIC_2 = results.AIC{idx2};
 
-    % ΔAIC definition
+    % AIC definition
     deltaAIC = AIC_2 - AIC_1;
 
     figure('Color','w');
@@ -251,7 +268,7 @@ if ~isempty(compareAICModels)
     hold on
     xline(0,'r','LineWidth',2)
 
-    xlabel(sprintf('\\DeltaAIC = %s − %s', ...
+    xlabel(sprintf('\\DeltaAIC = %s  %s', ...
         compareAICModels{2}, compareAICModels{1}))
     ylabel('Number of Cells')
     title('\DeltaAIC Model Comparison')
@@ -261,8 +278,8 @@ if ~isempty(compareAICModels)
     fprintf('\nAIC Comparison: %s vs %s\n', ...
         compareAICModels{1}, compareAICModels{2});
 
-    fprintf('Mean ΔAIC: %.3f\n', mean(deltaAIC));
-    fprintf('Median ΔAIC: %.3f\n', median(deltaAIC));
+    fprintf('Mean AIC: %.3f\n', mean(deltaAIC));
+    fprintf('Median AIC: %.3f\n', median(deltaAIC));
 
     fprintf('Cells where %s wins: %d / %d\n', ...
         compareAICModels{1}, ...
@@ -277,8 +294,8 @@ validIdx = ~isnan(R2_1) & ~isnan(R2_2);
 
 R2_diff = R2_1(validIdx) - R2_2(validIdx);
 
-fprintf('\nR² mean difference: %.4f\n', mean(R2_diff));
-fprintf('R² median difference: %.4f\n', median(R2_diff));
+fprintf('\nR� mean difference: %.4f\n', mean(R2_diff));
+fprintf('R� median difference: %.4f\n', median(R2_diff));
 fprintf('Valid cells used: %d\n', sum(validIdx));
 
 validIdx = ~isnan(AIC_1) & ~isnan(AIC_2);
