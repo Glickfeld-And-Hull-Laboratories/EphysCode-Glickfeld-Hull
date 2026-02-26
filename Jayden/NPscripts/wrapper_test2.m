@@ -1,0 +1,201 @@
+close all; clearvars; clc;
+
+%% debug mode one cell test
+debugMode = true;
+debugCell = 986;   % check indRFint
+%rng(0,'twister');   % randomness fully reproducible
+
+manualParamMode = false;   % <<< toggle this
+manualParams = [-9.8897,...
+   -5.7448,...
+    2.9080,...
+    1.0989,...
+    1.5050,...
+    0.0520,...
+   -0.7013,...
+    0.4246,...
+    0.0196,...
+   -0.7747,...
+   -1.0634,...
+   -0.8570];
+
+
+%% Load data 
+% load file with data concatenated across experiments
+
+analysisDir=('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase');
+load([analysisDir '\CrossOri_randDirFourPhase_summary.mat'])
+
+totalCells = totCells;   % cell number
+
+if debugMode
+    cellsToRun = debugCell; % test one cell here instead of total cell
+    fprintf('Cell\n');
+    disp(cellsToRun');
+else
+    cellsToRun = 1:totalCells;
+end
+
+fprintf('Running analysis on %d cell(s)\n', numel(cellsToRun));
+
+%% Decide what index of cells you're going to use
+
+indCortex   = find(depth_all>-1300);
+ind_sigRF   = sum(cells_sigRFbyTime_On_all,2)+sum(cells_sigRFbyTime_Off_all,2);
+listnc      = 1:size(cells_sigRFbyTime_On_all,1);
+indRF_pix   = listnc(ind_sigRF>0)';
+indRF_con   = find(bestTimePoint_all(:,2)>1);
+
+indRF_pix   = intersect(indRF_pix,indCortex);
+indRF_con   = intersect(indRF_con,indCortex);
+indRFint    = unique([indRF_pix; indRF_con]);
+idxInt      = intersect(indRF_pix, indRF_con);  % both mask and contrast method
+
+idxMask     = setdiff(indRF_pix, indRF_con); % mask method only
+idxCon      = setdiff(indRF_con,indRF_pix); % contrast method only
+
+ind         = intersect(resp_ind_dir_all, find(DSI_all>.5));
+ind_DS      = intersect(idxInt,ind); % visually responsive and direction-selective
+
+%% Calculate time point of STA
+% The first dimension of bestTimePoint_all is the one computed by the local contrast method
+
+%totalCells = sum(nCells_list);
+
+% Calculate best it by taking max zscore 
+for ic = cellsToRun
+    for it = 2:4
+        avgImgZscore(it,:,:) = squeeze(avgImgZscore_all(ic,it,:,:));     % Grab avg zscore STA images for time points 0.04 0.07 and 0.1
+    end 
+    [m, it_best]            = max(sum(sum(abs(avgImgZscore(:,:,:)),2),3),[],1);      % which of the three has the max cumulative zscore?
+    bestTimePoint_all(ic,3) = it_best;
+    bestTimePoint_all(ic,4) = m;
+end
+
+% Calculate best it by taking zscore threshold mask and taking highest cumulative CI value
+for ic = cellsToRun
+    for it = 2:4
+        pixMask             = imgaussfilt(abs(squeeze(avgImgZscoreThresh_all(ic,it,:,:))),3);
+        conMap              = squeeze(localConMap_map_all(ic, it, :,:));
+        maskMap             = pixMask.*conMap;
+        maskMap_sum(ic,it)  = mean(maskMap(:));
+    end
+    [m, it_best]            = max(maskMap_sum(ic,:),[],2);
+    bestTimePoint_all(ic,5) = it_best;
+    bestTimePoint_all(ic,6) = m;   
+end
+
+
+%% Find center of RF and crop
+if debugMode
+    indLoop = find(ind_DS == debugCell);
+    assert(~isempty(indLoop), 'debugCell is not in ind_DS');
+else
+    indLoop = 1:length(ind_DS);
+end
+
+for ii = indLoop
+    ic = ind_DS(ii);
+    avgImgZscore = squeeze(avgImgZscore_all(ic,:,:,:));     % Grab avg zscore STA images for all time points
+    data = medfilt2(imgaussfilt(squeeze(avgImgZscore(bestTimePoint_all(ic,1),:,:)),1));
+    [el, az] = getRFcenter(data); % reversed because of how I had swapped xDim and yDim for the image
+    sideLength = 20;
+    [data_cropped] = cropRFtoCenter(az, el, data, sideLength);
+    STA_cropped(:,:,ii) = data_cropped;
+
+
+end
+
+%% ---------- helpers ----------
+computeR2  = @(data, model) ...
+    1 - sum((data(:)-model(:)).^2) / ...
+        sum((data(:)-mean(data(:))).^2);
+
+computeAIC = @(RSS,n,k) n*log(RSS/n) + 2*k;
+
+%% ---------- settings ----------
+k_DoGCos = 12;        % parameter count
+nCells   = numel(indLoop);
+
+R2_DoGCos  = nan(nCells,1);
+AIC_DoGCos = nan(nCells,1);
+
+RF_DoGCos  = cell(nCells,1);
+params_all = cell(nCells,1);  % store parameters per cell
+
+k = 0;
+
+%% ============================================================
+% Main Loop (DoG � Cos ONLY)
+%% ============================================================
+
+for ii = indLoop
+    % rng(0)
+    if ii == 27
+        continue
+    end
+
+    k = k + 1;
+
+    ic  = ind_DS(ii);
+    STA = STA_cropped(:,:,ii);
+    n   = numel(STA);
+
+    fprintf('\n---- Cell %d ----\n', ic);
+
+    %% Fit DoG � Cos
+    if manualParamMode
+    
+        params = manualParams;
+        
+        % build coordinate system
+        [ny,nx] = size(STA);
+        x = (1:nx) - mean(1:nx);
+        y = (1:ny) - mean(1:ny);
+        [X,Y] = meshgrid(x,y);
+        XY = [X(:) Y(:)];
+        
+        modelVec = nonConcentricDoGCosineModel(params, XY, 'unnormalized');
+        RF_DoGCos{k} = reshape(modelVec, ny, nx);
+        
+    else
+        
+        [params, RF_DoGCos{k}, ~] = ...
+            fitNoncDoGCosineRF_diff(STA);
+        
+    end
+
+
+    params_all{k} = params;
+
+    %% Compute metrics
+    RSS = sum((STA(:)-RF_DoGCos{k}(:)).^2);
+
+    R2_DoGCos(k)  = computeR2(STA, RF_DoGCos{k});
+    AIC_DoGCos(k) = computeAIC(RSS, n, k_DoGCos);
+
+    fprintf('R2  = %.4f\n', R2_DoGCos(k));
+    fprintf('AIC = %.2f\n', AIC_DoGCos(k));
+    fprintf('Params:\n');
+    disp(params')
+    
+    figure
+    subplot(1,2,1)
+    imagesc(STA); axis image off; colormap gray
+    title('Data')
+    
+    subplot(1,2,2)
+    imagesc(RF_DoGCos{k}); axis image off; colormap gray
+    title('Model')
+
+
+    imagesc(RF_DoGCos{k})
+    axis image off
+    colormap(gray)
+    title({
+        'NonConc DoG'
+        sprintf('R^2 = %.3f', R2_DoGCos(k))
+        sprintf('AIC = %.1f', AIC_DoGCos(k))
+        })
+
+end
