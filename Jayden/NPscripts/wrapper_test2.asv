@@ -145,24 +145,24 @@ for ii = indLoop
 
     %% Fit DoG  Cos
     if manualParamMode
-
+    
         params = manualParams;
-
+        
         % build coordinate system
         [ny,nx] = size(STA);
         x = (1:nx) - mean(1:nx);
         y = (1:ny) - mean(1:ny);
         [X,Y] = meshgrid(x,y);
         XY = [X(:) Y(:)];
-
+        
         modelVec = nonConcentricDoGCosineModel(params, XY, 'unnormalized');
         RF_DoGCos{k} = reshape(modelVec, ny, nx);
-
+        
     else
-
+        
         [params, RF_DoGCos{k}, ~] = ...
             fitNoncDoGCosineRF_diff(STA);
-
+        
     end
 
 
@@ -178,12 +178,12 @@ for ii = indLoop
     fprintf('AIC = %.2f\n', AIC_DoGCos(k));
     fprintf('Params:\n');
     disp(params')
-
+    
     figure
     subplot(1,2,1)
     imagesc(STA); axis image off; colormap gray
     title('Data')
-
+    
     subplot(1,2,2)
     imagesc(RF_DoGCos{k}); axis image off; colormap gray
     title('Model')
