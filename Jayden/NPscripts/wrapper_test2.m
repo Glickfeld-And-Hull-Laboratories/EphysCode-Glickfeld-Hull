@@ -2,7 +2,7 @@ close all; clearvars; clc;
 
 %% debug mode one cell test
 debugMode = true;
-debugCell = 986;   % check indRFint
+debugCell = 470;   % check indRFint
 %rng(0,'twister');   % randomness fully reproducible
 
 manualParamMode = false;   % <<< toggle this
@@ -111,8 +111,6 @@ computeR2  = @(data, model) ...
     1 - sum((data(:)-model(:)).^2) / ...
         sum((data(:)-mean(data(:))).^2);
 
-computeAIC = @(RSS,n,k) n*log(RSS/n) + 2*k;
-
 %% ---------- settings ----------
 k_DoGCos = 12;        % parameter count
 nCells   = numel(indLoop);
@@ -161,7 +159,7 @@ for ii = indLoop
     else
 
         [params, RF_DoGCos{k}, ~] = ...
-            fitNoncDoGCosineRF_diff(STA);
+            fitNoncDoGCosineRF(STA);
 
     end
 
