@@ -135,6 +135,8 @@ function [params, modelRF, fitInfo] = fitNoncDoGCosineRF_diff(data, gaussianMode
     [pfit,~,res] = lsqcurvefit(fun,bestParams,XYdata,datav,lb,ub,opts);
     bestParams = pfit;
     bestRSS = sum(res.^2);
+
+    
     % bestExit   = exitflag;
     % bestOut    = output;
 
@@ -182,10 +184,41 @@ function y = nonConcentricDoGCosineModel(p, XY, gaussianMode)
     sc    = p(3);
     delta = p(4);
     ss    = sc + delta;   % <-- enforced sigmaS > sigmaC
+    if abs(As) > abs(Ac)
+    
+        % swap amplitudes
+        tmp = Ac;
+        Ac = As;
+        As = tmp;
+    
+        % swap sizes
+        tmp = sc;
+        sc = ss;
+        ss = tmp;
+    
+        % recompute delta
+        delta = ss - sc;
+    
+        % store back
+        p(1) = Ac;
+        p(2) = As;
+        p(3) = sc;
+        p(4) = delta;
+    
+    end
 
     tau   = p(5);
     theta = p(6);
 
+if tau < 1
+    tau = 1/tau;
+    theta = theta + pi/2;
+end
+
+theta = mod(theta,pi);
+
+params(5) = tau;
+params(6) = theta;
     x0    = p(7);
     y0    = p(8);
     f     = p(9);

@@ -23,16 +23,24 @@ for i = 1:numel(RF_cells)
 
         case 'standard'
             params = paramStruct{i};
-
+            effectiveSigma = params(3) / sqrt(params(5));
+            cycles = params(9) * effectiveSigma;
+            theta = params(6);
+            elongation = params(5);
+            if elongation < 1
+                elongation = 1 / elongation;
+                theta = theta + pi/ 2;
+            end
+    
             switch paramName
                 case 'orientation'
-                    param_vals(i) = params(6);
+                    param_vals(i) = theta;
                 case 'frequency'
-                    param_vals(i) = params(9);
+                    param_vals(i) = cycles;
                 case 'elongation'
-                    param_vals(i) = params(5);
+                    param_vals(i) = elongation;
                 case 'size'
-                    param_vals(i) = params(3);
+                    param_vals(i) = effectiveSigma;
             end
 
         case 'sg'

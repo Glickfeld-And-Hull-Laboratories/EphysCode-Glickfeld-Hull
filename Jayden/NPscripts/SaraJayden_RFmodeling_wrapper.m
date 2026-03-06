@@ -175,7 +175,7 @@ results = runRFModelComparison( ...
     {'DoG x cos', 'DoG x cos mod'}, {'DoG x cos', 'DoG x cos mod'});
 
 %% Ranking
-modelIdx = find(strcmp({modelRegistry.name}, 'DoG x cos mod'));
+modelIdx = find(strcmp({modelRegistry.name}, 'DoG x cos'));
 
 paramList = {'orientation','frequency','elongation','size'};
 
