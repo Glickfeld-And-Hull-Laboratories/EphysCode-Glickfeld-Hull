@@ -3,7 +3,7 @@
 %
 %  Modular RF model comparison pipeline.
 %
-%  Fits multiple receptive field models to STA data, computes R� and AICc,
+%  Fits multiple receptive field models to STA data, computes R and AICc,
 %  and optionally visualizes or exports comparison figures.
 %
 %  ------------------------------------------------------------------------
@@ -11,7 +11,7 @@
 %
 %  indLoop        : indices of cells to process (e.g., indLoop)
 %  ind_DS         : vector mapping index  actual cell ID
-%  STA_cropped    : 3D array (y � x � cellIndex) of cropped STA images
+%  STA_cropped    : 3D array (y  x  cellIndex) of cropped STA images
 %  modelRegistry  : struct array defining models to run (see example below)
 %  omitCells      : vector of cell IDs to skip (based on actual cell ID)
 %
@@ -29,7 +29,7 @@
 %
 %  results : struct containing
 %       .cellIDs       processed cell IDs
-%       .R2{m}         R� per model
+%       .R2{m}         R per model
 %       .AIC{m}        AICc per model
 %       .models{m}{k}  fitted RF images
 %
@@ -66,16 +66,16 @@
 %  ------------------------------------------------------------------------
 %  NOTES
 %
-%  � Models of type 'standard' must return:
+%   Models of type 'standard' must return:
 %        [params, RF, fitInfo]
 %
-%  � Models of type 'sg' must return struct with fields:
+%   Models of type 'sg' must return struct with fields:
 %        .patch (fitted RF image)
-%        .r2    (R� value)
+%        .r2    (R value)
 %
-%  � AICc is computed internally using computeAIC.
+%   AICc is computed internally using computeAIC.
 %
-%  � Omit list is based on actual cell ID (ic), NOT loop index (ii).
+%   Omit list is based on actual cell ID (ic), NOT loop index (ii).
 %
 %  ========================================================================
 function results = runRFModelComparison( ...
@@ -218,7 +218,217 @@ end
 modelNames = {modelRegistry.name};
 
 %% ============================================
-% R� Comparison (Display Only)
+% Scan parameter correlations (works for all models)
+%% ============================================
+
+corrThreshold = 0.1;
+
+for m = 1:nModels
+
+    P = [];
+
+    modelName = modelRegistry(m).name;
+
+    for k = 1:nValid
+
+        p = results.params{m}{k};
+
+        if isempty(p)
+            continue
+        end
+
+        row = p(:)';
+
+        theta = mod(row(6),pi);
+        phi   = mod(row(10),2*pi);
+
+        % ============================
+        % Handle model differences
+        % ============================
+
+        if contains(lower(modelName),'sigmaxyratio')
+
+            % NEW RATIO MODEL
+            % p = [Ac As sigmaX sigmaY kS theta x0 y0 f phi dx dy]
+
+            sigmaX = row(3);
+            sigmaY = row(4);
+
+            kS = row(5);
+
+            sigmaSx = kS * sigmaX;
+            sigmaSy = kS * sigmaY;
+
+            tau = sigmaY / sigmaX;
+
+            row_corr = [
+                row(1)
+                row(2)
+                sigmaX
+                sigmaY
+                sigmaSx
+                sigmaSy
+                kS
+                tau
+                cos(2*theta)
+                sin(2*theta)
+                row(9)
+                cos(phi)
+                sin(phi)
+                row(11)
+                row(12)
+            ];
+
+            paramNames = {
+                'Ac'
+                'As'
+                'sigmaX'
+                'sigmaY'
+                'sigmaSx'
+                'sigmaSy'
+                'kS'
+                'tau'
+                'cos2theta'
+                'sin2theta'
+                'freq'
+                'cosphi'
+                'sinphi'
+                'dx'
+                'dy'
+            };
+
+        elseif contains(lower(modelName),'sigmaxy')
+
+            % NEW sigmaC-kS model
+            % p = [Ac As sigmaC kS tau theta x0 y0 f phi dx dy]
+
+            sc = row(3);
+            kS = row(4);
+            ss = kS * sc;
+            tau = row(5);
+
+            row_corr = [
+                row(1)
+                row(2)
+                sc
+                ss
+                kS
+                tau
+                cos(2*theta)
+                sin(2*theta)
+                row(9)
+                cos(phi)
+                sin(phi)
+                row(11)
+                row(12)
+            ];
+
+            paramNames = {
+                'Ac'
+                'As'
+                'sigmaC'
+                'sigmaS'
+                'kS'
+                'tau'
+                'cos2theta'
+                'sin2theta'
+                'freq'
+                'cosphi'
+                'sinphi'
+                'dx'
+                'dy'
+            };
+
+        else
+
+            % ORIGINAL MODEL
+
+            sc = row(3);
+            delta = row(4);
+
+            ss = sc + delta;
+
+            tau = row(5);
+
+            row_corr = [
+                row(1)
+                row(2)
+                sc
+                ss
+                tau
+                cos(2*theta)
+                sin(2*theta)
+                row(9)
+                cos(phi)
+                sin(phi)
+                row(11)
+                row(12)
+            ];
+
+            paramNames = {
+                'Ac'
+                'As'
+                'sigmaC'
+                'sigmaS'
+                'tau'
+                'cos2theta'
+                'sin2theta'
+                'freq'
+                'cosphi'
+                'sinphi'
+                'dx'
+                'dy'
+            };
+
+        end
+
+        P(end+1,:) = row_corr; %#ok<AGROW>
+
+    end
+
+    if size(P,1) < 3
+        continue
+    end
+
+    valid = all(isfinite(P),2);
+    P = P(valid,:);
+
+    [R,pval] = corr(P,'Rows','complete');
+
+    fprintf('\n====================================\n');
+    fprintf('Parameter correlations: %s\n', modelRegistry(m).name);
+    fprintf('====================================\n');
+
+    nParam = size(P,2);
+
+    for i = 1:nParam
+        for j = i+1:nParam
+
+            if abs(R(i,j)) > corrThreshold && pval(i,j) < 0.05
+
+                fprintf('%s  vs  %s   r = %.3f   p = %.3g\n', ...
+                    paramNames{i}, paramNames{j}, R(i,j), pval(i,j));
+
+            end
+
+        end
+    end
+
+    figure('Color','w');
+    imagesc(R)
+    axis square
+    colorbar
+
+    set(gca,'XTick',1:nParam,'XTickLabel',paramNames,...
+        'YTick',1:nParam,'YTickLabel',paramNames)
+
+    xtickangle(45)
+
+    title(['Parameter Correlation Matrix: ' modelRegistry(m).name])
+
+end
+%% ============================================
+% R Comparison (Display Only)
 %% ============================================
 
 if ~isempty(compareR2Models)
@@ -288,22 +498,22 @@ if ~isempty(compareAICModels)
     fprintf('Cells where %s wins: %d / %d\n\n', ...
         compareAICModels{2}, ...
         sum(deltaAIC < 0), length(deltaAIC));
-end
 
-validIdx = ~isnan(R2_1) & ~isnan(R2_2);
 
-R2_diff = R2_1(validIdx) - R2_2(validIdx);
-
-fprintf('\nR� mean difference: %.4f\n', mean(R2_diff));
-fprintf('R� median difference: %.4f\n', median(R2_diff));
-fprintf('Valid cells used: %d\n', sum(validIdx));
-
-validIdx = ~isnan(AIC_1) & ~isnan(AIC_2);
-
-AIC_diff = AIC_1(validIdx) - AIC_2(validIdx);
-
-fprintf('\nAIC mean difference: %.4f\n', mean(AIC_diff));
-fprintf('AIC median difference: %.4f\n', median(AIC_diff));
-fprintf('Valid cells used: %d\n', sum(validIdx));
-
+    validIdx = ~isnan(R2_1) & ~isnan(R2_2);
+    
+    R2_diff = R2_1(validIdx) - R2_2(validIdx);
+    
+    fprintf('\nR mean difference: %.4f\n', mean(R2_diff));
+    fprintf('R median difference: %.4f\n', median(R2_diff));
+    fprintf('Valid cells used: %d\n', sum(validIdx));
+    
+    validIdx = ~isnan(AIC_1) & ~isnan(AIC_2);
+    
+    AIC_diff = AIC_1(validIdx) - AIC_2(validIdx);
+    
+    fprintf('\nAIC mean difference: %.4f\n', mean(AIC_diff));
+    fprintf('AIC median difference: %.4f\n', median(AIC_diff));
+    fprintf('Valid cells used: %d\n', sum(validIdx));
+end 
 end

@@ -1,6 +1,6 @@
 function modelVec = nonConcentricDoGCosineModel(p, XY, mode)
 % ============================================================
-% Nonconcentric DoG × Cosine RF model (forward model only)
+% Nonconcentric DoG � Cosine RF model (forward model only)
 %
 % p = [Ac, As, sigmaC, deltaSigma, tau, theta,
 %      x0, y0, f, phi, dx, dy]
@@ -42,7 +42,7 @@ Ys = Y - (y0 + dy);
 Xs_r =  Xs * cos(theta) + Ys * sin(theta);
 Ys_r = -Xs * sin(theta) + Ys * cos(theta);
 
-sigmaS = sigmaC + deltaSigma;
+sigmaS = deltaSigma;
 
 G_surround = exp(-(Xs_r.^2 + (tau*Ys_r).^2) ./ (2*sigmaS^2));
 
