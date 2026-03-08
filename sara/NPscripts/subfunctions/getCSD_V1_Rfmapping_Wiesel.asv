@@ -1,0 +1,361 @@
+%% LFP spectrolaminar analysis for V1, Sara Gannon
+%
+% Relevant literature:
+% Mendoza-Halliday et al. 'A ubiquitous spectrolaminar motif of  local field potential power across the  primate cortex.' Nature Neuroscience, 2023. https://doi.org/10.1038/s41593-023-01554-7
+
+
+
+for iexp = [25 24 23 22 21 20 19 18] %26 25 24 23 22 21 20 19 18 13 11
+
+    exptloc = 'V1'; %LG
+    [exptStruct] = createExptStruct(iexp,exptloc); % Load relevant times and directories for this experiment
+
+    clearvars -except iexp exptloc exptStruct
+
+% Get experiment info
+    mouse   = exptStruct.mouse;
+    date    = exptStruct.date;
+    loc     = exptStruct.loc;
+
+% Create path to neuropixel data
+    dataPath = fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/',loc, 'Data', 'neuropixel', date); % For Wiesel
+    cd(dataPath)
+
+% Navigate into imec folder
+    matchingFolders = dir(fullfile(dataPath, [mouse '*']));  % Find folders in dataPath location that start with mouse name
+    matchingFolder = matchingFolders(~contains({matchingFolders.name}, 'retinotopy'));   % Filter out folders that contain 'retinotopy' in the name
+
+    if numel(matchingFolder) == 1 && matchingFolder(1).isdir    % If there is only one folder that starts with mouse name
+        cd(fullfile(dataPath, matchingFolder(1).name));         % Change directory
+    else
+        error('Expected one folder for mouse %s, but found %d', mouse, numel(matchingFolder));  % Throw error if there is > or < than 1 folder that starts with mouse name and does not contain 'retinotopy'
+    end
+
+% Load LFP data (expected to be NPX data collected at 2500hz and reported in mV)
+    lfFile      = dir(fullfile(pwd, '*imec0.lf.bin'));   % Get info on file that ends in imec0.lf.bin
+    metaLFP     = ReadMeta(lfFile.name, pwd);       % Grab meta file from working directory
+    LFPtime     = 0:1/str2double(metaLFP.imSampRate):str2double(metaLFP.fileTimeSecs);  % Time of each sample
+    nSamp       = str2double(metaLFP.imSampRate)*str2double(metaLFP.fileTimeSecs); % Set number of samples to grab (as in, grabs all)
+    LFPdata     = ReadBin(0, nSamp, metaLFP, lfFile.name, pwd);    % Load LFP (channels x samples)
+
+% Parameters
+    Fs          = 2500; % Sampling frequency in Hz
+    cutofflow   = 150; % Cutoff frequency in Hz
+    [b, a] = butter(4, cutofflow/(Fs/2), 'low'); % Design filter (Butterworth, 4th order)
+    LFPdataFilt1 = filtfilt(b, a, LFPdata);
+    LFPdata = (LFPdataFilt1-LFPdataFilt1(300,:));
+    clear LFPdataFilt1
+
+% Set probe tip depth, distance between channels, and which channels to use
+    depth       = exptStruct.depth;
+    dz          = 20;       % 20 um between channels, vertically
+    chnls       = 2:2:200;  % Only take even channels because NPX probe has two columns of staggered channels
+    fs = 2500;  % Sampling rate (Hz), modify if different
+
+% Load Stimulus On times from photodiode
+    % Load stim on information (both MWorks signal and photodiode)
+        cd (['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_staff/home/' exptStruct.loc '/Analysis/Neuropixel/' exptStruct.date])       % Move from KS_Output folder to ...\Analysis\neuropixel\date folder, where TPrime output is saved
+        stimOnTimestampsMW  = table2array(readtable([date '_mworksStimOnSync.txt']));
+        stimOnTimestampsPD  = table2array(readtable([date '_photodiodeSync.txt']));
+
+    % Lonely TTL removal
+        lonelyThreshold = 0.1; % 100 ms
+        timeDiffs       = abs(diff(stimOnTimestampsPD));  % Compute pairwise differences efficiently
+        hasNeighbor = [false; timeDiffs < lonelyThreshold] | [timeDiffs < lonelyThreshold; false]; % Identify indices where a close neighbor exists
+        filteredPD = stimOnTimestampsPD(hasNeighbor);   % Keep only timestamps that have a neighbor within 100 ms
+
+        filteredPD = stimOnTimestampsPD;
+
+    % Account for report of the monitor's refresh rate in the photodiode signal
+        minInterval = 0.035; %0.035; % Define a minimum separation threshold (should be longer than a refresh cycle but shorter than ISI)     
+        leadingEdgesPD = filteredPD([true; diff(filteredPD) > minInterval]); % Extract the leading edges (first timestamp of each stimulus period)
+        % [true; ...] ensures that the very first timestamp is always included because otherwise diff() returns an array that is one element shorter than the original.
+
+    % Find stimulus blocks and separate stim on timestamps
+        threshold       = 5; % Time gap to define a break (in seconds)
+        breakIndices    = find(diff(leadingEdgesPD) > threshold); % Find the indices where the gap between timestamps exceeds the threshold
+        stimBlocks      = cell(length(breakIndices) + 1, 1); % Initialize a cell array to store stimulus blocks
+     
+        startIdx = 1;
+        for i = 1:length(breakIndices) % Extract stimulus blocks
+            endIdx          = breakIndices(i);
+            stimBlocks{i}   = leadingEdgesPD(startIdx:endIdx);
+            startIdx        = endIdx + 1;
+        end
+        stimBlocks{end} = leadingEdgesPD(startIdx:end); % Store the last block
+    
+    % Make sure all PD are stim-associated
+        ibRF = 0;
+        RFtimestamps =[];
+        for ib = 1:length(stimBlocks)
+            if size(stimBlocks{ib},1) > 20  % If stimulus block has at least 20 trials...
+                ibRF = ibRF + 1;
+                RFstimBlocks{ibRF} = stimBlocks{ib}(1:end-1); % Get rid of abherrant lonely PD signal at end of trial block
+                if ibRF<5
+                    RFtimestamps = [RFtimestamps;  stimBlocks{ib}(1:end-1)];
+                end
+            end
+        end
+
+        timestamps = RFtimestamps(5:10:(end-5));
+
+% Set windows for baseline and stim on
+    onWin       = .5;   % Stim On LFP window: 500 ms
+    baseWin     = .5;   % Baseline window: 500 ms
+
+% Create LFP window around Stim On times
+    all_stimLFP = [];
+    all_baseLFP = [];
+    all_LFP     = [];
+    for is = 1:length(timestamps)
+        % Find stim on window
+        stimIdx             = find(timestamps(is)+onWin>LFPtime & LFPtime>=timestamps(is));     % Get sample indices for LFP stim on window
+        stimLFP             = LFPdata(chnls,stimIdx);       % Create Stim On LFP variable with desired channels and sampling window
+        all_stimLFP(:,:,is) = stimLFP;
+        tFromStimOn         = LFPtime(stimIdx);   % Get the real times of the samples (for x-axis)
+        
+        % Find baseline window
+        baseIdx             = find(timestamps(is)>LFPtime & LFPtime>=(timestamps(is)-baseWin));
+        baseLFP             = LFPdata(chnls,baseIdx);
+        all_baseLFP(:,:,is)   = baseLFP;
+
+        % Concatenate in time: baseline first, then stim
+        fullLFP = [baseLFP stimLFP];
+        all_LFP(:,:,is) = fullLFP;
+
+        if baseIdx(end)+1 ~= stimIdx(1)
+            error('wrong baseline/stim windows')
+        else; end
+    end
+
+
+
+    LFP = (mean(all_stimLFP,3)-mean(all_baseLFP,3))./1000;  % Average across stim on windows and average across baselines, then subtract and convert to muV
+    LFP = mean(all_stimLFP,3)./1000;  % Average across stim on windows and average across baselines, then subtract and convert to muV
+
+% Determine depth to be plotted
+    maxDepth = -1300; % Set maximum depth to plot (in m)
+    numChannels = size(LFP, 1); % Total channels (assumed to be 100)
+    depths = linspace(depth, depth + (numChannels - 1) * dz, numChannels);    % Compute actual depth values for each channel
+    % Find channels that are shallower than maxDepth
+    validIdx = find(depths >= maxDepth);  % Select channels shallower than maxDepth
+    % Extract the LFP subset and update depth values
+    LFP = LFP(validIdx, :);
+    depth_subset = depths(validIdx);  % Update depth axis
+
+% Plot LFP as a function of depth
+    xx = tFromStimOn-tFromStimOn(1);    % X-axis will be relative timepoints (starting at 0) instead of experiment times
+
+    z   = depth:dz:depth+(dz*length(chnls));
+    v   = 1; % interpolation factor
+    figure
+    subplot 431
+        clear gca; which gca -all
+        imagesc(xx, depth_subset, interp2(LFP,v))
+        hold on
+        set(gca,'YDir','normal');
+        ylim([depth_subset(3) depth_subset(end-2)])
+        xlabel('time (s)')
+        ylabel('depth')
+        title('LFP (\muV)')
+        colormap('hot')
+        h = colorbar;
+        h.Ticks =  h.Limits;
+        movegui('center')
+%         xlim([0.1 0.3])
+
+ % Compute second derivative for CSD using unsmoothed LFP
+    CSD = -diff(LFP, 2, 1) / dz^2;  
+    
+% Smooth CSD
+    sigma       = 5; % Standard deviation for smoothing (adjust if needed)
+    CSD_smooth  = imgaussfilt(CSD, sigma, 'FilterSize', 15);  % 2D Gaussian smoothing
+
+% Plot CSD as a function of depth
+    z = depth:dz:depth+(dz*length(chnls)-1);
+    v = 1; % Interpolation factor
+    [mCSD, peakCSD] = max(mean(CSD_smooth,2),[],"all");
+    subplot 432
+        imagesc(xx, depth_subset(2:end-1), interp2(CSD_smooth, v))  % Exclude first and last rows due to second derivative
+        hold on
+        set(gca,'YDir','normal');
+        yline(z(peakCSD));
+        ylim([depth_subset(3) depth_subset(end-2)])
+        xlabel('Time (s)')
+        ylabel('Depth (um)')
+        title('CSD (\muA/mm^3)')
+        colormap('jet') 
+        h = colorbar;
+        h.Ticks = h.Limits;
+        movegui('center')
+%         xlim([0.1 0.3])
+%         caxis([-1 1])
+
+ % Compute second derivative for CSD using unsmoothed LFP
+    CSD = diff(LFP, 2, 1) / dz^2;  
+    
+% Smooth CSD
+    sigma       = 5; % Standard deviation for smoothing (adjust if needed)
+    CSD_smooth  = imgaussfilt(CSD, sigma, 'FilterSize', 15);  % 2D Gaussian smoothing
+
+% Plot CSD as a function of depth
+    z = depth:dz:depth+(dz*length(chnls)-1);
+    v = 1; % Interpolation factor
+    [mCSD, peakCSD] = max(mean(CSD_smooth,2),[],"all");
+    subplot 433
+        imagesc(xx, depth_subset(2:end-1), interp2(CSD_smooth, v))  % Exclude first and last rows due to second derivative
+        hold on
+        set(gca,'YDir','normal');
+        yline(z(peakCSD));
+        ylim([depth_subset(3) depth_subset(end-2)])
+        xlabel('Time (s)')
+        ylabel('Depth (um)')
+        title('CSD (\muA/mm^3)')
+        colormap('jet') 
+        h = colorbar;
+        h.Ticks = h.Limits;
+        movegui('center')
+%         xlim([0.1 0.3])
+%         caxis([-1 1])
+
+       layerStruct.LFPtime = LFPtime;
+       layerStruct.LFPdata = LFPdata;
+        
+        sgtitle({[mouse ' ' date], ['probe tip ' num2str(depth) ', avgd ' num2str(is) ' stimuli']})
+        print(fullfile(['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/' loc '/Analysis/Neuropixel/' date '/' mouse '-' date '-findLayer4-RFmapping-CSD.pdf']),'-dpdf','-bestfit')
+
+
+
+%now compute from epxerimental times
+    stimStruct = createStimStruct_Wiesel(exptStruct);
+    timestamps = stimStruct.timestamps{5};
+
+
+% Set windows for baseline and stim on
+    onWin       = .5;   % Stim On LFP window: 500 ms
+    baseWin     = .5;   % Baseline window: 500 ms
+
+% Create LFP window around Stim On times
+    all_stimLFP = [];
+    all_baseLFP = [];
+    all_LFP     = [];
+    for is = 1:length(timestamps)
+        % Find stim on window
+        stimIdx             = find(timestamps(is)+onWin>LFPtime & LFPtime>=timestamps(is));     % Get sample indices for LFP stim on window
+        stimLFP             = LFPdata(chnls,stimIdx);       % Create Stim On LFP variable with desired channels and sampling window
+        all_stimLFP(:,:,is) = stimLFP;
+        tFromStimOn         = LFPtime(stimIdx);   % Get the real times of the samples (for x-axis)
+        
+        % Find baseline window
+        baseIdx             = find(timestamps(is)>LFPtime & LFPtime>=(timestamps(is)-baseWin));
+        baseLFP             = LFPdata(chnls,baseIdx);
+        all_baseLFP(:,:,is)   = baseLFP;
+
+        % Concatenate in time: baseline first, then stim
+        fullLFP = [baseLFP stimLFP];
+        all_LFP(:,:,is) = fullLFP;
+
+        if baseIdx(end)+1 ~= stimIdx(1)
+            error('wrong baseline/stim windows')
+        else; end
+    end
+
+
+
+    LFP = (mean(all_stimLFP,3)-mean(all_baseLFP,3))./1000;  % Average across stim on windows and average across baselines, then subtract and convert to muV
+    LFP = mean(all_stimLFP,3)./1000;  % Average across stim on windows and average across baselines, then subtract and convert to muV
+
+% Determine depth to be plotted
+    maxDepth = -1300; % Set maximum depth to plot (in m)
+    numChannels = size(LFP, 1); % Total channels (assumed to be 100)
+    depths = linspace(depth, depth + (numChannels - 1) * dz, numChannels);    % Compute actual depth values for each channel
+    % Find channels that are shallower than maxDepth
+    validIdx = find(depths >= maxDepth);  % Select channels shallower than maxDepth
+    % Extract the LFP subset and update depth values
+    LFP = LFP(validIdx, :);
+    depth_subset = depths(validIdx);  % Update depth axis
+
+% Plot LFP as a function of depth
+    xx = tFromStimOn-tFromStimOn(1);    % X-axis will be relative timepoints (starting at 0) instead of experiment times
+
+    z   = depth:dz:depth+(dz*length(chnls));
+    v   = 1; % interpolation factor
+    figure
+    subplot 431
+        clear gca; which gca -all
+        imagesc(xx, depth_subset, interp2(LFP,v))
+        hold on
+        set(gca,'YDir','normal');
+        ylim([depth_subset(3) depth_subset(end-2)])
+        xlabel('time (s)')
+        ylabel('depth')
+        title('LFP (\muV)')
+        colormap('hot')
+        h = colorbar;
+        h.Ticks =  h.Limits;
+        movegui('center')
+%         xlim([0.1 0.3])
+
+ % Compute second derivative for CSD using unsmoothed LFP
+    CSD = -diff(LFP, 2, 1) / dz^2;  
+    
+% Smooth CSD
+    sigma       = 5; % Standard deviation for smoothing (adjust if needed)
+    CSD_smooth  = imgaussfilt(CSD, sigma, 'FilterSize', 15);  % 2D Gaussian smoothing
+
+% Plot CSD as a function of depth
+    z = depth:dz:depth+(dz*length(chnls)-1);
+    v = 1; % Interpolation factor
+    [mCSD, peakCSD] = max(mean(CSD_smooth,2),[],"all");
+    subplot 432
+        imagesc(xx, depth_subset(2:end-1), interp2(CSD_smooth, v))  % Exclude first and last rows due to second derivative
+        hold on
+        set(gca,'YDir','normal');
+        yline(z(peakCSD));
+        ylim([depth_subset(3) depth_subset(end-2)])
+        xlabel('Time (s)')
+        ylabel('Depth (um)')
+        title('CSD (\muA/mm^3)')
+        colormap('jet') 
+        h = colorbar;
+        h.Ticks = h.Limits;
+        movegui('center')
+%         xlim([0.1 0.3])
+%         caxis([-1 1])
+
+ % Compute second derivative for CSD using unsmoothed LFP
+    CSD = diff(LFP, 2, 1) / dz^2;  
+    
+% Smooth CSD
+    sigma       = 5; % Standard deviation for smoothing (adjust if needed)
+    CSD_smooth  = imgaussfilt(CSD, sigma, 'FilterSize', 15);  % 2D Gaussian smoothing
+
+% Plot CSD as a function of depth
+    z = depth:dz:depth+(dz*length(chnls)-1);
+    v = 1; % Interpolation factor
+    [mCSD, peakCSD] = max(mean(CSD_smooth,2),[],"all");
+    subplot 433
+        imagesc(xx, depth_subset(2:end-1), interp2(CSD_smooth, v))  % Exclude first and last rows due to second derivative
+        hold on
+        set(gca,'YDir','normal');
+        yline(z(peakCSD));
+        ylim([depth_subset(3) depth_subset(end-2)])
+        xlabel('Time (s)')
+        ylabel('Depth (um)')
+        title('CSD (\muA/mm^3)')
+        colormap('jet') 
+        h = colorbar;
+        h.Ticks = h.Limits;
+        movegui('center')
+%         xlim([0.1 0.3])
+%         caxis([-1 1])
+  
+        
+        sgtitle({[mouse ' ' date], ['probe tip ' num2str(depth) ', avgd ' num2str(is) ' stimuli']})
+        print(fullfile(['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/' loc '/Analysis/Neuropixel/' date '/' mouse '-' date '-findLayer4-CSD.pdf']),'-dpdf','-bestfit')
+
+
+
+
+end
+

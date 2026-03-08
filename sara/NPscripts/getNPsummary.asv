@@ -71,10 +71,11 @@ bestTimePoint_all = [];
 expts = [13 18 19 20 21 22 23 25 26];
 
 start=1;
-for iexp = expts     % 11 13 14 16 17
-    mouse = expt(iexp).mouse;
-    mouse_list = strvcat(mouse_list, mouse);
-    date = expt(iexp).date;
+for iexp                = expts     % 11 13 14 16 17
+    mouse               = expt(iexp).mouse;
+    mouse_list          = strvcat(mouse_list, mouse);
+    date                = expt(iexp).date;
+    probeTipDepth       = expt(iexp).z;
         
     load(fullfile(base, 'Analysis\Neuropixel', date, [date '_' mouse '_spikeAnalysis.mat']))
     load(fullfile(base, 'Analysis\Neuropixel', date, [date '_' mouse '_unitStructs.mat']))
@@ -112,7 +113,8 @@ for iexp = expts     % 11 13 14 16 17
     refViolations_all           = [refViolations_all, spikingStruct.refViolations];
     nSpikesUsed_all             = [nSpikesUsed_all, spikingStruct.nSpikesUsed];
     
-    depth_all                   = [depth_all, goodUnitStruct.depth];
+    depths                      = [goodUnitStruct.depth] + probeTipDepth;
+    depth_all                   = [depth_all, depths];
     channel_all                 = [channel_all, goodUnitStruct.channel];
 
     F1F0_all                    = [F1F0_all; f1overf0mat];

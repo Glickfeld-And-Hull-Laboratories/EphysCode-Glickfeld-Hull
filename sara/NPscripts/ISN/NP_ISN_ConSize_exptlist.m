@@ -292,3 +292,36 @@ expt(18).eyetrack = {' '};
 expt(18).wheeltrack = {' '};
 expt(18).saveLoc = 'sara';
 
+
+%% i3903 260213, PM Lumi
+expt(19).mouse = 'i3903';
+expt(19).date = '260213';
+expt(19).loc  = {'PM'};
+expt(19).z = -2000;
+expt(19).probe = {'NP1'};
+expt(19).genotype = {'C57/CBA'};
+expt(19).sex = {'F'};
+expt(19).age = '114';
+expt(19).cog = {'awake'};
+expt(19).layerTime = '1341';
+expt(19).exptTime = '1402';
+expt(19).eyetrack = {'y'};  
+expt(19).wheeltrack = {'y'};
+expt(19).saveLoc = 'Lumi';
+
+
+%% i3904 260223, PM Lumi
+expt(20).mouse = 'i3904';
+expt(20).date = '260223';
+expt(20).loc  = {'PM'};
+expt(20).z = -2000;
+expt(20).probe = {'NP1'};
+expt(20).genotype = {'C57/CBA'};
+expt(20).sex = {'F'};
+expt(20).age = '102';
+expt(20).cog = {'awake'};
+expt(20).layerTime = '1401';
+expt(20).exptTime = '1428';
+expt(20).eyetrack = {'y'};  
+expt(20).wheeltrack = {'y'};
+expt(20).saveLoc = 'Lumi';

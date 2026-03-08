@@ -6,8 +6,7 @@ function [stimStruct] = createStimStruct(exptStruct)
     date = exptStruct.date;
 
     % Load MWorks stimulus information
-        bName = ['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\Behavior\Data\data-' mouse '-' date '-' mwtime '.mat'];
-        %bName = ['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_staff/Behavior/Data/data-' mouse '-' date '-' mwtime '.mat'];
+        bName = ['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_staff/Behavior/Data/data-' mouse '-' date '-' mwtime '.mat'];
         load(bName);
     
         stimElevation   = double(input.stimOneGratingElevationDeg);
@@ -18,8 +17,7 @@ function [stimStruct] = createStimStruct(exptStruct)
         maskContrast    = cellfun(@(x) double(x), input.tMaskOneGratingContrast); % Same function as above, but need to do it this way because cell array contents were different data types 
 
     % Load stim on information (both MWorks signal and photodiode)
-        cd (['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\' exptStruct.loc '\Analysis\Neuropixel\' exptStruct.date])        % Move from KS_Output folder to ...\Analysis\neuropixel\date folder, where TPrime output is saved
-         %cd (['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_staff/home/' exptStruct.loc '/Analysis/Neuropixel/' exptStruct.date])        % Move from KS_Output folder to ...\Analysis\neuropixel\date folder, where TPrime output is saved
+        cd (['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_staff/home/' exptStruct.loc '/Analysis/Neuropixel/' exptStruct.date])        % Move from KS_Output folder to ...\Analysis\neuropixel\date folder, where TPrime output is saved
 
         stimOnTimestampsMW  = table2array(readtable([date '_mworksStimOnSync.txt']));
         stimOnTimestampsPD  = table2array(readtable([date '_photodiodeSync.txt']));
