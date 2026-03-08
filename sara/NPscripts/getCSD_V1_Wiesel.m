@@ -135,28 +135,28 @@ yCSD = (1:size(CSDraw,1)-1)*20 + exptStruct.depth;
 
 figure;
 movegui('center')
-    subplot 131
+    subplot 231
         imagesc(t, yLFP, stimLFP); hold on; colorbar  
         xline(0.06, 'c')
-        yline(-200)
+        yline(-180)
         subtitle('LFP raw, one trial')
         ylabel('channels (every other)')
         xlabel('time (s)')
         set(gca,'TickDir','out')
         set(gca,'YDir','normal')
-    subplot 132
+    subplot 232
         imagesc(t, yLFP, fLFP); hold on; colorbar  
         xline(0.06, 'c')
-        yline(-200)
+        yline(-180)
         subtitle('LFP, averaged all trials')
         ylabel('channels (every other)')
         xlabel('time (s)')
         set(gca,'TickDir','out')
         set(gca,'YDir','normal')
-    subplot 133
+    subplot 233
         imagesc(t, yCSD, -CSDraw); hold on; colorbar
         xline(0.06,'c')
-        yline(-200)
+        yline(-180)
 %         yline(yCSD(sumMinIdx),'b')
         subtitle('current source density')
         ylabel('channels (every other)')

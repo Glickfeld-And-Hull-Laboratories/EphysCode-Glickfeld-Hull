@@ -1,7 +1,22 @@
 function rankRFsByParameter( ...
     RF_cells, paramStruct, cellIDs, ...
     pdfFile, figTitle, ...
-    modelType, paramName)
+    modelType, paramName, saveDir)
+
+%% ===============================
+% Choose save directory
+%% ===============================
+
+if nargin < 8 || isempty(saveDir)
+
+    saveDir = fullfile(pwd);
+
+elseif strcmp(saveDir,'sg')
+
+    saveDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs\';
+
+end
+
 
 %% ===============================
 % Sanity checks
@@ -61,6 +76,18 @@ for i = 1:numel(RF_cells)
 end
 
 %% ===============================
+% Save unsorted parameters
+%% ===============================
+
+paramResults = struct;
+paramResults.cellIDs   = cellIDs;
+paramResults.paramName = paramName;
+paramResults.values    = param_vals;
+
+save(fullfile(saveDir, 'results', ['RFparams_' paramName '.mat']), 'paramResults');
+
+
+%% ===============================
 % Orientation wrapping
 %% ===============================
 
@@ -85,8 +112,9 @@ nCols = 6;
 nShow = numel(RF_sorted);
 nRows = ceil(nShow / nCols);
 
-if exist(pdfFile,'file')
-    delete(pdfFile)
+fullPDF = fullfile(saveDir, pdfFile);
+if exist(fullPDF,'file')
+    delete(fullPDF)
 end
 
 figure('Color','w','Position',[100 100 1400 800]);
@@ -132,7 +160,9 @@ end
 
 sgtitle(figTitle,'FontWeight','bold')
 
-exportgraphics(gcf,pdfFile,'ContentType','vector');
+disp(['Saving results to: ' saveDir])
+
+exportgraphics(gcf, fullfile(saveDir, pdfFile), 'ContentType','vector');
 close(gcf)
 
 end
