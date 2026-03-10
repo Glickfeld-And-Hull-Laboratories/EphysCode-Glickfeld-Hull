@@ -42,11 +42,11 @@ for i = 1:numel(RF_cells)
             cycles = params(9) * effectiveSigma;
             theta = params(6);
             elongation = params(5);
-            if elongation < 1
-                elongation = 1 / elongation;
-                theta = theta + pi/ 2;
-            end
-    
+            % if elongation < 1
+            %     elongation = 1 / elongation;
+            %     theta = theta + pi/ 2;
+            % end
+            % 
             switch paramName
                 case 'orientation'
                     param_vals(i) = theta;

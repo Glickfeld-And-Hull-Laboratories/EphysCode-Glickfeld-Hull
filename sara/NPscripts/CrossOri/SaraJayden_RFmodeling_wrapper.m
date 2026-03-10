@@ -87,9 +87,25 @@ for ii = indLoop
     sideLength = 20;
     [data_cropped] = cropRFtoCenter(az, el, data, sideLength);
     STA_cropped(:,:,ii) = data_cropped;
-
-
 end
+
+
+figure;
+is=1;
+for ic = 1:size(STA_cropped,3)
+    subplot(6,7,is)
+        % clim = max(abs(STA_cropped(:)));
+        % imagesc(STA_cropped(:,:,ic),[-clim clim])
+        imagesc(STA_cropped(:,:,ic))
+        subtitle(num2str(ind_DS(ic)))
+        axis image off
+        axis square
+        colormap gray
+        hold on
+    is=is+1;
+end
+print(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs\results\STAs_cropped_notNormalized.pdf'], '-dpdf','-bestfit')
+
 
 %% Run Gabor fit
 options.visualize = 0;
@@ -139,4 +155,23 @@ for p = 1:length(paramList)
         'sg' ...
         );
 end
+
+
+%% Load .mat files of tuning
+
+resultsDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs\results\';
+
+load(fullfile([resultsDir, 'RFparams_orientation.mat']))
+    valOrientationID = paramResults.cellIDs;  
+    valOrientation = paramResults.values;
+load(fullfile([resultsDir, 'RFparams_frequency.mat']))
+    valFrequencyID = paramResults.cellIDs;  
+    valFrequency = paramResults.values;
+load(fullfile([resultsDir, 'RFparams_elongation.mat']))
+    valElongationID = paramResults.cellIDs;  
+    valElongation = paramResults.values;      
+load(fullfile([resultsDir, 'RFparams_size.mat']))
+    valSizeID = paramResults.cellIDs;  
+    valSize = paramResults.values;      
+
 

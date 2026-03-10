@@ -1,4 +1,4 @@
-function get12Dir4PhaseFits(resp,base, exptStruct, doPlot)
+Fpofunction get12Dir4PhaseFits(resp,base, exptStruct, doPlot)
     
     mouse   = exptStruct.mouse;
     date    = exptStruct.date;
