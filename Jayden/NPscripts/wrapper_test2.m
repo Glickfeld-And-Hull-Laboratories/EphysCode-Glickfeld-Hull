@@ -2,7 +2,7 @@ close all; clearvars; clc;
 
 %% debug mode one cell test
 debugMode = true;
-debugCell = 470;   % check indRFint
+debugCell = 375;   % check indRFint
 %rng(0,'twister');   % randomness fully reproducible
 
 manualParamMode = false;   % <<< toggle this
@@ -159,7 +159,7 @@ for ii = indLoop
     else
 
         [params, RF_DoGCos{k}, ~] = ...
-            fitNoncDoGCosineRF(STA);
+            fitNoncDoGCosineRF_diff(STA);
 
     end
 
@@ -198,9 +198,14 @@ for ii = indLoop
 
 end
 %% GUI
-cellIdx = 1;   % because debug mode = one cell
-STA = STA_cropped(:,:,indLoop(cellIdx));
-params = params_all{cellIdx};
-size(params)
-disp(params)
-launchRF_GUI(STA, params);
+% cellIdx = 1;   % because debug mode = one cell
+% STA = STA_cropped(:,:,indLoop(cellIdx));
+% params = params_all{cellIdx};
+% size(params)
+% disp(params)
+% launchRF_GUI(STA, params);
+
+% params = results.params{m}{cellIndex};
+
+% checkFrequencyOrientation(STA, params);
+visualize_RF_validation(STA, RF_DoGCos{k}, params)
