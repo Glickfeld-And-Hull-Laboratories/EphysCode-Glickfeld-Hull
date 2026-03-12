@@ -129,8 +129,9 @@ exptloc = 'V1'; %LG
     end
 
 t = (0:size(CSDraw,2)-1)/Fs;   % time vector in seconds
-yLFP = (0:size(fLFP,1)-1)*20 + exptStruct.depth;
-yCSD = (1:size(CSDraw,1)-1)*20 + exptStruct.depth;
+depth = exptStruct.depth;
+yLFP = (0:size(fLFP,1)-1)*20 + depth;
+yCSD = (1:size(CSDraw,1)-1)*20 + depth;
 
 
 figure;
@@ -166,6 +167,7 @@ movegui('center')
     sgtitle([mouse ' ' date ', expt ' num2str(iexp)])
     print(fullfile(['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/' loc '/Analysis/Neuropixel/' date '/' mouse '-' date '-findLayer4-CSD.pdf']),'-dpdf','-bestfit')
 
+    save(fullfile(['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/' loc '/Analysis/Neuropixel/' date '/' mouse '-' date '-findLayer4-CSD.mat']), 'fLFP', 'CSDraw','chnls', 'Fs', 'dE', 'depth')
 
 end
 

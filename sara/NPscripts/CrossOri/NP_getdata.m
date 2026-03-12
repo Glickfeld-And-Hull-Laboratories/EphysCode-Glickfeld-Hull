@@ -1,6 +1,7 @@
 clear all; close all; clc
 baseDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
-iexp = 26; % Choose experiment
+
+iexp = 25; % Choose experiment
 exptloc = 'V1'; %LG
 
 [exptStruct] = createExptStruct(iexp,exptloc); % Load relevant times and directories for this experiment
@@ -40,8 +41,12 @@ save(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStru
 
 %% Find layer boundaries using LFP data
 
-b = 1;  % What stimulus presentation block to use for layer mapping?
-[layerStruct] = findLayer4(exptStruct, stimStruct, b);
+% On Wiesel, run getCSDV1_Wiesel.m for the relevant experiment, then...
+load(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStruct.mouse '-' exptStruct.date '-findlayer4-CSD.mat']))
+
+[L4_DepthShal, L4_DepthDeep, L4_shal_ch, L4_deep_ch] = alignCSDwithTemplate_L4(CSDraw, Fs, dE*1000, exptStruct.depth);
+    print(fullfile([baseDir, '\sara\Analysis\Neuropixel\', [exptStruct.date], '\' exptStruct.mouse '-' exptStruct.date '-layer4boundaries.pdf']),'-dpdf','-bestfit');
+    save(fullfile(baseDir, '\sara\Analysis\Neuropixel\', [exptStruct.date], [exptStruct.date '_' exptStruct.mouse '_layerStruct.mat']), 'L4_DepthShal','L4_DepthDeep','L4_shal_ch','L4_deep_ch');
 
 
 %% Sort spikes into trials and bins
@@ -66,7 +71,6 @@ save(fullfile(baseDir, '\Analysis\Neuropixel', [exptStruct.date], [exptStruct.da
 % (grating/plaid). Each element is then nTrials x Time (in bins of 10 ms)
 
 %%
-
 outDir=(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\' exptStruct.date]);
 
 [avg_resp_dir, resp_ind_dir] = getResponses(resp, base);
@@ -82,7 +86,7 @@ subplot 221
     scatter(FR_resp, depth_resp, 15, 'filled')
     xlim([-5 50]); 
     xlabel('avg FR')
-    ylim([-5000 0])
+    ylim([-3000 0])
     movegui('center')
     sgtitle([exptStruct.mouse ' ' exptStruct.date ', FR by depth'])
     print(fullfile([outDir, '\' exptStruct.mouse '-' exptStruct.date '-FRbyDepth.pdf']),'-dpdf','-bestfit');

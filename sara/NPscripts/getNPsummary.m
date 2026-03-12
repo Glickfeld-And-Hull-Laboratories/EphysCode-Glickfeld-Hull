@@ -62,13 +62,15 @@ localConMap_data_all = [];
 localConMap_map_all = [];
 bestTimePoint_all = [];
 
+layer_all = [];
+
 
 % V1 -- 11 13 18 19 20 21 22 23 24 25 26
 
 % V1 -- 13 18 19 20 21 22 23 25 26, throwing out 11 for RF position,
 % throwing out 24 because eye camera frames collected ~= timestamps of frames
 
-expts = [13 18 19 20 21 22 23 25 26];
+expts = [ 25 26];
 
 start=1;
 for iexp                = expts     % 11 13 14 16 17
@@ -84,6 +86,7 @@ for iexp                = expts     % 11 13 14 16 17
     load(fullfile(base, 'Analysis\Neuropixel', date, [date '_' mouse '_stimData.mat']))
     load(fullfile(base, 'Analysis\Neuropixel', date, [mouse '-' date '_spatialRFs.mat']))
     load(fullfile(base, 'Analysis\Neuropixel', date, [date '_' mouse '_stimStruct.mat']))
+    load(fullfile(base, 'Analysis\Neuropixel', date, [date '_' mouse '_layerStruct.mat']))
 
     indexpt = intersect(resp_ind_dir, find(DSI>.5));
 
@@ -116,6 +119,24 @@ for iexp                = expts     % 11 13 14 16 17
     depths                      = [goodUnitStruct.depth] + probeTipDepth;
     depth_all                   = [depth_all, depths];
     channel_all                 = [channel_all, goodUnitStruct.channel];
+
+    L4top = L4_DepthShal+probeTipDepth;
+    L4bot = L4_DepthDeep+probeTipDepth;
+    for ic = 1:nCells
+        if depths(ic) > L4top
+            layer(ic) = 3;
+        elseif depths(ic) < L4bot
+            layer(ic) = 5;
+        elseif depths(ic) <= L4top && depths(ic) >= L4bot
+            layer(ic) = 4;
+        else
+            error('Depth classification failed')
+        end
+    end
+    layer_all = [layer_all, layer];
+    stop
+    clear layer
+
 
     F1F0_all                    = [F1F0_all; f1overf0mat];
 
@@ -178,10 +199,11 @@ totalCells = totCells+nCells;
 ind = intersect(resp_ind_dir_all, find(DSI_all>.5));
 outDir=('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase');
 
-
+stop
 analysisDir=('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase');
 save(...
     fullfile([analysisDir '\CrossOri_randDirFourPhase_summary.mat']), ...
+        'layer_all',...
         'ind_sigRF_all', ...
         'cells_sigRFbyTime_On_all', ...
         'cells_sigRFbyTime_Off_all', ...
