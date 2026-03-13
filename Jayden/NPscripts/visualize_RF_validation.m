@@ -43,10 +43,6 @@ freqBins = freqBins(1:end-1);
 freqPower = freqPower ./ max(freqPower);
 
 %% ----------------------------
-% Orientation tuning (angular)
-%% ----------------------------
-
-%% ----------------------------
 % Orientation tuning (robust)
 %%
 

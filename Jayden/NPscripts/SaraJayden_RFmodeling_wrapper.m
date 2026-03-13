@@ -177,13 +177,45 @@ omitCells = [634];   % cell(s) with NaN
 %     {'DoG x cos', 'DoG x cos mod'}, {'DoG x cos', 'DoG x cos mod'});
 
 %% FFT outputs
-export_RF_validation_allCells( ...
-    indLoop, ...
-    ind_DS, ...
-    STA_cropped, ...
-    modelRegistry, ...
-    omitCells )
+% export_RF_validation_allCells( ...
+%     indLoop, ...
+%     ind_DS, ...
+%     STA_cropped, ...
+%     modelRegistry, ...
+%     omitCells )
+%% Dimension Reduction
+%% ================================
+% Parameter importance analysis
+%% ================================
 
+paramNames = {'Ac','As','sigmaC','deltaSigma','tau','theta',...
+              'x0','y0','f','phi','dx','dy'};
+
+nParams = length(paramNames);
+nCells = length(indLoop);
+
+deltaRSS_all = nan(nCells,nParams);
+cellID_all   = nan(nCells,1);
+
+for ii = indLoop
+
+    ic = ind_DS(ii);
+
+    if ismember(ic,omitCells)
+        continue
+    end
+
+    fprintf('Parameter analysis cell %d\n', ic)
+
+    STA = STA_cropped(:,:,ii);
+
+    result = parameter_ablation_DoGcos(STA);
+
+    deltaRSS_all(ii,:) = result.deltaRSS;
+
+    cellID_all(ii) = ic;
+
+end
 %% Ranking
 % modelIdx = find(strcmp({modelRegistry.name}, 'DoG x cos mod'));
 % 
@@ -203,3 +235,33 @@ export_RF_validation_allCells( ...
 %         paramList{p});
 % end
 
+%% Save parameter importance
+
+results.deltaRSS = deltaRSS_all;
+results.paramNames = paramNames;
+results.cellID = cellID_all;
+
+save('DoGcos_parameter_importance.mat','results')
+
+T = array2table(deltaRSS_all);
+T.Properties.VariableNames = paramNames;
+T.cellID = cellID_all;
+
+writetable(T,'DoGcos_parameter_importance.csv')
+
+figure('Position',[200 200 1200 600])
+
+imagesc(deltaRSS_all)
+
+colormap hot
+colorbar
+
+xticks(1:nParams)
+xticklabels(paramNames)
+
+xlabel('Parameter constrained')
+ylabel('Cell index')
+
+title('Parameter importance (ΔRSS)')
+
+exportgraphics(gcf,'DoGcos_parameter_importance_heatmap.pdf','Resolution',300)
