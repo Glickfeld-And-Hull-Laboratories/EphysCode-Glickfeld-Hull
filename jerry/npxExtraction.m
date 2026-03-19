@@ -1,41 +1,31 @@
-
-%% Neuropixel analysis pipeline tutorial
-% Made by SG, 2026-02-18
-
-
-%% Load experiment information
-
-clear all; close all; clc
+% Load experiment information
+clear all; close all; clc; clear global;
 baseDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
-iexp = 1; % Choose experiment
+iexp = 4; % Choose experiment
 
-[exptStruct] = createExptStruct_tut_TH(iexp); % Load relevant times and directories for this experiment
+[exptStruct] = iniExptStruct(iexp); % Load relevant times and directories for this experiment
 
-% I recommend reading through the above function and the
-% experiment list it calls as an example of one way to organize your
-% collected data for analysis.
+%% read data from ks4 and phy2 output
+% cluster_group.tsv        spike_times.npy      spike_clusters.npy      
 
+fPathBaseIn = fullfile(baseDir, '\jerry\analysis\neuropixel',exptStruct.mouse,exptStruct.date,'kilosort4');
+cd(fPathBaseIn);
+% unitInfo = readtable('cluster_info.tsv','FileType','delimitedtext','Delimiter','\t');
+% spikeTimes = readNPY('spike_times.npy');
+% spikeClusters = readNPY('spike_clusters.npy');
 
-%% Extract units from KS output
-% This tutorial uses sorted spiking data and stimulus information that is already synced to the neural data. For sorting in Kilosort and Phy2 and syncing using CatGT and TPrime, 
-% reference this protocol: https://docs.google.com/document/d/1Wmkkb9TnFrQzwDYZlS97jVEY9kwX42daFpmgGfw0XFE/edit?tab=t.0
-
-
-load(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStruct.date '_' exptStruct.mouse '_unitStructs.mat']), 'goodUnitStruct');
-% goodUnitStruct is a structure that contains all units that I sorted as
-% "good" (as opposed to "noise" or "MUA").
-
+[cluster_struct,~,~,~,~,~,goodUnitStruct,~,~] = ImportKSdataNew(); % Marie's function to tidy up ks4 and phy2 outputs for further analysis
+% write a more custom version of the above later
 %% Extract information about spiking and spike waveforms
-% First, let's look at how to pull and analyze individual waveforms.
-%
+% Pull and analyze individual waveforms.
 % Get mean and std waveform over time, calculate peak-to-trough time of the
 % max amplitude waveform across contact sites.
 
-% Setting parameters for waveform extraction and inclusion
+% Parameters for waveform extraction and inclusion
     refractoryViolationThresh   = 0.002;     % 2 ms
 
 % Initialize and extract meta file info for waveform analysis
-    fullDataPath    = fullfile(baseDir, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date); % Navigate to experiment directory
+    fullDataPath    = fullfile(baseDir, exptStruct.loc, 'analysis', 'neuropixel', exptStruct.mouse,exptStruct.date); % Navigate to experiment directory
     dirContents     = dir(fullDataPath); % Get names of all files and folders in the experiment directory
     runFolders      = {dirContents([dirContents.isdir] & ~ismember({dirContents.name}, {'.', '..'})).name}; % Get the names of all folders in experiment directory
     metaMask        = startsWith(runFolders, 'catgt', 'IgnoreCase', false) & ~contains(runFolders, 'ret', 'IgnoreCase', true);   % Logical mask for folders starting with 'catgt' and not containing 'ret'
@@ -56,7 +46,7 @@ load(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStru
 %% We will use an example unit to look closely interspike intervals and refractory period violations and to generate an autocorrelogram.
 
 % Choose an example cell
-    ic = 82;
+    ic = 78;
     fprintf([ 'cell ' num2str(ic) '\n'])
 
 % Get cell info
@@ -86,14 +76,14 @@ load(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStru
 % drift of the neurons in or out at the start of by the end of the
 % experiment.
     
-    if length(timestamps) > 10000  % if more than 10,000 spikes
-        midIdx = floor(length(timestamps)/2);  % index of middle spike
-        startIdx = midIdx - 5000;
-        endIdx   = midIdx + 4999;
-        spikeTimesForISI = timestamps(startIdx:endIdx);  
-    else
+    % if length(timestamps) > 10000  % if more than 10,000 spikes
+    %     midIdx = floor(length(timestamps)/2);  % index of middle spike
+    %     startIdx = midIdx - 5000;
+    %     endIdx   = midIdx + 4999;
+    %     spikeTimesForISI = timestamps(startIdx:endIdx);  
+    % else
         spikeTimesForISI = timestamps;
-    end
+    % end
 
 % Get interspike intervals and probabilities
     isi = diff(spikeTimesForISI); % Find the time differences between all spikes
@@ -271,8 +261,6 @@ load(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStru
             title(['Peak to Trough dist = ' sprintf('%.2f ms', PtTdist * 1000)])   % I only want 2 decimal places after 0
         
 
-
-
 %% Now, do the same, but for all sorted units. 
 % This will take about 9 minutes to run. Here, we are using CPU threads to
 % parallel process multiple cells at a time so that this analysis runs more quickly.
@@ -288,7 +276,7 @@ parfor ic  = cellIdx
 % Get cell info
     timestamps  = goodUnitStruct(ic).timestamps;
     channel     = goodUnitStruct(ic).channel;
-    rank        = goodUnitStruct(ic).rank;
+    % rank        = goodUnitStruct(ic).rank;
 
     if length(timestamps) > 10000
         spikeTimesForISI = timestamps(randsample(length(timestamps),10000));
@@ -426,7 +414,7 @@ delete(gcp("nocreate"));
 
 %% Now we can plot many cells at one time to compare spiking and waveform features
 
-idxCells = 82:4:110;  % Index of example cells to plot
+idxCells = 67:3:79;  % Index of example cells to plot
 figure;
 x = 1:size(waveformStruct(1).allsamps,1);
 i=1;

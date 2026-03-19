@@ -19,7 +19,7 @@ iexp = 1; % Choose experiment
 %% Extract units from KS output
 % This tutorial uses sorted spiking data and stimulus information that is already synced to the neural data. For sorting in Kilosort and Phy2 and syncing using CatGT and TPrime, 
 % reference this protocol: https://docs.google.com/document/d/1Wmkkb9TnFrQzwDYZlS97jVEY9kwX42daFpmgGfw0XFE/edit?tab=t.0
-
+%
 
 load(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStruct.date '_' exptStruct.mouse '_unitStructs.mat']), 'goodUnitStruct');
 % goodUnitStruct is a structure that contains all units that I sorted as
@@ -650,7 +650,7 @@ figure;
     scatter(FR_all, depth_all, 15, 'filled')
     hold on
     scatter(FR_resp, depth_resp, 15, 'filled')
-    legend('all','responsive');
+    legend()
     xlabel('avg FR'); xlim([-5 50])
     ylabel('depth (um)'); ylim([-5000 0])
     set(gca,'TickDir','out');
