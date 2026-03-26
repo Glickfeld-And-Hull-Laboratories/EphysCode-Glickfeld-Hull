@@ -1,5 +1,5 @@
 
-function [trialStruct, gratingRespMatrix, gratingOFFRespMatrix, resp, base] = createTrialStruct_16dir_tutorial(stimStruct, goodUnitStruct, b)
+function [trialStruct, gratingRespMatrix, gratingOFFRespMatrix, resp, base] = createTrialStruct_16dir_tut_TH(stimStruct, goodUnitStruct, b)
     trialStruct = struct(); 
 
     % Create trial-by-trial structure

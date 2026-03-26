@@ -550,7 +550,7 @@ figure; hold on
     % using CatGT and TPrime. For the purposes of this tutorial, you will not
     % practice syncing yourself, you will just load the already synced files.
 
-    stimStruct = createStimStruct_tut_TH(exptStruct);
+    stimStruct = NPXcreateStimStruct(exptStruct);
     
     % Again, I recommend reading through the above function as an example of 
     % one way to extract relevant stimulus information from the MWorks behavior 

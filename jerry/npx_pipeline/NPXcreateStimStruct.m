@@ -1,5 +1,5 @@
 
-function [stimStruct] = createStimStruct_tut_TH(exptStruct)
+function [stimStruct] = NPXcreateStimStruct(exptStruct)
 
     mwtime = exptStruct.exptTime;
     mouse = exptStruct.mouse;
@@ -12,16 +12,19 @@ function [stimStruct] = createStimStruct_tut_TH(exptStruct)
             bName = ['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\Behavior\Data\data-' mouse '-' date '-' mwtime{1,1} '.mat'];
         end
 
-        load(bName);
+        load(bName); %#ok<LOAD>
     
         stimElevation       = double(cell2mat(input.tGratingElevationDeg));
         stimAzimuth         = double(cell2mat(input.tGratingAzimuthDeg));
-        stimDirections      = cell2mat(input.tGratingDirectionDeg);
+        tCenterDirs         = cell2mat(input.tGratingDirectionDeg);
+        tSurroundDirs       = cell2mat(input.tSurroundGratingDirectionDeg);
+        tDoCenter           = cell2mat(input.tDoCenterGrating);
+        tDoSurround         = cell2mat(input.tDoSurroundGrating);
         stimSpatialFreq     = double(input.gratingSpatialFreqCPD);
-        stimTemporalFreq    = double(input.gratingTemporalFreqCPS);
+        % stimTemporalFreq    = double(input.gratingTemporalFreqCPS);
 
     % Load stim on information (both MWorks signal and photodiode)
-        cd (['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\' exptStruct.loc '\Analysis\Neuropixel\' exptStruct.date])        % Move from KS_Output folder to ...\Analysis\neuropixel\date folder, where TPrime output is saved
+        cd (['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\' exptStruct.loc '\analysis\Neuropixel\' exptStruct.date])        % Move from KS_Output folder to ...\Analysis\neuropixel\date folder, where TPrime output is saved
         stimOnTimestampsMW  = table2array(readtable([date '_mworksStimOnSync.txt']));
         stimOnTimestampsPD  = table2array(readtable([date '_photodiodeSync.txt']));
 
@@ -57,10 +60,11 @@ function [stimStruct] = createStimStruct_tut_TH(exptStruct)
         stimStruct.timestamps       = stimBlocks;   % Cell array (number of stim blocks long) containing all stim on timestamps within each block
         stimStruct.stimElevation    = stimElevation;
         stimStruct.stimAzimuth      = stimAzimuth;
-        stimStruct.stimDirection    = stimDirections;
+        stimStruct.centerDirs       = tCenterDirs;
+        stimStruct.surroundDirs     = tSurroundDirs;
         stimStruct.stimSpatialFreq  = stimSpatialFreq;
         stimStruct.stimTemporalFreq = stimTemporalFreq;
-        stimStruct.stimDuration     = 2;    % Stimulus duration in seconds
+        stimStruct.stimDuration     = 0.1;    % Stimulus duration in seconds
 
     warning('*createStimStruct* I am hard coding stimulus duration for now. Assumes 2s on.')
 end
