@@ -4,29 +4,56 @@ function [stimStruct] = NPXcreateStimStruct(exptStruct)
     mwtime = exptStruct.exptTime;
     mouse = exptStruct.mouse;
     date = exptStruct.date;
+    sessions = exptStruct.exptType;
 
     % Load MWorks stimulus information
-        if size(mwtime,2) == 1
-            bName = cell2mat(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\Behavior\Data\data-' mouse '-' date '-' mwtime '.mat']);
-        elseif size(mwtime,2) > 1
+        if class(mwtime) == "char"
+            bName = ['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\Behavior\Data\data-' mouse '-' date '-' mwtime '.mat'];
+        elseif class(mwtime) == "cell" & size(mwtime,2) == 1
             bName = ['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\Behavior\Data\data-' mouse '-' date '-' mwtime{1,1} '.mat'];
+        elseif class(mwtime) == "cell" & size(mwtime,2) > 1
+            exptStr = string(sessions);
+            mwtimeStr = string(mwtime);
+            exptANDmwtime = {exptStr;mwtimeStr};
+            warning('Multiple times exist, inspect all experiments and times in this session here.');
+            exptANDmwtime
+            nMWs = length(mwtimeStr);
+            for t = 1:nMWs
+                disp([num2str(t) ': ' mwtimeStr(t)]);
+            end
+            mwtime2use = input('Select file to use (enter number): ');
+            bName = ['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\Behavior\Data\data-' mouse '-' date '-' char(mwtimeStr(mwtime2use)) '.mat'];
         end
 
         load(bName); %#ok<LOAD>
-    
-        stimElevation       = double(cell2mat(input.tGratingElevationDeg));
-        stimAzimuth         = double(cell2mat(input.tGratingAzimuthDeg));
-        tCenterDirs         = cell2mat(input.tGratingDirectionDeg);
-        tSurroundDirs       = cell2mat(input.tSurroundGratingDirectionDeg);
-        tDoCenter           = cell2mat(input.tDoCenterGrating);
-        tDoSurround         = cell2mat(input.tDoSurroundGrating);
-        stimSpatialFreq     = double(input.gratingSpatialFreqCPD);
-        % stimTemporalFreq    = double(input.gratingTemporalFreqCPS);
+        inputStruct = input;
 
+        stimElevation       = double(cell2mat(inputStruct.tGratingElevationDeg));
+        stimAzimuth         = double(cell2mat(inputStruct.tGratingAzimuthDeg));
+        tCenterDirs         = cell2mat(inputStruct.tGratingDirectionDeg);
+        tSurroundDirs       = cell2mat(inputStruct.tSurroundGratingDirectionDeg);
+        tDoCenter           = cell2mat(inputStruct.tDoCenterGrating);
+        tDoSurround         = cell2mat(inputStruct.tDoSurroundGrating);
+        stimSpatialFreq     = double(inputStruct.gratingSpatialFreqCPD);
+        % stimTemporalFreq    = double(inputStruct.gratingTemporalFreqCPS);
+
+        trialTypes          = getIsoCrossTrialType(tCenterDirs,tSurroundDirs,tDoCenter,tDoSurround);
+        clear input
     % Load stim on information (both MWorks signal and photodiode)
-        cd (['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\' exptStruct.loc '\analysis\Neuropixel\' exptStruct.date])        % Move from KS_Output folder to ...\Analysis\neuropixel\date folder, where TPrime output is saved
-        stimOnTimestampsMW  = table2array(readtable([date '_mworksStimOnSync.txt']));
-        stimOnTimestampsPD  = table2array(readtable([date '_photodiodeSync.txt']));
+        cd (fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\',exptStruct.loc,'\analysis\Neuropixel\',exptStruct.mouse,exptStruct.date))        % Move from KS_Output folder to ...\Analysis\neuropixel\date folder, where TPrime output is saved
+        
+        nSesh = length(sessions);
+        disp(['This session had ' num2str(nSesh) ' experiments:'])
+        for sesh = 1:nSesh
+            disp([num2str(sesh) '. ' sessions{sesh}]);
+        end
+        currentExptNum = input('Enter number of experiment to pull mWorks and photodiode signal from: ');
+        currentExpt = sessions{currentExptNum};
+        
+        CGTFolder = ['catgt_' exptStruct.mouse '-' exptStruct.date '-CrossOriContrast-' currentExpt '_g0'];
+
+        stimOnTimestampsMW  = table2array(readtable(fullfile(CGTFolder,[mouse '_' date '_mworksStimOnSync.txt'])));
+        stimOnTimestampsPD  = table2array(readtable(fullfile(CGTFolder,[mouse '_' date '_photodiodeSync.txt'])));
 
     % Lonely TTL removal
         lonelyThreshold = 0.05; % 50 ms
@@ -63,9 +90,9 @@ function [stimStruct] = NPXcreateStimStruct(exptStruct)
         stimStruct.centerDirs       = tCenterDirs;
         stimStruct.surroundDirs     = tSurroundDirs;
         stimStruct.stimSpatialFreq  = stimSpatialFreq;
-        stimStruct.stimTemporalFreq = stimTemporalFreq;
+        % stimStruct.stimTemporalFreq = stimTemporalFreq;
         stimStruct.stimDuration     = 0.1;    % Stimulus duration in seconds
+        stimStruct.trialTypes       = trialTypes;
 
-    warning('*createStimStruct* I am hard coding stimulus duration for now. Assumes 2s on.')
 end
 

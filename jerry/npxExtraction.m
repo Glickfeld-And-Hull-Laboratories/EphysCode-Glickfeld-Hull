@@ -1,7 +1,7 @@
 % Load experiment information
 clear all; close all; clc; clear global;
 baseDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
-iexp = 4; % Choose experiment
+iexp = 2; % Choose experiment
 
 [exptStruct] = iniExptStruct(iexp); % Load relevant times and directories for this experiment
 
@@ -46,7 +46,7 @@ cd(fPathBaseIn);
 %% We will use an example unit to look closely interspike intervals and refractory period violations and to generate an autocorrelogram.
 
 % Choose an example cell
-    ic = 78;
+    ic = 98;
     fprintf([ 'cell ' num2str(ic) '\n'])
 
 % Get cell info
