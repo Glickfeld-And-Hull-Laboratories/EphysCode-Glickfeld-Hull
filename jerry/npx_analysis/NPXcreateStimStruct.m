@@ -1,5 +1,5 @@
 
-function [stimStruct] = NPXcreateStimStruct(exptStruct)
+function [stimStruct] = NPXcreateStimStruct(exptStruct,dur)
 
     mwtime = exptStruct.exptTime;
     mouse = exptStruct.mouse;
@@ -19,15 +19,15 @@ function [stimStruct] = NPXcreateStimStruct(exptStruct)
             exptANDmwtime
             nMWs = length(mwtimeStr);
             for t = 1:nMWs
-                disp([num2str(t) ': ' mwtimeStr(t)]);
+                disp([num2str(t) ': ' char(mwtimeStr(t))]);
             end
-            mwtime2use = input('Select file to use (enter number): ');
+            mwtime2use = input('Select mWorks time to use (enter number): ');
             bName = ['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\Behavior\Data\data-' mouse '-' date '-' char(mwtimeStr(mwtime2use)) '.mat'];
         end
-
-        load(bName); %#ok<LOAD>
-        inputStruct = input;
-
+        
+        S = load(bName); %#ok<LOAD>
+        inputStruct = S.input;
+        
         stimElevation       = double(cell2mat(inputStruct.tGratingElevationDeg));
         stimAzimuth         = double(cell2mat(inputStruct.tGratingAzimuthDeg));
         tCenterDirs         = cell2mat(inputStruct.tGratingDirectionDeg);
@@ -38,7 +38,7 @@ function [stimStruct] = NPXcreateStimStruct(exptStruct)
         % stimTemporalFreq    = double(inputStruct.gratingTemporalFreqCPS);
 
         trialTypes          = getIsoCrossTrialType(tCenterDirs,tSurroundDirs,tDoCenter,tDoSurround);
-        clear input
+
     % Load stim on information (both MWorks signal and photodiode)
         cd (fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\',exptStruct.loc,'\analysis\Neuropixel\',exptStruct.mouse,exptStruct.date))        % Move from KS_Output folder to ...\Analysis\neuropixel\date folder, where TPrime output is saved
         
@@ -56,7 +56,7 @@ function [stimStruct] = NPXcreateStimStruct(exptStruct)
         stimOnTimestampsPD  = table2array(readtable(fullfile(CGTFolder,[mouse '_' date '_photodiodeSync.txt'])));
 
     % Lonely TTL removal
-        lonelyThreshold = 0.05; % 50 ms
+        lonelyThreshold = 0.050; % 50 ms
         timeDiffs       = abs(diff(stimOnTimestampsPD));  % Compute pairwise differences efficiently
         hasNeighbor = [false; timeDiffs < lonelyThreshold] | [timeDiffs < lonelyThreshold; false]; % Identify indices where a close neighbor exists
         filteredPD = stimOnTimestampsPD(hasNeighbor);   % Keep only timestamps that have a neighbor within 50 ms
@@ -82,16 +82,30 @@ function [stimStruct] = NPXcreateStimStruct(exptStruct)
             startIdx        = endIdx + 1;
         end
         stimBlocks{end} = leadingEdgesPD(startIdx:end); % Store the last block
- 
+        for block = 1:length(stimBlocks)
+            if length(stimBlocks{block}) < 20
+                stimBlocks{block} = [];
+            end
+        end
+        stimBlocksClean = stimBlocks(~cellfun('isempty',stimBlocks));
+        if length(stimBlocksClean) > 1
+            for i = 1:length(stimBlocksClean)
+                disp([num2str(i) ': ' num2str(length(stimBlocksClean{i})) ' trials'])
+            end
+            stimBlock2use = input('Stim on timing cell array has multiple blocks, choose the one to use: ');
+            stimBlockFinal = stimBlocksClean{stimBlock2use};
+        else
+            stimBlockFinal = stimBlocksClean{1};
+        end
     % Create stimStruct
-        stimStruct.timestamps       = stimBlocks;   % Cell array (number of stim blocks long) containing all stim on timestamps within each block
+        stimStruct.timestamps       = stimBlockFinal;   % Cell array (number of stim blocks long) containing all stim on timestamps within each block
         stimStruct.stimElevation    = stimElevation;
         stimStruct.stimAzimuth      = stimAzimuth;
         stimStruct.centerDirs       = tCenterDirs;
         stimStruct.surroundDirs     = tSurroundDirs;
         stimStruct.stimSpatialFreq  = stimSpatialFreq;
         % stimStruct.stimTemporalFreq = stimTemporalFreq;
-        stimStruct.stimDuration     = 0.1;    % Stimulus duration in seconds
+        stimStruct.stimDuration     = str2double(exptStruct.stimDur{mwtime2use});    % Stimulus duration in seconds
         stimStruct.trialTypes       = trialTypes;
 
 end

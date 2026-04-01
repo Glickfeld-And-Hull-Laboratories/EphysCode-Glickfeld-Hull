@@ -1,7 +1,7 @@
 % Load experiment information
 clear all; close all; clc; clear global;
 baseDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
-iexp = 2; % Choose experiment
+iexp = 4; % Choose experiment
 
 [exptStruct] = iniExptStruct(iexp); % Load relevant times and directories for this experiment
 
@@ -46,7 +46,7 @@ cd(fPathBaseIn);
 %% We will use an example unit to look closely interspike intervals and refractory period violations and to generate an autocorrelogram.
 
 % Choose an example cell
-    ic = 98;
+    ic = 64;
     fprintf([ 'cell ' num2str(ic) '\n'])
 
 % Get cell info
@@ -556,14 +556,9 @@ figure; hold on
     % one way to extract relevant stimulus information from the MWorks behavior 
     % file.
 
-
-
 % Sort spike times into trials and bins
-    b = 1; % What stimulus presentation block to use for RandDirFourPhase analysis?
-    % Because I only did one experimental run, I will put 1 here. If the 16dir
-    % run was the second of 2 runs, I would put b=2.
-    
-    [trialStruct, gratingRespMatrix, gratingRespOFFMatrix, resp, base] = createTrialStruct_16dir_tut_TH(stimStruct, goodUnitStruct, b);     
+
+    [trialStruct, gratingRespMatrix, gratingRespOFFMatrix, resp, base] = NPXcreateTrialStruct(stimStruct, goodUnitStruct);     
     % Outputs
     %   - gratingRespMatrix (cell array), size [nUnits x nDirections], each element contains a cell array of spike times for each trial
     %   - gratingOFFRespMatrix (cell array),  size [nUnits x nDirections], each element is the 0.2s preceding each trial (what I am calling the "baseline" period)
@@ -576,7 +571,7 @@ figure; hold on
 
 nCells = size(resp,1);
 nDirs = size(resp,2);
-nTimeBins = 200; % Stimulus duration in 10 ms bin size -- i.e., 2s / 10ms
+nTimeBins = 20; % Stimulus duration in 10 ms bin size -- i.e., 2s / 10ms
 
 resp_cell = cellfun(@(x) x, resp, 'UniformOutput', false); % Response period (0ms - 2s)
 base_cell = cellfun(@(x) x, base, 'UniformOutput', false); % Baseline period (-200ms - 0s)

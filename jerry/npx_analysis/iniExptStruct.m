@@ -12,6 +12,7 @@ function [exptStruct] = iniExptStruct(iexp);
     else
         exptStruct.exptTime   = expt(iexp).exptTime;
     end
+    exptStruct.stimDur    = expt(iexp).stimDur;
     exptStruct.depth      = expt(iexp).depth;
     exptStruct.loc        = expt(iexp).loc;
     exptStruct.exptType   = expt(iexp).exptType;
