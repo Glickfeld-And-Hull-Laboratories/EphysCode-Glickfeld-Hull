@@ -1,5 +1,5 @@
 
-function [stimStruct] = NPXcreateStimStruct(exptStruct,dur)
+function [stimStruct] = NPXcreateStimStruct(exptStruct)
 
     mwtime = exptStruct.exptTime;
     mouse = exptStruct.mouse;

@@ -1,5 +1,5 @@
 
-function [trialStruct, gratingRespMatrix, gratingOFFRespMatrix, resp, base] = NPXcreateTrialStruct(stimStruct, goodUnitStruct)
+function [trialStruct, gratingRespMatrix, gratingOFFRespMatrix, resp, base, uniqueStims] = NPXcreateTrialStruct(stimStruct, goodUnitStruct)
     trialStruct = struct(); 
 
     % Create trial-by-trial structure
@@ -7,7 +7,7 @@ function [trialStruct, gratingRespMatrix, gratingOFFRespMatrix, resp, base] = NP
         trialStruct(i).onset    = stimStruct.timestamps(i);
         trialStruct(i).offset   = stimStruct.timestamps(i) + stimStruct.stimDuration;
         trialStruct(i).trialTypes = stimStruct.trialTypes(i);
-        % trialStruct(i).stimDir  = stimStruct.stimStimection(i);
+        % trialStruct(i).stimDir  = stimStruct.stimStimdirection(i);
     end
 
     nUnits      = length(goodUnitStruct);
@@ -18,12 +18,12 @@ function [trialStruct, gratingRespMatrix, gratingOFFRespMatrix, resp, base] = NP
 
     % nTrials = length(trialStruct);
 
-    binSize = 0.005; % 5 ms bins
+    binSize = 0.010; % 10 ms bins
     stimDuration = stimStruct.stimDuration; % Stimulus duration in seconds
     preStimTime = 0.1; % 100 ms before stimulus onset
     
-    respBins = stimDuration / binSize; % 20 bins
-    baseBins = preStimTime / binSize;  % 20 bins
+    % respNBins = stimDuration / binSize; % 20 bins
+    % baseNBins = preStimTime / binSize;  % 20 bins
     
     % Initialize resp and base as numeric arrays
     resp = cell(nUnits, nStims);

@@ -46,7 +46,7 @@ cd(fPathBaseIn);
 %% We will use an example unit to look closely interspike intervals and refractory period violations and to generate an autocorrelogram.
 
 % Choose an example cell
-    ic = 78;
+    ic = 64;
     fprintf([ 'cell ' num2str(ic) '\n'])
 
 % Get cell info
@@ -261,8 +261,6 @@ cd(fPathBaseIn);
             title(['Peak to Trough dist = ' sprintf('%.2f ms', PtTdist * 1000)])   % I only want 2 decimal places after 0
         
 
-
-
 %% Now, do the same, but for all sorted units. 
 % This will take about 9 minutes to run. Here, we are using CPU threads to
 % parallel process multiple cells at a time so that this analysis runs more quickly.
@@ -278,7 +276,7 @@ parfor ic  = cellIdx
 % Get cell info
     timestamps  = goodUnitStruct(ic).timestamps;
     channel     = goodUnitStruct(ic).channel;
-    rank        = goodUnitStruct(ic).rank;
+    % rank        = goodUnitStruct(ic).rank;
 
     if length(timestamps) > 10000
         spikeTimesForISI = timestamps(randsample(length(timestamps),10000));
@@ -416,7 +414,7 @@ delete(gcp("nocreate"));
 
 %% Now we can plot many cells at one time to compare spiking and waveform features
 
-idxCells = 82:4:110;  % Index of example cells to plot
+idxCells = 67:3:79;  % Index of example cells to plot
 figure;
 x = 1:size(waveformStruct(1).allsamps,1);
 i=1;
@@ -545,52 +543,47 @@ figure; hold on
 
 
 
-%% Next, let's organize spike times into stimulus-relevant times to look at stimulus-evoked activity
+%% organize spike times into stimulus-relevant times to look at stimulus-evoked activity
 
 % Load stimulus "on" timestamps
     % I have already synced these stimulus on timestamps to the neural signal
     % using CatGT and TPrime. For the purposes of this tutorial, you will not
     % practice syncing yourself, you will just load the already synced files.
 
-    stimStruct = createStimStruct_tut_TH(exptStruct);
+    stimStruct = NPXcreateStimStruct(exptStruct);
     
     % Again, I recommend reading through the above function as an example of 
     % one way to extract relevant stimulus information from the MWorks behavior 
     % file.
 
-
-
 % Sort spike times into trials and bins
-    b = 1; % What stimulus presentation block to use for RandDirFourPhase analysis?
-    % Because I only did one experimental run, I will put 1 here. If the 16dir
-    % run was the second of 2 runs, I would put b=2.
-    
-    [trialStruct, gratingRespMatrix, gratingRespOFFMatrix, resp, base] = createTrialStruct_16dir_tut_TH(stimStruct, goodUnitStruct, b);     
+
+    [trialStruct, gratingRespMatrix, gratingRespOFFMatrix, resp, base, uniqueStims] = NPXcreateTrialStruct(stimStruct, goodUnitStruct);     
     % Outputs
     %   - gratingRespMatrix (cell array), size [nUnits x nDirections], each element contains a cell array of spike times for each trial
     %   - gratingOFFRespMatrix (cell array),  size [nUnits x nDirections], each element is the 0.2s preceding each trial (what I am calling the "baseline" period)
-    %   - resp (cell array), size [nUnits x nDirs], each element is then nTrials x Time (in bins of 10 ms)
-    %   - base (cell array), size [nUnits x nDirs], same as resp but the baseline period
+    %   - resp (cell array), size [nUnits x nStimTypes], each element is then nTrials x Time (in bins of 10 ms)
+    %   - base (cell array), size [nUnits x nStimTypes], same as resp but the baseline period
 
 
 %% Now that we have trial information, we can get average spiking responses in response to each unique trial and identify cells that are significantly visually responsive.
 
 
 nCells = size(resp,1);
-nDirs = size(resp,2);
-nTimeBins = 200; % Stimulus duration in 10 ms bin size -- i.e., 2s / 10ms
+nStimTypes = size(resp,2);
+nTimeBins = 10; % Stimulus duration in 10 ms bin size -- i.e., 100ms / 10ms
 
-resp_cell = cellfun(@(x) x, resp, 'UniformOutput', false); % Response period (0ms - 2s)
-base_cell = cellfun(@(x) x, base, 'UniformOutput', false); % Baseline period (-200ms - 0s)
+resp_cell = cellfun(@(x) x, resp, 'UniformOutput', false); % Response period (0ms - 100ms)
+base_cell = cellfun(@(x) x, base, 'UniformOutput', false); % Baseline period (-100ms - 0ms)
 
 % Convert cell arrays to padded numeric arrays for computations
 maxTrials = max(cellfun(@(x) size(x,1), resp_cell(:))); % Find max trial count across conditions
 
-resp_numeric = nan(nCells, nDirs, maxTrials, nTimeBins);
-base_numeric = nan(nCells, nDirs, maxTrials, 20);
+resp_numeric = nan(nCells, nStimTypes, maxTrials, nTimeBins);
+base_numeric = nan(nCells, nStimTypes, maxTrials, nTimeBins);
 
 for ic = 1:nCells
-    for id = 1:nDirs
+    for id = 1:nStimTypes
         if ~isempty(resp_cell{ic,id})
             nTrials = size(resp_cell{ic,id},1);
             resp_numeric(ic,id,1:nTrials,:) = resp_cell{ic,id}; % Assign data
@@ -603,24 +596,24 @@ for ic = 1:nCells
 end
 
 % Compute mean and SEM (ignoring NaNs due to different trial counts)
-avg_resp_dir(:,:,1) = mean(sum(resp_numeric,4)/2,3,'omitnan'); % Avg across time & trials to get rate in Hz (scalar bc trial is 2s not 1s)
-avg_resp_dir(:,:,2) = std(sum(resp_numeric,4)*0.2,0,3,'omitnan') ./ sqrt(size(resp_numeric,3)); % SEM
+avg_resp_stim(:,:,1) = mean(sum(resp_numeric,4)/0.1,3,'omitnan'); % Avg across time & trials to get rate in Hz (scalar bc trial is 2s not 1s)
+avg_resp_stim(:,:,2) = std(sum(resp_numeric,4)*0.2,0,3,'omitnan') ./ sqrt(size(resp_numeric,3)); % SEM
 
-resp_dir_tc = mean(resp_numeric,3,'omitnan'); % Avg across trials, for time-course
-resp_dir_tr = mean(resp_numeric,4,'omitnan'); % Avg across time, for trials
+resp_stim_tc = squeeze(mean(resp_numeric,3,'omitnan')); % Avg across trials, for time-course
+resp_stim_tr = mean(resp_numeric,4,'omitnan'); % Avg across time, for trials
 
 % Find significantly responsive cells
-resp_cell_trials = sum(resp_numeric,4) / 200; % convert to spike rate per trial (Hz). Remember, 10 ms bin for 2s stimulus duration
-base_cell_trials = sum(base_numeric,4) / 20; % convert to Hz
+resp_cell_trials = sum(resp_numeric,4) / 0.1; % convert to spike rate per trial (Hz). Remember, 10 ms bin for 100ms stimulus duration
+base_cell_trials = sum(base_numeric,4) / 0.1; % convert to Hz
 
-h_resp = nan(nCells, nDirs);
-p_resp = nan(nCells, nDirs);
+h_resp = nan(nCells, nStimTypes);
+p_resp = nan(nCells, nStimTypes);
 
-for id = 1:nDirs
+for id = 1:nStimTypes
     [h_resp(:,id), p_resp(:,id)] = ttest2(...
         squeeze(resp_cell_trials(:,id,:)),...
         squeeze(base_cell_trials(:,id,:)),...
-        'dim', 2, 'tail','right', 'alpha', 0.05./(nDirs));
+        'dim', 2, 'tail','right', 'alpha', 0.05./(nStimTypes));
 end
 
 % Make an index of cells significantly responsive to gratings
@@ -691,8 +684,8 @@ figure;
 % Let's first plot a grating raster for one cell at one of the 16
 % directions.
 
-ic = 110; % example cell
-dirIdx = 5; % example direction
+ic = 78; % example cell
+dirIdx = 2; % example direction
 depth = exptStruct.depth + goodUnitStruct(ic).depth;
 
 % Get spike times for the specified unit and direction
@@ -721,7 +714,7 @@ figure;
     ylabel('Trial Number');
     title(['direction ' num2str(dirIdx)]);
     ylim([0 length(trialsSpikeTimes) + 1]);
-    xlim([-.2 2]); % Shows baseline (-.2 to 0s) and stimulus (0 to 1s)
+    xlim([-.15 .15]); % Shows baseline (-.2 to 0s) and stimulus (0 to 1s)
     
     % Plot stimulus onset line at **0s**
     xline(0, 'r', 'LineWidth', 2); 
@@ -733,10 +726,10 @@ figure;
 % directions to see rasters for a given cell in response to all 16
 % directions.
 
-for ic = [110 118 138 136 131]  % These are example cells I handpicked to demonstrate orientation selectivity, direction selectivity, and different F1/F0s
+for ic = [71 72 73 74 75 76 77 78]  % These are example cells I handpicked to demonstrate orientation selectivity, direction selectivity, and different F1/F0s
     depth = exptStruct.depth + goodUnitStruct(ic).depth;
     figure;
-        for i=1:nDirs
+        for i=1:nStimTypes
             subplot(6,3,i)
                 plotRaster_tut_TH(gratingRespMatrix, gratingRespOFFMatrix, ic,i)        
         end
@@ -808,9 +801,9 @@ f1overf0mat = F1 / F0;
 % Here is the same analysis, coded as a function now.
 [f0mat, f1mat, f1overf0mat] = getF1_tut_TH(gratingRespMatrix);
 % Outputs
-%   - f0mat (matrix), size [nUnits x nDirs]
-%   - f1mat (matrix), size [nUnits x nDirs]
-%   - f1overf0mat (matrix), size [nUnits x nDirs]
+%   - f0mat (matrix), size [nUnits x nStimTypes]
+%   - f1mat (matrix), size [nUnits x nStimTypes]
+%   - f1overf0mat (matrix), size [nUnits x nStimTypes]
 
 % The F1/F0 modulation is normally compared across a population by looking
 % at the F1/F0 for the prefferred direction.
@@ -819,10 +812,10 @@ f1overf0mat = F1 / F0;
 % (DSI_maxInd)
 
 for iCell = 1:nCells
-    [max_val max_ind]   = max(avg_resp_dir(iCell,:,1));
-    null_ind            = max_ind+(nDirs./2);
-    null_ind(find(null_ind>nDirs)) = null_ind(find(null_ind>nDirs))-nDirs;
-    min_val     = avg_resp_dir(iCell,null_ind,1,1,1);
+    [max_val max_ind]   = max(avg_resp_stim(iCell,:,1));
+    null_ind            = max_ind+(nStimTypes./2);
+    null_ind(find(null_ind>nStimTypes)) = null_ind(find(null_ind>nStimTypes))-nStimTypes;
+    min_val     = avg_resp_stim(iCell,null_ind,1,1,1);
     if min_val < 0; min_val = 0; end
     DSI(iCell)          = (max_val-min_val)./(max_val+min_val);
     DSI_maxInd(iCell)   = max_ind; 
