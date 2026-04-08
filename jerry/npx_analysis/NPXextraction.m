@@ -389,7 +389,7 @@ resp_ind_dir = find(sum(h_resp(:,:),2));
 nTrials = length(trialStruct);
 cort_cells_ind = find([goodUnitStruct.depth] >= 1200);
 resp_cort_ind = intersect(resp_ind_dir,cort_cells_ind);
-wfAllTrialsCells = cell(1,length(resp_cort_ind));
+wfAllTrialsCells = cell(length(resp_cort_ind),nTrials); % all data are saved here. nCell x nTrials cell array containing trial waveforms
 meta = readMeta_npx(binName, path); 
 
 dataLengthPreSpike          = 0.001;     % This is the data length that is subtracted from the spike time in order to see preceding baseline
@@ -406,11 +406,7 @@ for ic = 1:length(resp_cort_ind)
     thisCellind = resp_cort_ind(ic);
     fprintf(['\nCell ' num2str(thisCellind) '\n']);
     channel = goodUnitStruct(thisCellind).channel + 1;
-    % find sample timing samp0 and sample
     thisCellTS = goodUnitStruct(thisCellind).timestamps;
-    % The actual timestamps ('thisCellTS') determines whether a
-    % spike is to be pulled
-    trialWaveforms = cell(1,nTrials);
     for iTrial = 1:nTrials
         thisTrialSpikes = thisCellTS(thisCellTS > onsets(iTrial) & thisCellTS < offsets(iTrial));
         if ~isempty(thisTrialSpikes)
@@ -435,11 +431,27 @@ for ic = 1:length(resp_cort_ind)
                 end
                 waveforms(:,i) = dataArray(channel,:);
             end
-            trialWaveforms{iTrial} = waveforms;
+            wfAllTrialsCells{ic,iTrial} = waveforms;
+            fclose(fid);
         end
     end
-    wfAllTrialsCells{ic} = trialWaveforms;
 end
 
 testTimer = toc;
 delete(gcp("nocreate"));
+
+%% find average waveform by trial
+% 
+% allStims = stimStruct.trialTypes;
+% uniqueStims = unique(allStims);
+% 
+% % combine all waveforms from each stim type
+% dataByStim = cell(length(uniqueStims),2);
+% 
+% for st = 1:length(uniqueStims)
+%     dataByStim{st,2} = uniqueStims(st);
+%     thisStimIdx = find(allStims == uniqueStims(st));
+%     thisStimsDat = wfAllTrialsCells(:,thisStimIdx);
+%     wfMat = cell2mat(thisStimsDat(:)');
+% end
+
