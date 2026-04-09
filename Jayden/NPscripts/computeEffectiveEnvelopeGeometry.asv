@@ -1,0 +1,129 @@
+function metrics = computeEffectiveCompositeGeometry(params, kSigma, ...
+    ampExp, minWeight)
+% Computes effective composite size and elongation for a nonconcentric
+% DoG x cosine model from the union of two amplitude-weighted ellipses.
+%
+% params = [Ac, As, sigmaC, deltaSigma, tau, theta, ...
+%           x0, y0, f, phi, dx, dy]
+%
+% Outputs:
+%   size_parallel
+%   size_perp
+%   size_eff_area
+%   elongation_eff
+%   overlap_parallel
+%   overlap_perp
+
+    if nargin < 2 || isempty(kSigma)
+        kSigma = 2;
+    end
+    if nargin < 3 || isempty(ampExp)
+        ampExp = 0.5;
+    end
+    if nargin < 4 || isempty(minWeight)
+        minWeight = 0.10;
+    end
+
+    Ac = abs(params(1));
+    As = abs(params(2));
+    sigmaC = params(3);
+    deltaSigma = params(4);
+    tau = params(5);
+    theta = params(6);
+    dx = params(11);
+    dy = params(12);
+
+    sigmaS = sigmaC + deltaSigma;
+
+    if sigmaC <= 0 || sigmaS <= 0 || tau <= 0
+        metrics = struct( ...
+            'size_parallel', NaN, ...
+            'size_perp', NaN, ...
+            'size_eff_area', NaN, ...
+            'elongation_eff', NaN, ...
+            'overlap_parallel', NaN, ...
+            'overlap_perp', NaN, ...
+            'wC', NaN, ...
+            'wS', NaN);
+        return
+    end
+
+    % Relative component strengths
+    A_sum = Ac + As;
+    if A_sum == 0
+        wC = 0.5;
+        wS = 0.5;
+    else
+        wC = Ac / A_sum;
+        wS = As / A_sum;
+    end
+
+    gC = wC ^ ampExp;
+    gS = wS ^ ampExp;
+
+    if wC < minWeight
+        gC = 0;
+    end
+    if wS < minWeight
+        gS = 0;
+    end
+
+    % Shift in common-axis coordinates
+    d_parallel = dx * cos(theta) + dy * sin(theta);
+    d_perp = -dx * sin(theta) + dy * cos(theta);
+
+    % Amplitude-weighted ellipse half-widths
+    %
+    % In this model:
+    % parallel spread = sigma
+    % perpendicular spread = sigma / tau
+    aC = kSigma * sigmaC * gC;
+    bC = kSigma * (sigmaC / tau) * gC;
+
+    aS = kSigma * sigmaS * gS;
+    bS = kSigma * (sigmaS / tau) * gS;
+
+    % Intervals for center ellipse
+    C_par = [-aC, aC];
+    C_perp = [-bC, bC];
+
+    % Intervals for surround ellipse
+    S_par = [d_parallel - aS, d_parallel + aS];
+    S_perp = [d_perp - bS, d_perp + bS];
+
+    % Union spans
+    left_par = min(C_par(1), S_par(1));
+    right_par = max(C_par(2), S_par(2));
+    size_parallel = right_par - left_par;
+
+    left_perp = min(C_perp(1), S_perp(1));
+    right_perp = max(C_perp(2), S_perp(2));
+    size_perp = right_perp - left_perp;
+
+    % Overlap amounts along each axis
+    overlap_parallel = max(0, min(C_par(2), S_par(2)) - ...
+        max(C_par(1), S_par(1)));
+    overlap_perp = max(0, min(C_perp(2), S_perp(2)) - ...
+        max(C_perp(1), S_perp(1)));
+
+    % Effective size from union area-equivalent scale
+    size_eff_area = sqrt(size_parallel * size_perp);
+
+    % Effective elongation from union aspect ratio
+    elongation_eff = size_parallel / size_perp;
+    if elongation_eff < 1
+        elongation_eff = 1 / elongation_eff;
+    end
+
+    metrics = struct( ...
+        'size_parallel', size_parallel, ...
+        'size_perp', size_perp, ...
+        'size_eff_area', size_eff_area, ...
+        'elongation_eff', elongation_eff, ...
+        'overlap_parallel', overlap_parallel, ...
+        'overlap_perp', overlap_perp, ...
+        'd_parallel', d_parallel, ...
+        'd_perp', d_perp, ...
+        'wC', wC, ...
+        'wS', wS);
+end

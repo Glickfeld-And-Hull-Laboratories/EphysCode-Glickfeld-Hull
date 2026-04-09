@@ -41,6 +41,9 @@ idxCon      = setdiff(indRF_con,indRF_pix); % contrast method only
 
 ind         = intersect(resp_ind_dir_all, find(DSI_all>.5));
 ind_DS      = intersect(idxInt,ind); % visually responsive and direction-selective
+ind_all     = intersect(idxInt,resp_ind_dir_all); % visually responsive, orientation selective and direction-selective
+% for testing
+% ind_DS = ind_all;
 
 %% Calculate time point of STA
 % The first dimension of bestTimePoint_all is the one computed by the local contrast method
@@ -78,6 +81,8 @@ if debugMode
 else
     indLoop = 1:length(ind_DS);
 end
+
+cellIDs = ind_DS(indLoop);
 
 for ii = indLoop
     ic = ind_DS(ii);
@@ -153,29 +158,73 @@ modelRegistry = [
     %     'name','SG Gabor', ...
     %     'type','sg', ...
     %     'fitFcn', @(STA) fit2dGabor_JM(STA,options), ...
-    %     'k',10)
-    struct( ...
-        'name','DoG x cos', ...
-        'type','standard', ...
-        'fitFcn', @(STA) fitNoncDoGCosineRF_diff(STA), ...
-        'k',12)
-
+        % 'k',10)
     % struct( ...
-    %     'name','DoG x cos mod', ...
+    %     'name','DoG x cos phi', ...
     %     'type','standard', ...
     %     'fitFcn', @(STA) fitNoncDoGCosineRF_sigmaXY(STA), ...
     %     'k',12)
+
+    % struct( ...
+    %     'name','DoG x cos test', ...
+    %     'type','standard', ...
+    %     'fitFcn', @(STA) fitNoncDoGCosineRF_diff(STA), ...
+    %     'k',12)
+    struct( ...
+        'name','DoG x cos weighted', ...
+        'type','standard', ...
+        'fitFcn', @(STA) fitNoncDoGCosineRF_weighted(STA), ...
+        'k',12)
 ];
 
-omitCells = [634];   % cell(s) with NaN
+omitCells = [114, 634];   % cell(s) with NaN
 
-
+% results = refitCellsNoSurroundAndExportPDF( ...
+%     STA_cropped, ...
+%     'refit_comparison.pdf', ...
+%     1.0, ...
+%     1.0, ...
+%     'unnormalized', ...
+%     20);
 %% result outputs
-% results = runRFModelComparison( ...
-%     indLoop, ind_DS, STA_cropped, ...
-%     modelRegistry, omitCells, 'pdf', 'RF_DoGxcos.pdf', ...
-%     {'DoG x cos', 'DoG x cos mod'}, {'DoG x cos', 'DoG x cos mod'});
-
+results = runRFModelComparison( ...
+    indLoop, ind_DS, STA_cropped, ...
+    modelRegistry, omitCells, 'pdf', 'RF_DoGxcos_diff_weighted.pdf');
+%%
+% plotRFParameterMap(STA_cropped, results)
+% plotRFEndpointMap(STA_cropped, results)
+%% Fit orientation vs real-data orientation
+plotFitVsDataOrientationFromResults( ...
+    results, modelRegistry, 'DoG x cos weighted', ...
+    avg_resp_dir_all, cellIDs, ...
+    'results/FitVsDataOrientation_DoGxcos_weight.pdf', ...
+    'DoG x cos weighted: fit orientation vs data orientation');
+%%
+% %% STA strength metrics
+% staMetrics = computeSTAStrengthMetrics( ...
+%     indLoop, ...
+%     ind_DS, ...
+%     avgImgZscore_all, ...
+%     avgImgZscoreThresh_all, ...
+%     bestTimePoint_all, ...
+%     20);
+% [~, idxWeak] = sort(staMetrics.rmsZ, 'ascend');
+% disp(table( ...
+%     staMetrics.cellIDs(idxWeak(1:10)), ...
+%     staMetrics.rmsZ(idxWeak(1:10)), ...
+%     staMetrics.peakAbsZ(idxWeak(1:10)), ...
+%     staMetrics.fracSigPix(idxWeak(1:10)), ...
+%     'VariableNames', {'CellID','RMS_Z','PeakAbsZ','FracSigPix'}))
+% figure;
+% histogram(staMetrics.rmsZ);
+% xlabel('Cropped STA RMS z-score');
+% ylabel('Cell count');
+% title('STA strength distribution');
+% figure;
+% histogram(staMetrics.fracSigPix);
+% xlabel('Fraction significant pixels in 20x20 crop');
+% ylabel('Cell count');
+% title('STA significant-pixel fraction');
 %% FFT outputs
 % export_RF_validation_allCells( ...
 %     indLoop, ...
@@ -186,38 +235,39 @@ omitCells = [634];   % cell(s) with NaN
 %% Dimension Reduction
 %% ================================
 % Parameter importance analysis
-%% ================================
-
-paramNames = {'Ac','As','sigmaC','deltaSigma','tau','theta',...
-              'x0','y0','f','phi','dx','dy'};
-
-nParams = length(paramNames);
-nCells = length(indLoop);
-
-deltaRSS_all = nan(nCells,nParams);
-cellID_all   = nan(nCells,1);
-
-for ii = indLoop
-
-    ic = ind_DS(ii);
-
-    if ismember(ic,omitCells)
-        continue
-    end
-
-    fprintf('Parameter analysis cell %d\n', ic)
-
-    STA = STA_cropped(:,:,ii);
-
-    result = parameter_ablation_DoGcos(STA);
-
-    deltaRSS_all(ii,:) = result.deltaRSS;
-
-    cellID_all(ii) = ic;
-
-end
-%% Ranking
-% modelIdx = find(strcmp({modelRegistry.name}, 'DoG x cos mod'));
+% %% ================================
+% 
+% paramNames = {'Ac','As','sigmaC','deltaSigma','tau','theta',...
+%               'x0','y0','f','phi','dx','dy'};
+% 
+% nParams = length(paramNames);
+% nCells = length(indLoop);
+% 
+% deltaRSS_all = nan(nCells,nParams);
+% cellID_all   = nan(nCells,1);
+% 
+% for ii = indLoop
+% 
+%     ic = ind_DS(ii);
+% 
+%     if ismember(ic,omitCells)
+%         continue
+%     end
+% 
+%     fprintf('Parameter analysis cell %d\n', ic)
+% 
+%     STA = STA_cropped(:,:,ii);
+% 
+%     result = parameter_ablation_DoGcos(STA);
+% 
+%     deltaRSS_all(ii,:) = result.deltaRSS;
+% 
+%     cellID_all(ii) = ic;
+% 
+% end
+% 
+ %% Ranking
+% modelIdx = find(strcmp({modelRegistry.name}, 'DoG x cos weighted'));
 % 
 % paramList = {'orientation','frequency','elongation','size'};
 % 
@@ -234,34 +284,113 @@ end
 %         'standard', ...
 %         paramList{p});
 % end
-
+% 
 %% Save parameter importance
-
-results.deltaRSS = deltaRSS_all;
-results.paramNames = paramNames;
-results.cellID = cellID_all;
-
-save('DoGcos_parameter_importance.mat','results')
-
-T = array2table(deltaRSS_all);
-T.Properties.VariableNames = paramNames;
-T.cellID = cellID_all;
-
-writetable(T,'DoGcos_parameter_importance.csv')
-
-figure('Position',[200 200 1200 600])
-
-imagesc(deltaRSS_all)
-
-colormap hot
-colorbar
-
-xticks(1:nParams)
-xticklabels(paramNames)
-
-xlabel('Parameter constrained')
-ylabel('Cell index')
-
-title('Parameter importance (ΔRSS)')
-
-exportgraphics(gcf,'DoGcos_parameter_importance_heatmap.pdf','Resolution',300)
+% 
+% results.deltaRSS = deltaRSS_all;
+% results.paramNames = paramNames;
+% results.cellID = cellID_all;
+% 
+% save('DoGcos_parameter_importance.mat','results')
+% 
+% T = array2table(deltaRSS_all);
+% T.Properties.VariableNames = paramNames;
+% T.cellID = cellID_all;
+% 
+% writetable(T,'DoGcos_parameter_importance.csv')
+% 
+% figure('Position',[200 200 1200 600])
+% 
+% imagesc(deltaRSS_all)
+% 
+% colormap hot
+% colorbar
+% 
+% xticks(1:nParams)
+% xticklabels(paramNames)
+% 
+% xlabel('Parameter constrained')
+% ylabel('Cell index')
+% 
+% title('Parameter importance (RSS)')
+% 
+% exportgraphics(gcf,'DoGcos_parameter_importance_heatmap.pdf','Resolution',300)
+% 
+% %% Screen weak STAs against fit complexity
+% 
+% modelName = 'DoG x cos test';
+% modelIdx = find(strcmp({modelRegistry.name}, modelName), 1);
+% assert(~isempty(modelIdx), 'Model not found in modelRegistry.');
+% 
+% paramsCell = results.params{modelIdx};
+% nFit = numel(paramsCell);
+% 
+% assert(nFit == numel(staMetrics.cellIDs), ...
+%     'staMetrics and fit results are not aligned.');
+% 
+% deltaSigma = nan(nFit, 1);
+% shiftMag = nan(nFit, 1);
+% freq = nan(nFit, 1);
+% tau = nan(nFit, 1);
+% As_rel = nan(nFit, 1);
+% 
+% for k = 1:nFit
+%     p = paramsCell{k};
+% 
+%     if isempty(p) || ~isnumeric(p) || numel(p) < 12 || any(~isfinite(p))
+%         continue
+%     end
+% 
+%     Ac = p(1);
+%     As = p(2);
+% 
+%     deltaSigma(k) = p(4);
+%     shiftMag(k) = hypot(p(11), p(12));
+%     freq(k) = p(9);
+%     tau(k) = p(5);
+%     As_rel(k) = abs(As) / (abs(Ac) + abs(As) + eps);
+% end
+% 
+% %% Scatter plots
+% 
+% figure('Color', 'w');
+% scatter(staMetrics.rmsZ, deltaSigma, 'filled');
+% xlabel('STA RMS z-score');
+% ylabel('\Delta\sigma');
+% title('\Delta\sigma vs STA strength');
+% 
+% figure('Color', 'w');
+% scatter(staMetrics.rmsZ, shiftMag, 'filled');
+% xlabel('STA RMS z-score');
+% ylabel('Shift magnitude');
+% title('Shift magnitude vs STA strength');
+% 
+% figure('Color', 'w');
+% scatter(staMetrics.rmsZ, freq, 'filled');
+% xlabel('STA RMS z-score');
+% ylabel('Frequency');
+% title('Frequency vs STA strength');
+% 
+% figure('Color', 'w');
+% scatter(staMetrics.fracSigPix, deltaSigma, 'filled');
+% xlabel('Fraction significant pixels');
+% ylabel('\Delta\sigma');
+% title('\Delta\sigma vs significant-pixel fraction');
+% 
+% figure('Color', 'w');
+% scatter(staMetrics.fracSigPix, shiftMag, 'filled');
+% xlabel('Fraction significant pixels');
+% ylabel('Shift magnitude');
+% title('Shift magnitude vs significant-pixel fraction');
+% 
+% figure('Color', 'w');
+% scatter(staMetrics.fracSigPix, As_rel, 'filled');
+% xlabel('Fraction significant pixels');
+% ylabel('Relative surround strength |As| / (|Ac| + |As|)');
+% title('Relative surround strength vs significant-pixel fraction');
+%% Export fitted parameters
+% Tparams = exportRFParamsToCSV( ...
+%     results, ...
+%     modelRegistry, ...
+%     'DoG x cos test', ...
+%     'results/DoGxcos_test_params.csv');
