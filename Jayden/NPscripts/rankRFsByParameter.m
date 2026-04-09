@@ -38,6 +38,7 @@ for i = 1:numel(RF_cells)
 
         case 'standard'
             params = paramStruct{i};
+<<<<<<< HEAD
             effectiveSigma = params(3) / sqrt(params(5));
             cycles = params(9) * effectiveSigma;
             theta = params(6);
@@ -47,15 +48,61 @@ for i = 1:numel(RF_cells)
             %     theta = theta + pi/ 2;
             % end
             % 
+=======
+        
+            if isempty(params) || ~isnumeric(params) || numel(params) < 12 || ...
+                    any(~isfinite(params))
+                continue
+            end
+        
+>>>>>>> 3d9fab6 (Added function outline center surround envolop and OSI)
             switch paramName
                 case 'orientation'
-                    param_vals(i) = theta;
+                    param_vals(i) = params(6);
+        
                 case 'frequency'
-                    param_vals(i) = cycles;
-                case 'elongation'
-                    param_vals(i) = elongation;
+                    freqMetrics = computeVisibleFrequencyMetrics20x20( ...
+                        params, 1.0, 0.10);
+                    param_vals(i) = freqMetrics.f;
+        
+                case 'period'
+                    freqMetrics = computeVisibleFrequencyMetrics20x20( ...
+                        params, 1.0, 0.10);
+                    param_vals(i) = freqMetrics.period_pixels;
+        
+                case 'cycles_visible'
+                    freqMetrics = computeVisibleFrequencyMetrics20x20( ...
+                        params, 1.0, 0.10);
+                    param_vals(i) = freqMetrics.cycles_visible;
+        
+                case 'oscillation'
+                    freqMetrics = computeVisibleFrequencyMetrics20x20( ...
+                        params, 1.0, 0.10);
+                    param_vals(i) = freqMetrics.osc_score;
+        
                 case 'size'
-                    param_vals(i) = effectiveSigma;
+                    geomMetrics = computeEffectiveEnvelopeGeometry( ...
+                        params, 1.0, 0.10);
+                    param_vals(i) = geomMetrics.size_eff;
+        
+                case 'elongation'
+                    geomMetrics = computeEffectiveEnvelopeGeometry( ...
+                        params, 1.0, 0.10);
+                    param_vals(i) = geomMetrics.elongation_eff;
+        
+                case 'sigma_parallel'
+                    geomMetrics = computeEffectiveEnvelopeGeometry( ...
+                        params, 1.0, 0.10);
+                    param_vals(i) = geomMetrics.sigma_parallel;
+        
+                case 'sigma_perp'
+                    geomMetrics = computeEffectiveEnvelopeGeometry( ...
+                        params, 1.0, 0.10);
+                    param_vals(i) = geomMetrics.sigma_perp;
+        
+                otherwise
+                    error('Unsupported paramName "%s" for modelType "standard".', ...
+                        paramName)
             end
 
         case 'sg'
@@ -71,10 +118,9 @@ for i = 1:numel(RF_cells)
                 case 'size'
                     param_vals(i) = fit.sigma_x;
             end
-
     end
 end
-
+% disp(param_vals)
 %% ===============================
 % Save unsorted parameters
 %% ===============================
@@ -131,7 +177,12 @@ for i = 1:nShow
     colormap gray
     hold on
 
-    %% Overlay orientation axis
+    if strcmp(modelType, 'standard') && ...
+            (strcmp(paramName, 'size') || strcmp(paramName, 'elongation'))
+        params_this = paramStruct{sortIdx(i)};
+        drawDoGEnvelopes(params_this, size(rf), 2);
+    end
+
     if strcmp(paramName,'orientation')
 
         theta = param_sorted(i);
@@ -147,7 +198,7 @@ for i = 1:nShow
 
         plot([cx-L*dx cx+L*dx], ...
              [cy-L*dy cy+L*dy], ...
-             'r-','LineWidth',1.5);
+             'y-','LineWidth',1.5);
     end
 
     hold off
@@ -155,7 +206,6 @@ for i = 1:nShow
     title(sprintf('%d | %.3f', ...
         cellID_sorted(i), param_sorted(i)), ...
         'FontSize',7)
-
 end
 
 sgtitle(figTitle,'FontWeight','bold')

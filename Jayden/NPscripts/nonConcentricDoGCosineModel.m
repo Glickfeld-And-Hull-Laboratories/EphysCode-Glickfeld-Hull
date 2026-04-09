@@ -1,64 +1,72 @@
 function modelVec = nonConcentricDoGCosineModel(p, XY, mode)
 % ============================================================
-% Nonconcentric DoG � Cosine RF model (forward model only)
+% Nonconcentric DoG x Cosine RF model
 %
-% p = [Ac, As, sigmaC, deltaSigma, tau, theta,
+% p = [Ac, As, sigmaC, deltaSigma, tau, theta, ...
 %      x0, y0, f, phi, dx, dy]
 %
 % XY = [X(:) Y(:)]
-%
 % mode = 'unnormalized' or 'normalized'
-%
-% Returns modelVec (column vector)
 % ============================================================
 
-Ac  = p(1);
-As  = p(2);
-sigmaC = p(3);
-deltaSigma = p(4);
-tau  = p(5);
-theta = p(6);
-x0   = p(7);
-y0   = p(8);
-f    = p(9);
-phi  = p(10);
-dx   = p(11);
-dy   = p(12);
+    if nargin < 3 || isempty(mode)
+        mode = 'unnormalized';
+    end
 
-X = XY(:,1);
-Y = XY(:,2);
+    Ac = p(1);
+    As = p(2);
+    sigmaC = p(3);
+    deltaSigma = p(4);
+    sigmaS = sigmaC + deltaSigma;   % critical fix
 
-% ---- rotate coordinates ----
-Xc =  (X - x0) * cos(theta) + (Y - y0) * sin(theta);
-Yc = -(X - x0) * sin(theta) + (Y - y0) * cos(theta);
+    tau = p(5);
+    theta = p(6);
+    x0 = p(7);
+    y0 = p(8);
+    f = p(9);
+    phi = p(10);
+    dx = p(11);
+    dy = p(12);
 
-% ---- center Gaussian ----
-G_center = exp(-(Xc.^2 + (tau*Yc).^2) ./ (2*sigmaC^2));
+    X = XY(:, 1);
+    Y = XY(:, 2);
 
-% ---- surround Gaussian (shifted) ----
-Xs = X - (x0 + dx);
-Ys = Y - (y0 + dy);
+    % Center coordinates
+    Xc = X - x0;
+    Yc = Y - y0;
 
-Xs_r =  Xs * cos(theta) + Ys * sin(theta);
-Ys_r = -Xs * sin(theta) + Ys * cos(theta);
+    % Surround coordinates
+    Xs = X - (x0 + dx);
+    Ys = Y - (y0 + dy);
 
-sigmaS = deltaSigma;
+    % Rotate both
+    Xc_r =  cos(theta) * Xc + sin(theta) * Yc;
+    Yc_r = -sin(theta) * Xc + cos(theta) * Yc;
 
-G_surround = exp(-(Xs_r.^2 + (tau*Ys_r).^2) ./ (2*sigmaS^2));
+    Xs_r =  cos(theta) * Xs + sin(theta) * Ys;
+    Ys_r = -sin(theta) * Xs + cos(theta) * Ys;
 
-% ---- DoG ----
-DoG = Ac * G_center - As * G_surround;
+    switch mode
+        case 'unnormalized'
+            G_center = exp(-(Xc_r.^2 + (tau * Yc_r).^2) ./ ...
+                (2 * sigmaC^2));
+            G_surround = exp(-(Xs_r.^2 + (tau * Ys_r).^2) ./ ...
+                (2 * sigmaS^2));
 
-% ---- Cosine modulation ----
-carrier = cos(2*pi*f*Xc + phi);
+        case 'normalized'
+            G_center = (1 / (2 * pi * sigmaC^2)) * ...
+                exp(-(Xc_r.^2 + (tau * Yc_r).^2) ./ ...
+                (2 * sigmaC^2));
+            G_surround = (1 / (2 * pi * sigmaS^2)) * ...
+                exp(-(Xs_r.^2 + (tau * Ys_r).^2) ./ ...
+                (2 * sigmaS^2));
 
-model = DoG .* carrier;
+        otherwise
+            error('Unknown mode');
+    end
 
-% ---- optional normalization ----
-if nargin > 2 && strcmp(mode,'normalized')
-    model = model / max(abs(model));
-end
+    DoG = Ac .* G_center - As .* G_surround;
+    carrier = cos(2 * pi * f * Xc_r + phi);
 
-modelVec = model;
-
+    modelVec = DoG .* carrier;
 end
