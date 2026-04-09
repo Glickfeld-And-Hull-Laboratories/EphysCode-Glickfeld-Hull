@@ -20,7 +20,8 @@ function [trialStruct, gratingRespMatrix, gratingOFFRespMatrix, resp, base, uniq
 
     binSize = 0.010; % 10 ms bins
     stimDuration = stimStruct.stimDuration; % Stimulus duration in seconds
-    preStimTime = 0.1; % 100 ms before stimulus onset
+    extractDuration = input('Time after stim onset to include for spike event extraction in seconds (e.g, for 100ms enter 0.100): ');
+    preStimTime = 0.2; % 100 ms before stimulus onset
     
     % respNBins = stimDuration / binSize; % 20 bins
     % baseNBins = preStimTime / binSize;  % 20 bins
@@ -49,7 +50,7 @@ function [trialStruct, gratingRespMatrix, gratingOFFRespMatrix, resp, base, uniq
             trialStruct(j).trialOFFSpikes{i} = trialOFFSpikes;
 
             % Bin spikes into 10 ms bins
-            respCounts = histcounts(trialSpikes, 0:binSize:stimDuration);
+            respCounts = histcounts(trialSpikes, 0:binSize:extractDuration);
             baseCounts = histcounts(trialOFFSpikes, -preStimTime:binSize:0);
 
             % Get trial information
