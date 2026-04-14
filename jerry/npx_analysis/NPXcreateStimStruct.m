@@ -8,8 +8,10 @@ function [stimStruct] = NPXcreateStimStruct(exptStruct)
 
     % Load MWorks stimulus information
         if class(mwtime) == "char"
+            mwtime2use = 1;
             bName = ['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\Behavior\Data\data-' mouse '-' date '-' mwtime '.mat'];
         elseif class(mwtime) == "cell" & size(mwtime,2) == 1
+            mwtime2use = 1;
             bName = ['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\Behavior\Data\data-' mouse '-' date '-' mwtime{1,1} '.mat'];
         elseif class(mwtime) == "cell" & size(mwtime,2) > 1
             exptStr = string(sessions);
