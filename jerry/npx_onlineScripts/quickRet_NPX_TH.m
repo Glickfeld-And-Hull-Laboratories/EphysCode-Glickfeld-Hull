@@ -129,12 +129,13 @@ LFPdata = (LFPdata-LFPdata(300,:));
 
     stims = [];
     LFPbyStim = zeros(length(chnls), size(LFPbyTrial,2), nStim);  % Initialize as [ nChannels x onWin samples x nStimuli ]
+    El4Plots = flip(uniqueEl);
 
     start=1;
     for ie = 1:nElevations
-        indEl = find(stimElevation == uniqueEl(ie));
+        indEl = find(stimElevation == El4Plots(ie));
         for ia = 1:nAzimuths
-            stims   = [stims; uniqueEl(ie) uniqueAz(ia)];
+            stims   = [stims; El4Plots(ie) uniqueAz(ia)];
             indAz   = find(stimAzimuth == uniqueAz(ia));
             ind     = intersect(indEl,indAz);
             LFPbyStim(:,:,start) = mean(LFPbyTrial(:,:,ind),3);

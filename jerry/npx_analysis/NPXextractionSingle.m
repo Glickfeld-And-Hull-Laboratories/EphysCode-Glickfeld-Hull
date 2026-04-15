@@ -519,8 +519,7 @@ for ic = 1:nCells
     for iStim = 1:nStimTypes
         stimIdx = stimTrialIdx{1,iStim};
         thisStimAvg = mean(thisCellBinFR(stimIdx,:),1); % average across all trials in that trial type
-        thisStimAvg_bslCorrected = thisStimAvg - mean(thisStimAvg(11:20)); % subtract baseline from all bins
-        smoothStimAvg = smoothdata(thisStimAvg_bslCorrected,'gaussian',smooth_window);
+        smoothStimAvg = smoothdata(thisStimAvg,'gaussian',smooth_window);
         psth_data(iStim,ic,:) = smoothStimAvg;
     end
 end

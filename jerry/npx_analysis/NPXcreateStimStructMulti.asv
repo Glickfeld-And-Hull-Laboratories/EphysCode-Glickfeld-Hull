@@ -1,5 +1,5 @@
 
-function [stimStruct] = NPXcreateStimStruct(exptStruct)
+function [stimStruct] = NPXcreateStimStructMulti(exptStruct)
 
     mwtime = exptStruct.exptTime;
     mouse = exptStruct.mouse;
@@ -10,9 +10,13 @@ function [stimStruct] = NPXcreateStimStruct(exptStruct)
         if class(mwtime) == "char"
             mwtime2use = 1;
             bName = ['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\Behavior\Data\data-' mouse '-' date '-' mwtime '.mat'];
+            S = load(bName); %#ok<LOAD>
+            inputStruct = S.input;
         elseif class(mwtime) == "cell" & size(mwtime,2) == 1
             mwtime2use = 1;
             bName = ['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\Behavior\Data\data-' mouse '-' date '-' mwtime{1,1} '.mat'];
+            S = load(bName); %#ok<LOAD>
+            inputStruct = S.input;
         elseif class(mwtime) == "cell" & size(mwtime,2) > 1
             exptStr = string(sessions);
             mwtimeStr = string(mwtime);
@@ -23,12 +27,27 @@ function [stimStruct] = NPXcreateStimStruct(exptStruct)
             for t = 1:nMWs
                 disp([num2str(t) ': ' char(mwtimeStr(t))]);
             end
-            mwtime2use = input('Select mWorks time to use (enter number): ');
-            bName = ['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\Behavior\Data\data-' mouse '-' date '-' char(mwtimeStr(mwtime2use)) '.mat'];
+            mwtime2use = input('Select mWorks time to use (enter 1 number or multiple in brackets. e.g, [3 4]): ');
+            if isscalar(mwtime2use) % concat multiple structs if needed
+                bName = ['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\Behavior\Data\data-' mouse '-' date '-' char(mwtimeStr(mwtime2use)) '.mat'];
+                S = load(bName); %#ok<LOAD>
+                inputStruct = S.input;
+            else
+                nMWtimes = length(mwtime2use);
+                for i = 1:nMWtimes
+                    bName = ['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\Behavior\Data\data-' mouse '-' date '-' char(mwtimeStr(mwtime2use(i))) '.mat'];
+                    S = load(bName);
+                    if i == 1
+                        inputStruct = S.input;
+                    else
+                        inputStruct(i) = S.input;
+                    end
+                end
+            end
         end
         
-        S = load(bName); %#ok<LOAD>
-        inputStruct = S.input;
+        % S = load(bName); %#ok<LOAD>
+        % inputStruct = S.input;
         
         stimElevation       = double(cell2mat(inputStruct.tGratingElevationDeg));
         stimAzimuth         = double(cell2mat(inputStruct.tGratingAzimuthDeg));
@@ -42,7 +61,7 @@ function [stimStruct] = NPXcreateStimStruct(exptStruct)
         stimSpatialFreq     = double(inputStruct.gratingSpatialFreqCPD);
         % stimTemporalFreq    = double(inputStruct.gratingTemporalFreqCPS);
 
-    % Load stim on information (both MWorks signal and photodiode)
+    % Load sync'd stim on timing information (both MWorks signal and photodiode)
         cd (fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\',exptStruct.loc,'\analysis\Neuropixel\',exptStruct.mouse,exptStruct.date))        % Move from KS_Output folder to ...\Analysis\neuropixel\date folder, where TPrime output is saved
         
         nSesh = length(sessions);
@@ -50,7 +69,7 @@ function [stimStruct] = NPXcreateStimStruct(exptStruct)
         for sesh = 1:nSesh
             disp([num2str(sesh) '. ' sessions{sesh}]);
         end
-        currentExptNum = input('Enter session number corresponding to the NAME OF NEURAL RECORDING to pull mWorks and photodiode signal from: ');
+        currentExptNum = input('Enter session number corresponding to the NAME OF NEURAL RECORDING to pull mWorks and photodiode signal from (e.g, 1 or for multiple, [1 2]): ');
         currentExpt = sessions{currentExptNum};
         
         CGTFolder = ['catgt_' exptStruct.mouse '-' exptStruct.date '-CrossOriContrast-' currentExpt '_g0'];

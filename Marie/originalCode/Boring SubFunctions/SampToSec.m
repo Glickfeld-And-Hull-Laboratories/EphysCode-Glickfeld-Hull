@@ -14,7 +14,6 @@ if length(dir('*.meta')) == 1
   binName = binfolder(1).name;
   path = binfolder(1).folder;
 end
-tic 
 
 % Parse the corresponding metafile
 meta = ReadMeta(binName, path);
