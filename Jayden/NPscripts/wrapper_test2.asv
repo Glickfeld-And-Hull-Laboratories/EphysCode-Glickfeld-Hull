@@ -2,7 +2,7 @@ close all; clearvars; clc;
 
 %% debug mode one cell test
 debugMode = true;
-debugCell = 71;   % check indRFint
+debugCell = 375;   % check indRFint
 %rng(0,'twister');   % randomness fully reproducible
 
 manualParamMode = false;   % <<< toggle this
@@ -289,7 +289,7 @@ for ii = indLoop
     % In manual mode, params_all may be empty unless you store it here
     params_all{k} = params;
 
-    RSS = sum((gaborSTA(:) - RF_DoGCos{k}(:)).^2);
+    RSS = sum((STA(:) - RF_DoGCos{k}(:)).^2);
     R2_DoGCos(k) = computeR2(STA, RF_DoGCos{k});
     AIC_DoGCos(k) = computeAIC(RSS, n, k_DoGCos);
 
@@ -317,7 +317,65 @@ STA = STA_cropped(:,:,indLoop(cellIdx));
 params = params_all{cellIdx};
 size(params)
 disp(params)
-launchRF_GUI(STA, params);
+% launchRF_GUI(STA, params);
+rf_data = STA;
+cellID = indRFint;
+Ac = params(1);
+As = params(2);
+sc = params(3);
+delta = params(4);
+ss = sc + delta;
+tau = params(5);
+theta = params(6);
+x0 = params(7);
+y0 = params(8);
+f = params(9);
+phi = params(10);
+dx = params(11);
+dy = params(12);
+
+fprintf('Cell %d\n', cellID);
+fprintf('Ac = %.3f\n', Ac);
+fprintf('As = %.3f\n', As);
+fprintf('sigmaC = %.3f\n', sc);
+fprintf('sigmaS = %.3f\n', ss);
+fprintf('tau = %.3f\n', tau);
+fprintf('theta (deg) = %.3f\n', rad2deg(mod(theta, pi)));
+fprintf('f = %.3f cycles/pixel\n', f);
+fprintf('phi (deg) = %.3f\n', rad2deg(phi));
+fprintf('dx = %.3f, dy = %.3f, offsetLen = %.3f\n', ...
+    dx, dy, hypot(dx, dy));
+
+[ny, nx] = size(rf_data);
+
+x = (1:nx) - mean(1:nx);
+y = (1:ny) - mean(1:ny);
+[X, Y] = meshgrid(x, y);
+
+Xc = X - x0;
+Yc = Y - y0;
+
+Xs = X - (x0 + dx);
+Ys = Y - (y0 + dy);
+
+Xcp = cos(theta) * Xc + sin(theta) * Yc;
+Ycp = -sin(theta) * Xc + cos(theta) * Yc;
+
+Xsp = cos(theta) * Xs + sin(theta) * Ys;
+Ysp = -sin(theta) * Xs + cos(theta) * Ys;
+
+Gc = exp(-(Xcp.^2 + (tau * Ycp).^2) / (2 * sc^2));
+Gs = exp(-(Xsp.^2 + (tau * Ysp).^2) / (2 * ss^2));
+
+carrier = cos(phi) .* cos(2 * pi * f * Xcp) - ...
+    sin(phi) .* sin(2 * pi * f * Xcp);
+
+centerPart = Ac .* Gc .* carrier;
+surroundPart = As .* Gs .* carrier;
+DoGenv = Ac .* Gc - As .* Gs;
+fullModel = DoGenv .* carrier;
+% debug_DoGCos_frequency_fft(params, 20);
+% debug_STA_vs_model_fft(STA, params, 20);
 
 % params = results.params{m}{cellIndex};
 

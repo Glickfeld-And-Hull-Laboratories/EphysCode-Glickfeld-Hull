@@ -1,31 +1,18 @@
-function [params, modelRF, fitInfo] = fitNoncDoGCosineRF_sigmaXY( ...
-    data, gaussianMode, nStarts)
-% fitNoncDoGCosineRF_diff
+function [params, modelRF, fitInfo] = ...
+    fitNoncDoGCosineRF_sigmaXY(data, gaussianMode, nStarts)
+% Weighted DoG x cosine fit with an added continuum parameter alpha.
 %
-% Penalized DoG x cosine fit using lsqnonlin.
+% alpha in [0, 1] controls the continuum:
+%   alpha = 0  -> more DoG-like
+%   alpha = 1  -> more Gabor-like
 %
-% Model:
-%   y = (Ac * Gc - As * Gs) .* carrier
+% Parameter vector:
+%   p = [Ac AsBase sigmaC deltaSigma tau theta x0 y0 ...
+%        fMax phi dx dy alpha]
 %
-% Parameters:
-%   p = [Ac As sigmaC deltaSigma tau theta x0 y0 f phi dx dy]
-%
-% Main soft penalties:
-%   1) large deltaSigma is discouraged when As is weak
-%   2) large nonconcentric shift is discouraged when center/surround
-%      overlap strongly
-%   3) nonzero As is discouraged when surround is highly redundant
-%
-% Inputs:
-%   data          2D RF image
-%   gaussianMode  'unnormalized' or 'normalized'
-%   nStarts       currently unused in the hybrid grid logic, retained
-%                 for compatibility
-%
-% Outputs:
-%   params        best-fit parameter vector
-%   modelRF       fitted RF image
-%   fitInfo       diagnostics
+% Effective parameters used in model:
+%   As_eff = (1 - alpha) * AsBase
+%   f_eff  = alpha * fMax
 
     if nargin < 2 || isempty(gaussianMode)
         gaussianMode = 'unnormalized';
@@ -37,84 +24,94 @@ function [params, modelRF, fitInfo] = fitNoncDoGCosineRF_sigmaXY( ...
     %#ok<NASGU>
     nStarts = nStarts;
 
-    %% Coordinate system
     [ny, nx] = size(data);
+
+    % ---------------------------------------
+    % Build pixel weights from raw STA
+    % ---------------------------------------
+    Wpix = buildAutoWeightsFromSTA(data);
+
+    % ---------------------------------------
+    % Coordinate system
+    % ---------------------------------------
     x = (1:nx) - mean(1:nx);
     y = (1:ny) - mean(1:ny);
     [X, Y] = meshgrid(x, y);
 
     XYdata = [X(:) Y(:)];
     datav = data(:);
+    wvec = Wpix(:);
 
-    %% Initial guess
+    % ---------------------------------------
+    % Initial guess
+    % ---------------------------------------
     amp = max(abs(datav));
     if ~isfinite(amp) || amp == 0
         amp = 1;
     end
 
-    % PARAMETERS:
-    % [Ac As sigmaC deltaSigma tau theta x0 y0 f phi dx dy]
+    % [Ac AsBase sigmaC deltaSigma tau theta x0 y0 fMax phi dx dy alpha]
     p0 = [ ...
-        amp, ...                % Ac
-        amp / 2, ...            % As
-        min(nx, ny) / 4, ...    % sigmaC
-        min(nx, ny) / 4, ...    % deltaSigma
-        1, ...                  % tau
-        0, ...                  % theta
-        0, 0, ...               % x0, y0
-        0.1, ...                % f
-        0, ...                  % phi
-        0, 0];                  % dx, dy
+        amp, ...
+        amp / 2, ...
+        min(nx, ny) / 4, ...
+        min(nx, ny) / 4, ...
+        1, ...
+        0, ...
+        0, 0, ...
+        0.35, ...
+        0, ...
+        0, 0, ...
+        0.5];
 
-    %% Bounds
+    % ---------------------------------------
+    % Bounds
+    % ---------------------------------------
     lb = [ ...
-        -amp * 3, -amp * 3, ...
-        eps, eps, ...
-        0.2, ...
+        -amp * 3, 0, ...
+        0.5, 0, ...
+        0.5, ...
         -pi, ...
-        min(x), min(y), ...
+        -6, -6, ...
         0, ...
-        0, ...
-        -max(nx, ny), -max(nx, ny)];
+        -pi, ...
+        -5, -5, ...
+        0];
 
     ub = [ ...
          amp * 3, amp * 3, ...
-         max(nx, ny), max(nx, ny), ...
-         5, ...
+         10, 10, ...
+         3, ...
          pi, ...
-         max(x), max(y), ...
-         0.5, ...
-         0, ...
-         max(nx, ny), max(nx, ny)];
+         6, 6, ...
+         0.35, ...
+         pi, ...
+         5, 5, ...
+         1];
 
-    %% Penalty settings
-    penalty = defaultPenaltySettings();
-
-    %% Optimizer options
     opts = optimoptions('lsqnonlin', ...
         'Display', 'off', ...
         'MaxFunctionEvaluations', 1e4);
 
-    objfun = @(p) penalizedResidualDoGCos( ...
-        p, XYdata, datav, gaussianMode, penalty, [ny nx]);
+    objfun = @(p) weightedResidualDoGCosAlpha( ...
+        p, XYdata, datav, wvec, gaussianMode);
 
-    %% ======================================
-    % Hybrid Global Search
-    %% ======================================
+    % ---------------------------------------
+    % Hybrid search
+    % ---------------------------------------
     bestRSS = Inf;
     bestParams = p0;
     candidates = [];
 
     thetaGrid = linspace(-pi/2, pi/2, 12);
-    freqGrid = linspace(0.05, 0.35, 8);
+    alphaGrid = linspace(0, 1, 7);
 
-    % ---------- Stage 1: 2D grid ----------
+    % ---------- Stage 1 ----------
     for th = thetaGrid
-        for f = freqGrid
-
+        for a = alphaGrid
             p0s = p0;
             p0s(6) = th;
-            p0s(9) = f;
+            p0s(13) = a;
             p0s(10) = 0;
 
             try
@@ -127,7 +124,6 @@ function [params, modelRF, fitInfo] = fitNoncDoGCosineRF_sigmaXY( ...
     end
 
     if isempty(candidates)
-        % fall back to one direct run
         [pfit, ~, res] = lsqnonlin(objfun, p0, lb, ub, opts);
         bestParams = pfit;
         bestRSS = sum(res .^ 2);
@@ -136,8 +132,8 @@ function [params, modelRF, fitInfo] = fitNoncDoGCosineRF_sigmaXY( ...
         topK = min(6, size(candidates, 1));
         candidates = candidates(1:topK, :);
 
-        % ---------- Stage 2: refine phase ----------
-        phaseGrid = linspace(0, 0, 1);
+        % ---------- Stage 2 ----------
+        phaseGrid = linspace(-pi, pi, 6);
 
         for i = 1:topK
             baseParams = candidates(i, 2:end);
@@ -165,208 +161,102 @@ function [params, modelRF, fitInfo] = fitNoncDoGCosineRF_sigmaXY( ...
         bestRSS = sum(res .^ 2);
     end
 
-    %% Output
+    % ---------------------------------------
+    % Output
+    % ---------------------------------------
     params = bestParams;
     modelRF = reshape( ...
-        nonConcentricDoGCosineModel(params, XYdata, gaussianMode), ...
+        nonConcentricDoGCosineModelAlpha(params, XYdata, gaussianMode), ...
         ny, nx);
 
-    fitInfo.RSS = bestRSS;
-    fitInfo.penalty = penalty;
-    fitInfo.overlap = estimateEnvelopeOverlap(params, gaussianMode, [ny nx]);
-    fitInfo.redundancy = computeRedundancyFactor(params, gaussianMode, ...
-        penalty, [ny nx]);
+    % save effective values too
+    alpha = params(13);
+    As_eff = (1 - alpha) * params(2);
+    f_eff = alpha * params(9);
 
-    fprintf('BestRSS:\n');
+    fitInfo.RSS = bestRSS;
+    fitInfo.Wpix = Wpix;
+    fitInfo.alpha = alpha;
+    fitInfo.As_eff = As_eff;
+    fitInfo.f_eff = f_eff;
+
+    fprintf('Alpha-continuum weighted BestRSS:\n');
     disp(bestRSS)
+    fprintf('alpha = %.3f, As_eff = %.3f, f_eff = %.3f\n', ...
+        alpha, As_eff, f_eff)
 end
 
 
-function r = penalizedResidualDoGCos( ...
-    p, XYdata, datav, gaussianMode, penalty, imSize)
-% penalizedResidualDoGCos
-%
-% Returns residual vector for lsqnonlin:
-%   [data residuals; penalty residuals]
+function Wpix = buildAutoWeightsFromSTA(data)
+% Build soft weights directly from STA amplitude.
 
-    yhat = nonConcentricDoGCosineModel(p, XYdata, gaussianMode);
-    r_data = yhat - datav;
+    A = abs(data);
 
-    if any(~isfinite(p)) || any(~isfinite(r_data))
+    % optional light smoothing to reduce one-pixel noise influence
+    A = imgaussfilt(A, 0.75);
+
+    A = A / (max(A(:)) + eps);
+
+    % soft weighting:
+    % weak pixels still matter a little, strong pixels matter more
+    Wpix = 0.1 + 0.9 * (A .^ 2);
+end
+
+
+function r = weightedResidualDoGCosAlpha( ...
+    p, XYdata, datav, wvec, gaussianMode)
+
+    yhat = nonConcentricDoGCosineModelAlpha(p, XYdata, gaussianMode);
+    err = yhat - datav;
+
+    if any(~isfinite(p)) || any(~isfinite(err))
         r = [zeros(size(datav)); 1e3];
         return
     end
 
-    % unpack
-    Ac = p(1);
-    As = p(2);
     sc = p(3);
-    delta = p(4);
-    ss = sc + delta;
+    ss = p(3) + p(4);
     tau = p(5);
-    dx = p(11);
-    dy = p(12);
+    alpha = p(13);
 
-    if sc <= 0 || ss <= 0 || tau <= 0
-        r = [r_data; 1e3];
+    if sc <= 0 || ss <= 0 || tau <= 0 || alpha < 0 || alpha > 1
+        r = [sqrt(wvec) .* err; 1e3];
         return
     end
 
-    shiftMag = sqrt(dx ^ 2 + dy ^ 2);
-
-    % relative surround strength
-    Aref = abs(Ac) + abs(As) + eps;
-    As_rel = abs(As) / Aref;
-
-    % effective scale
-    sizeC = sc / sqrt(tau);
-
-    % overlap / redundancy
-    overlap = estimateEnvelopeOverlap(p, gaussianMode, imSize);
-    redundancy = computeRedundancyFactor(p, gaussianMode, penalty, imSize);
-
-    % 1) Penalize deltaSigma when surround is weak
-    weakSurroundWeight = max(0, 1 - As_rel / penalty.AsRelAllowDelta);
-    pen_delta_weakAs = penalty.lamDeltaWeakAs * weakSurroundWeight * ...
-        (delta / (sc + eps));
-
-    % 2) Penalize shift when overlap is high
-    pen_shift_overlap = penalty.lamShiftOverlap * overlap * ...
-        (shiftMag / (sizeC + eps));
-
-    % 3) Penalize As when surround looks redundant
-    pen_As_redundant = penalty.lamAsRedundant * redundancy * As_rel;
-
-    % 4) Mild shrinkage on tau away from 1
-    pen_tau = penalty.lamTau * abs(log(tau));
-
-    r = [
-        r_data;
-        pen_delta_weakAs;
-        pen_shift_overlap;
-        pen_As_redundant;
-        pen_tau
-    ];
-end
-
-
-function penalty = defaultPenaltySettings()
-% defaultPenaltySettings
-%
-% Tuning knobs for soft structural penalties.
-
-    penalty = struct();
-
-    % When As_rel is below this, large deltaSigma becomes increasingly
-    % discouraged.
-    penalty.AsRelAllowDelta = 0.25;
-
-    % Strengths of penalty residuals
-    penalty.lamDeltaWeakAs = 1.0;
-    penalty.lamShiftOverlap = 1.0;
-    penalty.lamAsRedundant = 1.5;
-    penalty.lamTau = 0.2;
-
-    % Redundancy logic
-    % Larger -> more forgiving
-    penalty.deltaSimilarityScale = 0.35;
-    penalty.shiftSimilarityScale = 0.35;
-end
-
-
-function redundancy = computeRedundancyFactor(p, gaussianMode, ...
-    penalty, imSize)
-% computeRedundancyFactor
-%
-% High when center/surround are highly overlapping, similarly sized,
-% and only weakly shifted.
-
-    sc = p(3);
-    delta = p(4);
-    tau = p(5);
+    Ac = p(1);
+    As_base = p(2);
     dx = p(11);
     dy = p(12);
 
-    %#ok<NASGU>
-    tau = tau;
+    nPix = numel(datav);
+    scaleReg = sqrt(nPix);
 
-    sizeC = sc / sqrt(max(p(5), eps));
-    shiftMag = sqrt(dx ^ 2 + dy ^ 2);
-    overlap = estimateEnvelopeOverlap(p, gaussianMode, imSize);
+    lambda_As = 0.2;
+    lambda_sc = 0.01;
+    lambda_off = 0.02;
+    lambda_alpha_mid = 0.00;  % set >0 if you want to discourage mid-alpha
 
-    deltaNorm = delta / (sc + eps);
-    shiftNorm = shiftMag / (sizeC + eps);
+    r_data = sqrt(wvec) .* err;
 
-    similarSize = exp(-(deltaNorm ^ 2) / penalty.deltaSimilarityScale);
-    smallShift = exp(-(shiftNorm ^ 2) / penalty.shiftSimilarityScale);
+    pen_As = scaleReg * lambda_As * abs(As_base) / (abs(Ac) + eps);
+    pen_sc = scaleReg * lambda_sc / (sc + eps);
+    pen_off = scaleReg * lambda_off * sqrt(dx^2 + dy^2);
+    pen_alpha_mid = scaleReg * lambda_alpha_mid * alpha * (1 - alpha);
 
-    redundancy = overlap * similarSize * smallShift;
+    r = [r_data;
+         pen_As;
+         pen_sc;
+         pen_off;
+         pen_alpha_mid];
 end
 
 
-function overlap = estimateEnvelopeOverlap(p, gaussianMode, imSize)
-% estimateEnvelopeOverlap
-%
-% Computes normalized overlap of center and surround envelopes.
-% Near 1 = very similar / highly overlapping.
-% Lower values = more distinct.
-
-    sc = p(3);
-    delta = p(4);
-    ss = sc + delta;
-    tau = p(5);
-    theta = p(6);
-    x0 = p(7);
-    y0 = p(8);
-    dx = p(11);
-    dy = p(12);
-
-    ny = imSize(1);
-    nx = imSize(2);
-
-    x = (1:nx) - mean(1:nx);
-    y = (1:ny) - mean(1:ny);
-    [X, Y] = meshgrid(x, y);
-
-    Xc = X - x0;
-    Yc = Y - y0;
-
-    Xs = X - (x0 + dx);
-    Ys = Y - (y0 + dy);
-
-    Xcp = cos(theta) * Xc + sin(theta) * Yc;
-    Ycp = -sin(theta) * Xc + cos(theta) * Yc;
-
-    Xsp = cos(theta) * Xs + sin(theta) * Ys;
-    Ysp = -sin(theta) * Xs + cos(theta) * Ys;
-
-    switch gaussianMode
-        case 'unnormalized'
-            Gc = exp(-(Xcp .^ 2 + (tau * Ycp) .^ 2) / (2 * sc ^ 2));
-            Gs = exp(-(Xsp .^ 2 + (tau * Ysp) .^ 2) / (2 * ss ^ 2));
-        case 'normalized'
-            Gc = (1 / (2 * pi * sc ^ 2)) * ...
-                exp(-(Xcp .^ 2 + (tau * Ycp) .^ 2) / (2 * sc ^ 2));
-            Gs = (1 / (2 * pi * ss ^ 2)) * ...
-                exp(-(Xsp .^ 2 + (tau * Ysp) .^ 2) / (2 * ss ^ 2));
-        otherwise
-            error('Unknown gaussianMode: %s', gaussianMode)
-    end
-
-    num = sum(Gc(:) .* Gs(:));
-    den = sqrt(sum(Gc(:) .^ 2) * sum(Gs(:) .^ 2)) + eps;
-
-    overlap = num / den;
-end
-
-
-function y = nonConcentricDoGCosineModel(p, XY, gaussianMode)
-% nonConcentricDoGCosineModel
-%
-% p = [Ac As sigmaC deltaSigma tau theta x0 y0 f phi dx dy]
+function y = nonConcentricDoGCosineModelAlpha(p, XY, gaussianMode)
+% p = [Ac AsBase sigmaC deltaSigma tau theta x0 y0 fMax phi dx dy alpha]
 
     Ac = p(1);
-    As = p(2);
+    As_base = p(2);
     sc = p(3);
     delta = p(4);
     ss = sc + delta;
@@ -376,10 +266,16 @@ function y = nonConcentricDoGCosineModel(p, XY, gaussianMode)
 
     x0 = p(7);
     y0 = p(8);
-    f = p(9);
+
+    f_max = p(9);
     phi = p(10);
     dx = p(11);
     dy = p(12);
+    alpha = p(13);
+
+    % Continuum coupling
+    As = (1 - alpha) * As_base;
+    f = alpha * f_max;
 
     Xc = XY(:, 1) - x0;
     Yc = XY(:, 2) - y0;
@@ -395,13 +291,13 @@ function y = nonConcentricDoGCosineModel(p, XY, gaussianMode)
 
     switch gaussianMode
         case 'unnormalized'
-            Gc = exp(-(Xcp .^ 2 + (tau * Ycp) .^ 2) / (2 * sc ^ 2));
-            Gs = exp(-(Xsp .^ 2 + (tau * Ysp) .^ 2) / (2 * ss ^ 2));
+            Gc = exp(-(Xcp.^2 + (tau * Ycp).^2) / (2 * sc^2));
+            Gs = exp(-(Xsp.^2 + (tau * Ysp).^2) / (2 * ss^2));
         case 'normalized'
-            Gc = (1 / (2 * pi * sc ^ 2)) * ...
-                 exp(-(Xcp .^ 2 + (tau * Ycp) .^ 2) / (2 * sc ^ 2));
-            Gs = (1 / (2 * pi * ss ^ 2)) * ...
-                 exp(-(Xsp .^ 2 + (tau * Ysp) .^ 2) / (2 * ss ^ 2));
+            Gc = (1 / (2 * pi * sc^2)) * ...
+                exp(-(Xcp.^2 + (tau * Ycp).^2) / (2 * sc^2));
+            Gs = (1 / (2 * pi * ss^2)) * ...
+                exp(-(Xsp.^2 + (tau * Ysp).^2) / (2 * ss^2));
         otherwise
             error('Unknown gaussianMode: %s', gaussianMode)
     end

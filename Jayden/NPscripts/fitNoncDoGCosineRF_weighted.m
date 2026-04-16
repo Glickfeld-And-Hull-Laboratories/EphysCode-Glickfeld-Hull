@@ -183,7 +183,6 @@ function Wpix = buildAutoWeightsFromSTA(data)
     Wpix = 0.1 + 0.9 * (A .^ 2);
 end
 
-
 function r = weightedResidualDoGCos(p, XYdata, datav, wvec, gaussianMode)
 
     yhat = nonConcentricDoGCosineModel(p, XYdata, gaussianMode);
@@ -203,7 +202,28 @@ function r = weightedResidualDoGCos(p, XYdata, datav, wvec, gaussianMode)
         return
     end
 
+    Ac = p(1);
+    As = p(2);
+    dx = p(11);
+    dy = p(12);
+
+    nPix = numel(datav);
+    scaleReg = sqrt(nPix);
+
+    lambda_As = 0.2;
+    lambda_sc = 0.01;
+    lambda_off = 0.02;
+
     r = sqrt(wvec) .* err;
+
+    pen_As = scaleReg * lambda_As * abs(As) / (abs(Ac) + eps);
+    pen_sc = scaleReg * lambda_sc / (sc + eps);
+    pen_off = scaleReg * lambda_off * sqrt(dx^2 + dy^2);
+
+    % r = [r_data;
+    %      pen_As;
+    %      pen_sc;
+    %      pen_off];
 end
 
 
