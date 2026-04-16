@@ -2,7 +2,7 @@ close all; clearvars; clc;
 
 %% debug mode one cell test
 debugMode = false;
-debugCell = 986;   % check indRFint
+debugCell = 375;   % check indRFint
 %rng(0,'twister');   % randomness fully reproducible
 
 %% Load data 
@@ -42,8 +42,10 @@ idxCon      = setdiff(indRF_con,indRF_pix); % contrast method only
 ind         = intersect(resp_ind_dir_all, find(DSI_all>.5));
 ind_DS      = intersect(idxInt,ind); % visually responsive and direction-selective
 ind_all     = intersect(idxInt,resp_ind_dir_all); % visually responsive, orientation selective and direction-selective
+% ind_test    = intersect(idxInt, resp_ind_dir_all); % exclude noise STA
+
 % for testing
-% ind_DS = ind_all;
+ind_DS = ind_all;
 
 %% Calculate time point of STA
 % The first dimension of bestTimePoint_all is the one computed by the local contrast method
@@ -82,16 +84,142 @@ else
     indLoop = 1:length(ind_DS);
 end
 
-cellIDs = ind_DS(indLoop);
+% cellIDs = ind_DS(indLoop);
+% 
+% for ii = indLoop
+%     ic = ind_DS(ii);
+%     avgImgZscore = squeeze(avgImgZscore_all(ic,:,:,:));     % Grab avg zscore STA images for all time points
+%     data = medfilt2(imgaussfilt(squeeze(avgImgZscore(bestTimePoint_all(ic,1),:,:)),1));
+%     [el, az] = getRFcenter(data); % reversed because of how I had swapped xDim and yDim for the image
+%     sideLength = 20;
+%     [data_cropped] = cropRFtoCenter(az, el, data, sideLength);
+%     STA_cropped(:,:,ii) = data_cropped;
+%% Find center of RF, crop, and keep only valid STAs
+%
+% Validity rule:
+%   1. cropped STA must have a high enough peak absolute value
+%   2. strong pixels must form a sufficiently large connected cluster
+%
+% Outputs used later:
+%   STA_cropped   : 20 x 20 x N_valid array
+%   cellIDs       : N_valid x 1 vector, matched to STA_cropped
+%
+% Optional outputs for QC:
+%   rejectedCellIDs
+%   validMask
+%   cropQC
 
-for ii = indLoop
+if debugMode
+    indLoop = find(ind_DS == debugCell);
+    assert(~isempty(indLoop), 'debugCell is not in ind_DS');
+else
+    indLoop = 1:length(ind_DS);
+end
+
+sideLength = 20;
+
+% -----------------------------
+% Threshold / QC settings
+% -----------------------------
+peakThresh = 2.0;      % min peak |STA| to count as real signal
+thrFactor = 1.5;       % strong pixel threshold = thrFactor * std(crop)
+minClusterSize = 9;   % minimum connected strong-pixel cluster size
+
+% -----------------------------
+% Preallocate / initialize
+% -----------------------------
+nCandidates = numel(indLoop);
+
+STA_cropped = zeros(sideLength, sideLength, 0);
+cellIDs = zeros(0, 1);
+
+rejectedCellIDs = zeros(0, 1);
+validMask = false(length(ind_DS), 1);
+
+cropQC = struct( ...
+    'cellID', cell(nCandidates, 1), ...
+    'peakAbs', cell(nCandidates, 1), ...
+    'noiseStd', cell(nCandidates, 1), ...
+    'thr', cell(nCandidates, 1), ...
+    'largestCluster', cell(nCandidates, 1), ...
+    'fracStrong', cell(nCandidates, 1), ...
+    'isValid', cell(nCandidates, 1));
+
+k = 0;
+
+for jj = 1:nCandidates
+    ii = indLoop(jj);
     ic = ind_DS(ii);
-    avgImgZscore = squeeze(avgImgZscore_all(ic,:,:,:));     % Grab avg zscore STA images for all time points
-    data = medfilt2(imgaussfilt(squeeze(avgImgZscore(bestTimePoint_all(ic,1),:,:)),1));
-    [el, az] = getRFcenter(data); % reversed because of how I had swapped xDim and yDim for the image
-    sideLength = 20;
-    [data_cropped] = cropRFtoCenter(az, el, data, sideLength);
-    STA_cropped(:,:,ii) = data_cropped;
+
+    % -----------------------------------
+    % Build cropped 20x20 STA
+    % -----------------------------------
+    avgImgZscore = squeeze(avgImgZscore_all(ic, :, :, :));
+
+    data = medfilt2(imgaussfilt( ...
+        squeeze(avgImgZscore(bestTimePoint_all(ic, 1), :, :)), 1));
+
+    [el, az] = getRFcenter(data);   % keep your original convention
+    data_cropped = cropRFtoCenter(az, el, data, sideLength);
+
+    % -----------------------------------
+    % Compute strong-pixel mask
+    % -----------------------------------
+    absCrop = abs(data_cropped);
+
+    peakAbs = max(absCrop(:));
+    noiseStd = std(data_cropped(:));
+
+    % avoid degenerate threshold if crop is all zeros
+    if noiseStd == 0 || ~isfinite(noiseStd)
+        thr = inf;
+    else
+        thr = thrFactor * noiseStd;
+    end
+
+    BW = absCrop > thr;
+    fracStrong = mean(BW(:));
+
+    % -----------------------------------
+    % Spatial clustering test
+    % -----------------------------------
+    CC = bwconncomp(BW, 8);
+
+    if CC.NumObjects == 0
+        largestCluster = 0;
+    else
+        largestCluster = max(cellfun(@numel, CC.PixelIdxList));
+    end
+
+    % -----------------------------------
+    % Valid STA rule
+    % -----------------------------------
+    isValid = (peakAbs >= peakThresh) && ...
+              (largestCluster >= minClusterSize);
+
+    % -----------------------------------
+    % Save QC info
+    % -----------------------------------
+    cropQC(jj).cellID = ic;
+    cropQC(jj).peakAbs = peakAbs;
+    cropQC(jj).noiseStd = noiseStd;
+    cropQC(jj).thr = thr;
+    cropQC(jj).largestCluster = largestCluster;
+    cropQC(jj).fracStrong = fracStrong;
+    cropQC(jj).isValid = isValid;
+
+    % -----------------------------------
+    % Keep only valid crops
+    % -----------------------------------
+    if isValid
+        k = k + 1;
+        STA_cropped(:, :, k) = data_cropped;
+        cellIDs(k, 1) = ic;
+        validMask(ii) = true;
+    else
+        rejectedCellIDs(end + 1, 1) = ic;
+    end
+end
 
     % % plotting cropped RF
     % figure('Name','RF center & crop','Color','w');
@@ -119,7 +247,6 @@ for ii = indLoop
     % 
     % sgtitle(sprintf('Cell %d - RF localization & cropping', ic))
 
-end
 
 %% Run Gabor fit
 options.visualize = 0;
@@ -160,10 +287,10 @@ modelRegistry = [
     %     'fitFcn', @(STA) fit2dGabor_JM(STA,options), ...
         % 'k',10)
     % struct( ...
-    %     'name','DoG x cos phi', ...
+    %     'name','DoG x cos alpha', ...
     %     'type','standard', ...
     %     'fitFcn', @(STA) fitNoncDoGCosineRF_sigmaXY(STA), ...
-    %     'k',12)
+    %     'k',13)
 
     % struct( ...
     %     'name','DoG x cos test', ...
@@ -187,18 +314,42 @@ omitCells = [114, 634];   % cell(s) with NaN
 %     'unnormalized', ...
 %     20);
 %% result outputs
+indLoop_valid = 1:size(STA_cropped, 3);
+ind_DS_valid = cellIDs;
+
 results = runRFModelComparison( ...
-    indLoop, ind_DS, STA_cropped, ...
-    modelRegistry, omitCells, 'pdf', 'RF_DoGxcos_diff_weighted.pdf');
+    indLoop_valid, ind_DS_valid, STA_cropped, ...
+    modelRegistry, omitCells, 'pdf', ...
+    'RF_DoGxcos_diff_alpha_test.pdf');
 %%
 % plotRFParameterMap(STA_cropped, results)
 % plotRFEndpointMap(STA_cropped, results)
 %% Fit orientation vs real-data orientation
-plotFitVsDataOrientationFromResults( ...
-    results, modelRegistry, 'DoG x cos weighted', ...
-    avg_resp_dir_all, cellIDs, ...
-    'results/FitVsDataOrientation_DoGxcos_weight.pdf', ...
-    'DoG x cos weighted: fit orientation vs data orientation');
+valueToRemove = omitCells;
+
+cellIDs(cellIDs == valueToRemove) = [];
+
+freqTable = extractFrequencyVerificationAllCells( ...
+    STA_cropped, cellIDs, results, modelRegistry, 'DoG x cos weighted');
+figure;
+scatter(freqTable.f_pred, freqTable.f_data, 40, 'filled');
+xlabel('Predicted f');
+ylabel('Data FFT f');
+grid on;
+axis equal
+%%
+figure;
+scatter(freqTable.f_pred, freqTable.f_full, 40, 'filled');
+xlabel('Predicted f');
+ylabel('Full-model FFT f');
+grid on;
+axis equal
+%%
+% plotFitVsDataOrientationFromResults( ...
+%     results, modelRegistry, 'DoG x cos alpha', ...
+%     avg_resp_dir_all, cellIDs, ...
+%     'results/FitVsDataOrientation_DoGxcos_alpha.pdf', ...
+%     'DoG x cos alpha: fit orientation vs data orientation');
 %%
 % %% STA strength metrics
 % staMetrics = computeSTAStrengthMetrics( ...
@@ -267,7 +418,7 @@ plotFitVsDataOrientationFromResults( ...
 % end
 % 
  %% Ranking
-% modelIdx = find(strcmp({modelRegistry.name}, 'DoG x cos weighted'));
+% modelIdx = find(strcmp({modelRegistry.name}, 'DoG x cos alpha'));
 % 
 % paramList = {'orientation','frequency','elongation','size'};
 % 
@@ -284,7 +435,12 @@ plotFitVsDataOrientationFromResults( ...
 %         'standard', ...
 %         paramList{p});
 % end
-% 
+
+%%
+% plotPrefThetaOffsetScatter( ...
+%     results, modelRegistry, 'DoG x cos alpha', ...
+%     avg_resp_dir_all, cellIDs);
+
 %% Save parameter importance
 % 
 % results.deltaRSS = deltaRSS_all;
