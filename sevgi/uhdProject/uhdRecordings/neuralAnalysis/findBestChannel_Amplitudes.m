@@ -1,0 +1,102 @@
+% =========================================================
+% SO 8/13/2024 Hull lab
+% Finds the best channel of the given sample points
+% Read nSamp timepoints from the binary file, starting
+% at timepoint offset samples(i). The returned array has
+% dimensions [nChan,nSamp]. Note that nSamp returned
+% is the lesser of: {nSamp, timepoints available}.
+%
+% IMPORTANT: samples must be array of start positions and nSamp must be integer.
+%
+function [bestChannelPhyllum, depth, amplitudes, amplitudePerChannel] = findBestChannel_Amplitudes(samples, nSamp, fileSizeBytes, binName, path, sizeOfData, sConvertDataType, imecMeta)
+    globals;
+
+    bestChannelPhyllum = -1;
+    depth = -1;
+    amplitudes = [];
+
+    nFileSamp = floor(fileSizeBytes/(sizeOfData * NUM_OF_CHANNELS));
+        
+    dataArray = NaN(length(samples),NUM_OF_CHANNELS, nSamp); % # of samples X # of channels X timepoints
+    fid = fopen(fullfile(path, binName), 'rb');
+    for i=1:length(samples)                
+        samples(i) = max(samples(i), 0);
+        if samples(i)<nFileSamp
+            nSampToRead = min(nSamp, nFileSamp - samples(i));
+            sizeA = [NUM_OF_CHANNELS, nSampToRead];
+    
+            fseek(fid, samples(i) * sizeOfData * NUM_OF_CHANNELS, 'bof');
+            tempData = fread(fid, sizeA, sConvertDataType);        
+            dataArray(i,:, 1:size(tempData,2)) = tempData; %(chOfInterest,:);
+        else
+            logger.info('findBestChannel_Amplitudes', ['samples(i)=' num2str(samples(i)) ' bigger than nFileSamp=' num2str(nFileSamp) ' at i=' num2str(i) ' th trial']);
+        end
+    end
+
+    % Gain correction
+    dataArray = gainCorrectIM(dataArray, imecMeta); 
+
+    % Exclude Synch channel cos it creates an outlier for the amplitude calculation
+    dataArray = dataArray(:,1:MAX_CHANNELS,:);
+
+%     dataArrayPart1 = dataArray(:,1:FUNKY_CHANNEL,:); % Exclude funky channel
+%     dataArrayPart2 = dataArray(:,FUNKY_CHANNEL+2:end,:);
+%     dataArray = [dataArrayPart1, dataArrayPart2];
+
+    % Find which channel has max mean waveform
+%     meanWaveForms = mean(dataArray,1);
+%     meanWaveFormsSqueezed = squeeze(meanWaveForms);
+%     [maxs, indsMaxs] = max(meanWaveFormsSqueezed,[],2);
+%     [mins, indsMins] = min(meanWaveFormsSqueezed,[],2);
+%     absDiff = abs(maxs-mins);
+%     [~, bestChannelOld] = max(absDiff);
+%     bestChannelPhyllum = bestChannel-1; % To adapt it Phyylum version of channels
+%     depth = ceil(bestChannelPhyllum/NUM_OF_COLUMNS_IN_PROBE)*DEPTH_PER_ROW;
+    
+    largestAmplitude = 0;
+    amplitudePerChannel = zeros(1,size(dataArray,2));
+
+    for iCh = 1:size(dataArray,2)
+        waveForm = dataArray(:, iCh, :);
+        waveForm = squeeze(waveForm);
+        meanWaveForm = mean(waveForm, 1);
+        maxs = max(meanWaveForm);
+        mins = min(meanWaveForm);
+        absDiff = abs(maxs-mins);        
+        amplitudePerChannel(iCh) = absDiff;        
+        if largestAmplitude<amplitudePerChannel(iCh)
+            largestAmplitude = amplitudePerChannel(iCh);
+            bestChannel = iCh;
+        end
+    end
+
+    if FUNKY_CHANNEL~=-1 % ignore the funky channel input, just put the average of the rest of the channels
+        indsExcept = ~ismember(1:length(amplitudePerChannel),FUNKY_CHANNEL);
+        amplitudePerChannel(FUNKY_CHANNEL) = mean(amplitudePerChannel(indsExcept));
+    end
+
+    if largestAmplitude>0
+        bestChannelPhyllum = bestChannel-1; % To adapt it Phyllum version of channels
+        depth = depthDuringRecording - ceil(bestChannelPhyllum/NUM_OF_COLUMNS_IN_PROBE)*DEPTH_PER_ROW;
+
+        waveFormBestCh = dataArray(:, bestChannel, :);
+        waveFormBestCh = squeeze(waveFormBestCh);
+        maxs = max(waveFormBestCh,[], 2);
+        mins = min(waveFormBestCh,[], 2);
+        absDiff = abs(maxs-mins);
+        amplitudes = absDiff;
+    end
+
+
+%     f = figure;
+%     f.Position = [globalX globalY globalW globalH];     
+%     samplingRate = 30000.5267660000;
+%     x=-RAW_PRE_SPIKE:1/samplingRate:RAW_POST_SPIKE-1/samplingRate;
+%     x=x.*1000; % convert to ms
+%     plot(x,meanWaveFormsSqueezed(1,:),'LineWidth',1);
+%     plot(meanWaveFormsSqueezed(16,:)','LineWidth',1);
+%     hold on;
+%     plot(meanWaveFormsSqueezed(224,:)','LineWidth',1);
+
+    fclose(fid);
+end % ReadBin

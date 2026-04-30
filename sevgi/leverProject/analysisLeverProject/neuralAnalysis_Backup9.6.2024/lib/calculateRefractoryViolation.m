@@ -1,0 +1,62 @@
+function [singleUnit, refractoryViolationRate, refractoryViolationRateMF, relativeSpkTimesMsec, targetSpikeRates] = calculateRefractoryViolation(spikeTimesSecs, allTrials, leverHoldTimes, leverReleaseTimesGLX, neuronType, edges)
+    globalsCommon;
+    trialCount = length(allTrials);
+    
+    relativeSpkTimesMsec = [];
+    if isempty(edges) % If no input sent, by default it is ACG edges
+        edges = -X_MAX_CORRELOGRAM-BIN_SIZE_CORRELOGRAM:BIN_SIZE_CORRELOGRAM:X_MAX_CORRELOGRAM+BIN_SIZE_CORRELOGRAM;
+    end
+
+    for ind=1:trialCount        
+        preHoldTime = leverHoldTimes(ind)-PRE_TIME_HOLD;
+        % How about getting only preHold and postRelease duration for ACG
+        % NOOO It increased violation for SS, try another time for all units
+%         postReleaseTime = leverReleaseTimesGLX(ind)+POST_TIME_RELEASE;
+%         spikesOfTrial = spikeTimesSecs(spikeTimesSecs>preHoldTime & spikeTimesSecs<postReleaseTime); 
+        
+        %Divide spike times into trials beginning from preHoldTime(t) to preHoldTime(t+1) so that it also includes iti for further CCG analysis
+        if ind+1<=trialCount
+            preHoldTimeNext = leverHoldTimes(ind+1)-PRE_TIME_HOLD; % beginning of next trial
+            spikesOfTrial = spikeTimesSecs(spikeTimesSecs>preHoldTime & spikeTimesSecs<preHoldTimeNext);
+            % NO NEED TO THIS %spikesOfTrialForRef = spikesOfTrialForRef - leverHoldTimes(ind);
+        else
+            spikesOfTrial = spikeTimesSecs(spikeTimesSecs>preHoldTime); % no preHoldTimeNext cos it's the end of the session
+            % NO NEED TO THIS %spikesOfTrialForRef = spikesOfTrialForRef - preHoldTime;
+        end
+        
+        spikesOfTrialMsec = 1000*spikesOfTrial;
+        relativeSpkTimeMsec = (spikesOfTrialMsec'-spikesOfTrialMsec); % Spike time differences across each element - this is more readable than bsxfun %bsxfun(@minus, unitTargetSpikeTimesSec', unitRefSpikeTimesSec); %  element-wise operation to two arrays with implicit expansion enabled
+        relativeSpkTimeMsec(eye(size(relativeSpkTimeMsec))==1) = NaN; % set diagonal to NaN, cos its the difference with the spike itself, ACG is not interested in self-difference of the very same spike!
+        relativeSpkTimeMsec(relativeSpkTimeMsec<=edges(1) | relativeSpkTimeMsec>=edges(end))=NaN; % constrain it within the ROI            
+        relativeSpkTimeMsec=relativeSpkTimeMsec(~isnan(relativeSpkTimeMsec));
+        if size(relativeSpkTimeMsec,1)>1 
+            relativeSpkTimeMsec=relativeSpkTimeMsec';  % If It is column-wise, convert it to row-wise. It could be already row-wise for 1-element unitTargetSpikeTimesSec, so don't remove this if
+        end
+        relativeSpkTimesMsec = [relativeSpkTimesMsec relativeSpkTimeMsec];
+    end
+
+    binCounts = histcounts(relativeSpkTimesMsec,edges);
+    targetSpikeRates = binCounts/(sum(binCounts)*BIN_SIZE_CORRELOGRAM/1000); % /1000 if binSize in ms  % sum(binCounts)==length(relativeSpkTimes) cos we added up that many times (as many as ref.unit's spikes), average over number of spikes of reference unit (to reveal y-axis be the firing rate of target neuron itself) and specified bin size
+
+    indsRefractory = find(edges>=REFRACTORY_RANGE(1) & edges<REFRACTORY_RANGE(2)); % get the edges between -1 and 1 (-1 inclusive 1 exclusive since smaller than 1 ms spikes contained in the previous bin)
+    if strcmp(neuronType,NEURON_TYPE_MFB)
+        indsRefractory = find(edges>=REFRACTORY_RANGE_MF(1) & edges<REFRACTORY_RANGE_MF(2));
+    end
+    refractoryViolation = targetSpikeRates(indsRefractory);
+    refractoryViolationRate = mean(refractoryViolation)/mean(targetSpikeRates);
+
+    % Just to see MF refractory violation in case unclassified cells may turn out to be MF
+    indsRefractoryMF = find(edges>=REFRACTORY_RANGE_MF(1) & edges<REFRACTORY_RANGE_MF(2));
+    refractoryViolationMF = targetSpikeRates(indsRefractoryMF);
+    refractoryViolationRateMF = mean(refractoryViolationMF)/mean(targetSpikeRates);
+    
+    singleUnit = 0;
+    if ~strcmp(neuronType,NEURON_TYPE_MFB) && (refractoryViolationRate<=REFRACTORY_VIOLATION_LIMIT || isnan(refractoryViolationRate)) % NaN means it has no violations. Refractory violation is 6 % for all cell types except MF
+        singleUnit = 1;
+    elseif strcmp(neuronType,NEURON_TYPE_MFB) && (refractoryViolationRateMF<=REFRACTORY_VIOLATION_LIMIT_MF || isnan(refractoryViolationRateMF)) % NaN means it has no violations. Refractory violation is 10 % for MFs
+        singleUnit = 1;
+    elseif isempty(neuronType) && (refractoryViolationRateMF<=REFRACTORY_VIOLATION_LIMIT_MF || isnan(refractoryViolationRateMF)) % Unknown units can still be MF
+        singleUnit = 1;
+    end
+
+end

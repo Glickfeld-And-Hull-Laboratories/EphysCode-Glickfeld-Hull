@@ -1,0 +1,271 @@
+function saveUnitswBehavVars(unitGood, unitMua, unitNoise, unitUnprocessed, unitAll, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, trialCutIndex, ...
+allTrials, arrHitTrials, arrFaTrials, arrMissTrials, arrStimTurnedOnTrials, arrReqHoldTimes, arrReactTimes, tooFastTime, reactTime, preHoldTime, fixedHoldStartsAtTrial)
+%responseTypeHoldFixedAll, responseTypeHoldFixedHFM, responseTypeReleaseFixedAll, responseTypeReleaseFixedHFM, responseTypeTargetFixedAll, responseTypeTargetFixedHFM
+
+% spikeRatesHoldRandomAll, spikeRatesHoldFixedAll, spikeRatesHoldRandomHFM, spikeRatesHoldFixedHFM, spikeRatesReleaseRandomAll, spikeRatesReleaseFixedAll, ...
+%                 spikeRatesReleaseRandomHFM, spikeRatesReleaseFixedHFM, spikeRatesTargetRandomAll, spikeRatesTargetFixedAll, spikeRatesTargetRandomHFM, spikeRatesTargetFixedHFM, ...
+
+
+    globals;
+    unitsAndVarsPath = strcat(pathToUnitsDataFolder,UNITS_AND_VARS_FILE_NAME);
+    
+    if ~exist(unitsAndVarsPath,'file')
+    
+        softCut = SOFT_CUT;
+        softCutPartition = SOFT_CUT_PARTITION;
+        hardCut = HARD_CUT;
+        hardCutPartition = HARD_CUT_PARTITION;
+        
+%         if UNIT_OF_INTEREST== -1 % save all units             
+
+            unitCategoryList = {unitGood, unitMua};
+            newUnitCategoryList = cell(1,2);
+
+            for cid=1:length(unitCategoryList)
+                newUnits = [];
+                unitList = unitCategoryList{cid}; % first good units, then multi units
+
+                for uid=1:length(unitList)
+                    unit = unitList(uid);
+                    newUnit.id = unit.id;
+                    newUnit.spikeTimesSecs = unit.spikeTimesSecs;
+                    newUnit.amplitudes = unit.amplitudes;
+                    newUnit.ch = unit.ch;
+                    newUnit.depth = unit.depth;
+                    newUnit.fr = unit.fr;
+                    newUnit.clusterAmpl = unit.clusterAmpl;
+                    newUnit.group = unit.group;
+                    newUnit.nSpikes = unit.nSpikes;
+                    newUnit.SNR = unit.SNR;
+                    newUnit.neuronType = unit.neuronType;
+                    newUnit.layer = unit.layer;
+                    newUnit.KSLabel = unit.KSLabel;
+                    newUnit.neuronType = unit.neuronType;
+        
+                    [spikeTimeAlignedToLeverHoldAll, spikeTimeAlignedToLeverReleaseAll, spikeTimeAlignedToTargetVisStimAll, spikeTimeAlignedToBaselineVisStimAll, ~, ~, ~, ~, ~, ~, ~, ~, ~, fixedHoldStartsAtRelativeTrialAll, ~] = ...
+                        chunkAlignSpikeTimes(unit.spikeTimesSecs, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, allTrials);
+                    newUnit.spikeTimeHoldAll = spikeTimeAlignedToLeverHoldAll;
+                    newUnit.spikeTimeReleaseAll = spikeTimeAlignedToLeverReleaseAll;
+                    newUnit.spikeTimeTargetAll = spikeTimeAlignedToTargetVisStimAll;
+                    newUnit.spikeTimeBaselineAll = spikeTimeAlignedToBaselineVisStimAll;
+    
+                    newUnit.spikeRatePerTrialHoldAll = cellfun(@length,spikeTimeAlignedToLeverHoldAll)/(POST_TIME_HOLD+PRE_TIME_HOLD);
+                    newUnit.spikeRatePerTrialReleaseAll = cellfun(@length,spikeTimeAlignedToLeverReleaseAll)/(POST_TIME_RELEASE+PRE_TIME_RELEASE);
+                    newUnit.spikeRatePerTrialTargetAll = cellfun(@length,spikeTimeAlignedToTargetVisStimAll)/(POST_TIME_VIS_STIM+PRE_TIME_VIS_STIM);
+    
+                    % Add Fixed/Random versions too
+                    if fixedHoldStartsAtRelativeTrialAll>0                        
+                        spikeTimeHoldRandomAll = spikeTimeAlignedToLeverHoldAll(1:fixedHoldStartsAtRelativeTrialAll-1)';
+                        spikeTimeHoldFixedAll = spikeTimeAlignedToLeverHoldAll(fixedHoldStartsAtRelativeTrialAll:end)';
+                        spikeTimeReleaseRandomAll = spikeTimeAlignedToLeverReleaseAll(1:fixedHoldStartsAtRelativeTrialAll-1)';
+                        spikeTimeReleaseFixedAll = spikeTimeAlignedToLeverReleaseAll(fixedHoldStartsAtRelativeTrialAll:end)';
+                        
+                        spikeTimeTargetRandomAll = spikeTimeAlignedToTargetVisStimAll(1:fixedHoldStartsAtRelativeTrialAll-1)';
+                        spikeTimeTargetFixedAll = spikeTimeAlignedToTargetVisStimAll(fixedHoldStartsAtRelativeTrialAll:end)';
+                    else
+                        spikeTimeHoldRandomAll = spikeTimeAlignedToLeverHoldAll';
+                        spikeTimeReleaseRandomAll = spikeTimeAlignedToLeverReleaseAll';    
+                        spikeTimeTargetRandomAll = spikeTimeAlignedToTargetVisStimAll';
+                    end
+    
+                    newUnit.spikeTimeHoldRandomAll = spikeTimeHoldRandomAll;
+                    newUnit.spikeTimeHoldFixedAll = spikeTimeHoldFixedAll;
+                    newUnit.spikeTimeReleaseRandomAll = spikeTimeReleaseRandomAll;
+                    newUnit.spikeTimeReleaseFixedAll = spikeTimeReleaseFixedAll;
+                    newUnit.spikeTimeTargetRandomAll = spikeTimeTargetRandomAll;
+                    newUnit.spikeTimeTargetFixedAll = spikeTimeTargetFixedAll;
+    
+                    newUnit.spikeRatePerTrialHoldRandomAll = cellfun(@length,spikeTimeHoldRandomAll)/(POST_TIME_HOLD+PRE_TIME_HOLD);
+                    newUnit.spikeRatePerTrialHoldFixedAll = cellfun(@length,spikeTimeHoldFixedAll)/(POST_TIME_HOLD+PRE_TIME_HOLD);
+                    newUnit.spikeRatePerTrialReleaseRandomAll = cellfun(@length,spikeTimeReleaseRandomAll)/(POST_TIME_RELEASE+PRE_TIME_RELEASE);
+                    newUnit.spikeRatePerTrialReleaseFixedAll = cellfun(@length,spikeTimeReleaseFixedAll)/(POST_TIME_RELEASE+PRE_TIME_RELEASE);
+                    newUnit.spikeRatePerTrialTargetRandomAll = cellfun(@length,spikeTimeTargetRandomAll)/(POST_TIME_VIS_STIM+PRE_TIME_VIS_STIM);
+                    newUnit.spikeRatePerTrialTargetFixedAll = cellfun(@length,spikeTimeTargetFixedAll)/(POST_TIME_VIS_STIM+PRE_TIME_VIS_STIM);
+
+                    spikeRatesHoldRandomAll = calculateFiringRates(spikeTimeHoldRandomAll, EDGES_HOLD, BIN_SIZE_PSTH);
+                    [spikeRatesHoldFixedAll, responseTypeHoldFixedAll] = calculateFiringRates(spikeTimeHoldFixedAll, EDGES_HOLD, BIN_SIZE_PSTH);
+                    spikeRatesReleaseRandomAll = calculateFiringRates(spikeTimeReleaseRandomAll, EDGES_RELEASE, BIN_SIZE_PSTH);
+                    [spikeRatesReleaseFixedAll, responseTypeReleaseFixedAll] = calculateFiringRates(spikeTimeReleaseFixedAll, EDGES_RELEASE, BIN_SIZE_PSTH);
+                    spikeRatesTargetRandomAll = calculateFiringRates(spikeTimeTargetRandomAll, EDGES_VIS_STIM, BIN_SIZE_PSTH);
+                    [spikeRatesTargetFixedAll, responseTypeTargetFixedAll] = calculateFiringRates(spikeTimeTargetFixedAll, EDGES_VIS_STIM, BIN_SIZE_PSTH); 
+    
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% HIT TRIALS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    [spikeTimeAlignedToLeverHoldHit, spikeTimeAlignedToLeverReleaseHit, spikeTimeAlignedToTargetVisStimHit, spikeTimeAlignedToBaselineVisStimHit, ~, ~, ~, ~, ~, ~, ~, ~, ~, fixedHoldStartsAtRelativeTrial, ~] = ...
+                        chunkAlignSpikeTimes(unit.spikeTimesSecs, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, arrHitTrials);
+                    [val,pos]=intersect(arrHitTrials,arrStimTurnedOnTrials); % returns the position on the first array
+                    spikeTimeOnlyTargetVisStimHit = spikeTimeAlignedToTargetVisStimHit(pos);
+    
+                    newUnit.spikeTimeHoldHit = spikeTimeAlignedToLeverHoldHit;
+                    newUnit.spikeTimeReleaseHit = spikeTimeAlignedToLeverReleaseHit;
+                    newUnit.spikeTimeTargetHit = spikeTimeAlignedToTargetVisStimHit;
+                    newUnit.spikeTimeBaselineHit = spikeTimeAlignedToBaselineVisStimHit;
+    
+                    if fixedHoldStartsAtRelativeTrial>0                        
+                        spikeTimeHoldRandomHit = spikeTimeAlignedToLeverHoldHit(1:fixedHoldStartsAtRelativeTrial-1)';
+                        spikeTimeHoldFixedHit = spikeTimeAlignedToLeverHoldHit(fixedHoldStartsAtRelativeTrial:end)';
+                        spikeTimeReleaseRandomHit = spikeTimeAlignedToLeverReleaseHit(1:fixedHoldStartsAtRelativeTrial-1)';
+                        spikeTimeReleaseFixedHit = spikeTimeAlignedToLeverReleaseHit(fixedHoldStartsAtRelativeTrial:end)';
+                        
+                        indFixedTarget = find(val>=arrHitTrials(fixedHoldStartsAtRelativeTrial),1); %find the index in the intersection of two sets (val)
+                        spikeTimeTargetRandomHit = spikeTimeOnlyTargetVisStimHit(1:indFixedTarget-1)';
+                        spikeTimeTargetFixedHit = spikeTimeOnlyTargetVisStimHit(indFixedTarget:end)';
+                    else
+                        spikeTimeHoldRandomHit = spikeTimeAlignedToLeverHoldHit';
+                        spikeTimeReleaseRandomHit = spikeTimeAlignedToLeverReleaseHit';    
+                        spikeTimeTargetRandomHit = spikeTimeOnlyTargetVisStimHit';
+                    end
+    
+                    newUnit.spikeRatePerTrialHoldRandomHit = cellfun(@length,spikeTimeHoldRandomHit)/(POST_TIME_HOLD+PRE_TIME_HOLD);
+                    newUnit.spikeRatePerTrialHoldFixedHit = cellfun(@length,spikeTimeHoldFixedHit)/(POST_TIME_HOLD+PRE_TIME_HOLD);
+                    newUnit.spikeRatePerTrialReleaseRandomHit = cellfun(@length,spikeTimeReleaseRandomHit)/(POST_TIME_RELEASE+PRE_TIME_RELEASE);
+                    newUnit.spikeRatePerTrialReleaseFixedHit = cellfun(@length,spikeTimeReleaseFixedHit)/(POST_TIME_RELEASE+PRE_TIME_RELEASE);
+                    newUnit.spikeRatePerTrialTargetRandomHit = cellfun(@length,spikeTimeTargetRandomHit)/(POST_TIME_VIS_STIM+PRE_TIME_VIS_STIM);
+                    newUnit.spikeRatePerTrialTargetFixedHit = cellfun(@length,spikeTimeTargetFixedHit)/(POST_TIME_VIS_STIM+PRE_TIME_VIS_STIM);
+
+                    spikeRatesHoldRandomHit = calculateFiringRates(spikeTimeHoldRandomHit, EDGES_HOLD, BIN_SIZE_PSTH);
+                    [spikeRatesHoldFixedHit, responseTypeHoldFixedHit] = calculateFiringRates(spikeTimeHoldFixedHit, EDGES_HOLD, BIN_SIZE_PSTH);
+                    spikeRatesReleaseRandomHit = calculateFiringRates(spikeTimeReleaseRandomHit, EDGES_RELEASE, BIN_SIZE_PSTH);
+                    [spikeRatesReleaseFixedHit, responseTypeReleaseFixedHit] = calculateFiringRates(spikeTimeReleaseFixedHit, EDGES_RELEASE, BIN_SIZE_PSTH);
+                    spikeRatesTargetRandomHit = calculateFiringRates(spikeTimeTargetRandomHit, EDGES_VIS_STIM, BIN_SIZE_PSTH);
+                    [spikeRatesTargetFixedHit, responseTypeTargetFixedHit] = calculateFiringRates(spikeTimeTargetFixedHit, EDGES_VIS_STIM, BIN_SIZE_PSTH); 
+
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% FA TRIALS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    [spikeTimeAlignedToLeverHoldFa, spikeTimeAlignedToLeverReleaseFa, spikeTimeAlignedToTargetVisStimFa, spikeTimeAlignedToBaselineVisStimFa, ~, ~, ~, ~, ~, ~, ~, ~, ~, fixedHoldStartsAtRelativeTrial, ~] = ...
+                        chunkAlignSpikeTimes(unit.spikeTimesSecs, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, arrFaTrials);
+                    [val,pos]=intersect(arrFaTrials,arrStimTurnedOnTrials); % returns the position on the first array
+                    spikeTimeOnlyTargetVisStimFa = spikeTimeAlignedToTargetVisStimFa(pos);
+    
+                    newUnit.spikeTimeHoldFa = spikeTimeAlignedToLeverHoldFa;
+                    newUnit.spikeTimeReleaseFa = spikeTimeAlignedToLeverReleaseFa;
+                    newUnit.spikeTimeTargetFa = spikeTimeAlignedToTargetVisStimFa;
+                    newUnit.spikeTimeBaselineFa = spikeTimeAlignedToBaselineVisStimFa;
+    
+                    if fixedHoldStartsAtRelativeTrial>0                        
+                        spikeTimeHoldRandomFa = spikeTimeAlignedToLeverHoldFa(1:fixedHoldStartsAtRelativeTrial-1)';
+                        spikeTimeHoldFixedFa = spikeTimeAlignedToLeverHoldFa(fixedHoldStartsAtRelativeTrial:end)';
+                        spikeTimeReleaseRandomFa = spikeTimeAlignedToLeverReleaseFa(1:fixedHoldStartsAtRelativeTrial-1)';
+                        spikeTimeReleaseFixedFa = spikeTimeAlignedToLeverReleaseFa(fixedHoldStartsAtRelativeTrial:end)';
+                        
+                        indFixedTarget = find(val>=arrFaTrials(fixedHoldStartsAtRelativeTrial),1); %find the index in the intersection of two sets (val)
+                        spikeTimeTargetRandomFa = spikeTimeOnlyTargetVisStimFa(1:indFixedTarget-1)';
+                        spikeTimeTargetFixedFa = spikeTimeOnlyTargetVisStimFa(indFixedTarget:end)';
+                    else
+                        spikeTimeHoldRandomFa = spikeTimeAlignedToLeverHoldFa';
+                        spikeTimeReleaseRandomFa = spikeTimeAlignedToLeverReleaseFa';    
+                        spikeTimeTargetRandomFa = spikeTimeOnlyTargetVisStimFa';
+                    end
+    
+                    newUnit.spikeRatePerTrialHoldRandomFa = cellfun(@length,spikeTimeHoldRandomFa)/(POST_TIME_HOLD+PRE_TIME_HOLD);
+                    newUnit.spikeRatePerTrialHoldFixedFa = cellfun(@length,spikeTimeHoldFixedFa)/(POST_TIME_HOLD+PRE_TIME_HOLD);
+                    newUnit.spikeRatePerTrialReleaseRandomFa = cellfun(@length,spikeTimeReleaseRandomFa)/(POST_TIME_RELEASE+PRE_TIME_RELEASE);
+                    newUnit.spikeRatePerTrialReleaseFixedFa = cellfun(@length,spikeTimeReleaseFixedFa)/(POST_TIME_RELEASE+PRE_TIME_RELEASE);
+                    newUnit.spikeRatePerTrialTargetRandomFa = cellfun(@length,spikeTimeTargetRandomFa)/(POST_TIME_VIS_STIM+PRE_TIME_VIS_STIM);
+                    newUnit.spikeRatePerTrialTargetFixedFa = cellfun(@length,spikeTimeTargetFixedFa)/(POST_TIME_VIS_STIM+PRE_TIME_VIS_STIM);
+
+                    spikeRatesHoldRandomFa = calculateFiringRates(spikeTimeHoldRandomFa, EDGES_HOLD, BIN_SIZE_PSTH);
+                    [spikeRatesHoldFixedFa, responseTypeHoldFixedFa] = calculateFiringRates(spikeTimeHoldFixedFa, EDGES_HOLD, BIN_SIZE_PSTH);
+                    spikeRatesReleaseRandomFa = calculateFiringRates(spikeTimeReleaseRandomFa, EDGES_RELEASE, BIN_SIZE_PSTH);
+                    [spikeRatesReleaseFixedFa, responseTypeReleaseFixedFa] = calculateFiringRates(spikeTimeReleaseFixedFa, EDGES_RELEASE, BIN_SIZE_PSTH);
+
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% MISS TRIALS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    [spikeTimeAlignedToLeverHoldMiss, spikeTimeAlignedToLeverReleaseMiss, spikeTimeAlignedToTargetVisStimMiss, spikeTimeAlignedToBaselineVisStimMiss, ~, ~, ~, ~, ~, ~, ~, ~, ~, fixedHoldStartsAtRelativeTrial, ~] = ...
+                        chunkAlignSpikeTimes(unit.spikeTimesSecs, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, arrMissTrials);
+                    [val,pos]=intersect(arrMissTrials,arrStimTurnedOnTrials); % returns the position on the first array
+                    spikeTimeOnlyTargetVisStimMiss = spikeTimeAlignedToTargetVisStimMiss(pos);
+    
+                    newUnit.spikeTimeHoldMiss = spikeTimeAlignedToLeverHoldMiss;
+                    newUnit.spikeTimeReleaseMiss = spikeTimeAlignedToLeverReleaseMiss;
+                    newUnit.spikeTimeTargetMiss = spikeTimeAlignedToTargetVisStimMiss;
+                    newUnit.spikeTimeBaselineMiss = spikeTimeAlignedToBaselineVisStimMiss;
+    
+                    if fixedHoldStartsAtRelativeTrial>0                        
+                        spikeTimeHoldRandomMiss = spikeTimeAlignedToLeverHoldMiss(1:fixedHoldStartsAtRelativeTrial-1)';
+                        spikeTimeHoldFixedMiss = spikeTimeAlignedToLeverHoldMiss(fixedHoldStartsAtRelativeTrial:end)';
+                        spikeTimeReleaseRandomMiss = spikeTimeAlignedToLeverReleaseMiss(1:fixedHoldStartsAtRelativeTrial-1)';
+                        spikeTimeReleaseFixedMiss = spikeTimeAlignedToLeverReleaseMiss(fixedHoldStartsAtRelativeTrial:end)';
+                        
+                        indFixedTarget = find(val>=arrMissTrials(fixedHoldStartsAtRelativeTrial),1); %find the index in the intersection of two sets (val)
+                        spikeTimeTargetRandomMiss = spikeTimeOnlyTargetVisStimMiss(1:indFixedTarget-1)';
+                        spikeTimeTargetFixedMiss = spikeTimeOnlyTargetVisStimMiss(indFixedTarget:end)';
+                    else
+                        spikeTimeHoldRandomMiss = spikeTimeAlignedToLeverHoldMiss';
+                        spikeTimeReleaseRandomMiss = spikeTimeAlignedToLeverReleaseMiss';    
+                        spikeTimeTargetRandomMiss = spikeTimeOnlyTargetVisStimMiss';
+                    end
+    
+                    newUnit.spikeRatePerTrialHoldRandomMiss = cellfun(@length,spikeTimeHoldRandomMiss)/(POST_TIME_HOLD+PRE_TIME_HOLD);
+                    newUnit.spikeRatePerTrialHoldFixedMiss = cellfun(@length,spikeTimeHoldFixedMiss)/(POST_TIME_HOLD+PRE_TIME_HOLD);
+                    newUnit.spikeRatePerTrialReleaseRandomMiss = cellfun(@length,spikeTimeReleaseRandomMiss)/(POST_TIME_RELEASE+PRE_TIME_RELEASE);
+                    newUnit.spikeRatePerTrialReleaseFixedMiss = cellfun(@length,spikeTimeReleaseFixedMiss)/(POST_TIME_RELEASE+PRE_TIME_RELEASE);
+                    newUnit.spikeRatePerTrialTargetRandomMiss = cellfun(@length,spikeTimeTargetRandomMiss)/(POST_TIME_VIS_STIM+PRE_TIME_VIS_STIM);
+                    newUnit.spikeRatePerTrialTargetFixedMiss = cellfun(@length,spikeTimeTargetFixedMiss)/(POST_TIME_VIS_STIM+PRE_TIME_VIS_STIM);
+
+                    spikeRatesHoldRandomMiss = calculateFiringRates(spikeTimeHoldRandomMiss, EDGES_HOLD, BIN_SIZE_PSTH);
+                    [spikeRatesHoldFixedMiss, responseTypeHoldFixedMiss] = calculateFiringRates(spikeTimeHoldFixedMiss, EDGES_HOLD, BIN_SIZE_PSTH);
+                    spikeRatesReleaseRandomMiss = calculateFiringRates(spikeTimeReleaseRandomMiss, EDGES_RELEASE, BIN_SIZE_PSTH);
+                    [spikeRatesReleaseFixedMiss, responseTypeReleaseFixedMiss] = calculateFiringRates(spikeTimeReleaseFixedMiss, EDGES_RELEASE, BIN_SIZE_PSTH);
+                    spikeRatesTargetRandomMiss = calculateFiringRates(spikeTimeTargetRandomMiss, EDGES_VIS_STIM, BIN_SIZE_PSTH);
+                    [spikeRatesTargetFixedMiss, responseTypeTargetFixedMiss] = calculateFiringRates(spikeTimeTargetFixedMiss, EDGES_VIS_STIM, BIN_SIZE_PSTH);
+
+                    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                    
+                    newUnit.spikeRatesHoldRandomAll = spikeRatesHoldRandomAll;
+                    newUnit.spikeRatesHoldFixedAll = spikeRatesHoldFixedAll;
+                    newUnit.spikeRatesHoldRandomHFM = [spikeRatesHoldRandomHit; spikeRatesHoldRandomFa; spikeRatesHoldRandomMiss]; %spikeRatesHoldRandomHFM{uid};
+                    newUnit.spikeRatesHoldFixedHFM = [spikeRatesHoldFixedHit; spikeRatesHoldFixedFa; spikeRatesHoldFixedMiss]; %spikeRatesHoldFixedHFM{uid};
+                    newUnit.spikeRatesReleaseRandomAll = spikeRatesReleaseRandomAll;
+                    newUnit.spikeRatesReleaseFixedAll = spikeRatesReleaseFixedAll;
+                    newUnit.spikeRatesReleaseRandomHFM = [spikeRatesReleaseRandomHit; spikeRatesReleaseRandomFa; spikeRatesReleaseRandomMiss];
+                    newUnit.spikeRatesReleaseFixedHFM = [spikeRatesReleaseFixedHit; spikeRatesReleaseFixedFa; spikeRatesReleaseFixedMiss];
+                    newUnit.spikeRatesTargetRandomAll = spikeRatesTargetRandomAll;
+                    newUnit.spikeRatesTargetFixedAll = spikeRatesTargetFixedAll;
+                    newUnit.spikeRatesTargetRandomHFM = [spikeRatesTargetRandomHit; spikeRatesTargetRandomMiss];
+                    newUnit.spikeRatesTargetFixedHFM = [spikeRatesTargetFixedHit; spikeRatesTargetFixedMiss];
+    
+                    newUnit.responseTypeHoldFixedAll = responseTypeHoldFixedAll;% responseTypeHoldFixedAll{uid};
+                    newUnit.responseTypeHoldFixedHFM = [responseTypeHoldFixedHit, responseTypeHoldFixedFa, responseTypeHoldFixedMiss]; %responseTypeHoldFixedHFM{uid};
+                    newUnit.responseTypeReleaseFixedAll = responseTypeReleaseFixedAll;
+                    newUnit.responseTypeReleaseFixedHFM = [responseTypeReleaseFixedHit, responseTypeReleaseFixedFa, responseTypeReleaseFixedMiss];
+                    newUnit.responseTypeTargetFixedAll = responseTypeTargetFixedAll;
+                    newUnit.responseTypeTargetFixedHFM = [responseTypeTargetFixedHit, responseTypeTargetFixedMiss];
+        
+                    %%%%% CALCULATE REFRACTORINESS and DECIDE IF IT IS A SINGLE OR MULTI UNIT
+                    [singleUnit, refractoryViolationRate, refractoryViolationRateMF] = calculateRefractoryViolation(newUnit.spikeTimesSecs',allTrials, leverHoldTimes, leverReleaseTimesGLX, newUnit.neuronType);
+                    
+                    if cid==1 && ~singleUnit % in the unitGood list
+                        logger.info('saveUnitswBehavVars', ['Consider removing unit=' num2str(newUnit.id) ' (' newUnit.neuronType ') into Multi units (Update in Phyllum and delete ' unitsAndVarsPath ' ) since singleUnit=' ...
+                            num2str(singleUnit) ' with refractoryViolationRate=%' num2str(refractoryViolationRate*100,'%.2f') ' refractoryViolationRateMF=%' num2str(refractoryViolationRateMF*100,'%.2f')]);                        
+                        %return;
+                    elseif cid==2 && singleUnit % in the unitMua list
+                        logger.info('saveUnitswBehavVars', ['Consider removing unit=' num2str(newUnit.id) ' (' newUnit.neuronType ') into Single units (Update in Phyllum and delete ' unitsAndVarsPath ' ) since singleUnit=' ...
+                            num2str(singleUnit) ' with refractoryViolationRate=%' num2str(refractoryViolationRate*100,'%.2f') ' refractoryViolationRateMF=%' num2str(refractoryViolationRateMF*100,'%.2f')]);
+                        if ~isempty(newUnit.neuronType) % since Unknown multi units can have low refractoriness but may or may not be MF, so prompt the log above and just countinue-do not quit
+                            %return;
+                        end
+                    end
+
+                    if cid==1
+                        category='Single Units ';
+                    elseif cid==2
+                        category='Multi Units ';
+                    end
+                    logger.info('saveUnitswBehavVars', [category num2str(uid) ' Id=' num2str(newUnit.id) ' singleUnit=' num2str(singleUnit) ...
+                        ' with refractoryViolationRate=%' num2str(refractoryViolationRate*100,'%.2f') ...
+                        ' refractoryViolationRateMF=%' num2str(refractoryViolationRateMF*100,'%.2f') ...
+                        ' type=' newUnit.neuronType]);
+                    newUnit.singleUnit = singleUnit;
+                    newUnit.refractoryViolationRate = refractoryViolationRate;
+                    newUnits = [newUnits newUnit];
+                end
+                newUnitCategoryList{cid} = newUnits;
+            end
+
+            unitGood = newUnitCategoryList{1};
+            unitMua = newUnitCategoryList{2};
+            save(unitsAndVarsPath,'unitGood', 'unitMua', 'unitNoise', 'unitUnprocessed', 'unitAll', 'leverHoldTimes', 'leverReleaseTimesGLX', 'targetStimTimesGLX', 'baselineStimTimesGLX', ...
+                'trialCutIndex', 'allTrials', 'arrHitTrials', 'arrFaTrials', 'arrMissTrials', 'arrStimTurnedOnTrials', 'arrReqHoldTimes', 'arrReactTimes', ...
+                'tooFastTime', 'reactTime', 'preHoldTime', 'fixedHoldStartsAtTrial','softCut','softCutPartition','hardCut','hardCutPartition');
+            logger.info('saveUnitswBehavVars', [num2str(length(unitGood)) ' single units and' num2str(length(unitMua)) ' multi units are saved together with behavioral variables into :' unitsAndVarsPath]);
+%         end
+    end
+end

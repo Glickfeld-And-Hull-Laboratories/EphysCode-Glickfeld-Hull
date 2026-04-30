@@ -1,0 +1,203 @@
+function checkNeuralChangeswrtRewardedVsOmissionTrials(unit, arrReactTimes, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, ...
+    lickOnsetTimesGLX, lickOffsetTimesGLX, rewardOnsetTimesGLX, rewardOffsetTimesGLX, arrStimTurnedOnTrials, allTrials, arrHitTrials, arrFaTrials, arrMissTrials, omissionTrials, nonOmissionTrials)
+
+        globals; 
+        
+        PRE_TIME_HOLD = .5;
+        POST_TIME_RELEASE = 5;
+        SPIKE_SPAN = 0.1;
+
+        predTrialCount = length(allTrials)-fixedHoldStartsAtTrial+1;
+                
+        spikeTimesSec = unit.spikeTimesSecs;
+        
+        holdTimesAlignedToRelease = nan(1,predTrialCount);
+        rewardOnsetAlignedToRelease = [];
+        spikeTimeofTrialAlignedToLickOnset = cell(1,predTrialCount);
+
+        spikeTimeofOmissionTrialsAlignedToLeverRelease = {}; %cell(1,predTrialCount);
+        spikeTimeofNonOmissionTrialsAlignedToLeverRelease = {}; %cell(1,predTrialCount);
+        lickTimeofOmissionTrialsAlignedToLeverRelease = {}; %cell(1,predTrialCount);
+        lickTimeofNonOmissionTrialsAlignedToLeverRelease = {}; %cell(1,predTrialCount);
+
+%         indPredTrial=1;
+        for indTrial=fixedHoldStartsAtTrial:length(allTrials)
+            % ******************* for 1st plot : Spikes aligned to release ***********************
+            % get spikes between hold and release                        
+            spikesOfTrial = spikeTimesSec(spikeTimesSec>(leverHoldTimes(indTrial)-PRE_TIME_HOLD) & spikeTimesSec<(leverReleaseTimesGLX(indTrial)+POST_TIME_RELEASE));             
+            %spikeTimeofTrialAlignedToLeverRelease(indPredTrial)
+            spikesOfTrial = spikesOfTrial - leverReleaseTimesGLX(indTrial); % align according to Lever Release           
+
+            lickTimeOfTrial = lickOnsetTimesGLX(lickOnsetTimesGLX>(leverHoldTimes(indTrial)-PRE_TIME_HOLD) & lickOnsetTimesGLX<(leverReleaseTimesGLX(indTrial)+POST_TIME_RELEASE)); 
+            lickTimeOfTrial = lickTimeOfTrial - leverReleaseTimesGLX(indTrial);            
+
+            if any(omissionTrials==indTrial) % This is an Omission trial
+                spikeTimeofOmissionTrialsAlignedToLeverRelease{end+1} = spikesOfTrial; %spikeTimeofOmissionTrialsAlignedToLeverRelease(indPredTrial) spikeTimeofTrialAlignedToLeverRelease(indPredTrial);
+                lickTimeofOmissionTrialsAlignedToLeverRelease{end+1} = lickTimeOfTrial';
+            elseif any(nonOmissionTrials==indTrial) % This trial is rewarded
+                spikeTimeofNonOmissionTrialsAlignedToLeverRelease{end+1} = spikesOfTrial; %spikeTimeofTrialAlignedToLeverRelease(indPredTrial);
+                lickTimeofNonOmissionTrialsAlignedToLeverRelease{end+1} = lickTimeOfTrial';
+            end
+            
+%             holdTimesAlignedToRelease(indPredTrial) = leverHoldTimes(indTrial)-leverReleaseTimesGLX(indTrial);
+%             
+            indActualTrial = find(nonOmissionTrials==indTrial);
+            if ~isempty(indActualTrial)
+                indRew = find(rewardOnsetTimesGLX>leverReleaseTimesGLX(indTrial) & rewardOnsetTimesGLX<leverHoldTimes(indTrial+1));
+                %[num2str(indTrial) ' found its Reward at ' num2str(indRew)]
+                rewardOnset = rewardOnsetTimesGLX(indRew);
+                rewardOnsetAlignedToRelease = [rewardOnsetAlignedToRelease rewardOnset-leverReleaseTimesGLX(indTrial)];
+            end
+%             
+%             % ******************* for 2nd plot : Spikes aligned to lick onset ***********************
+%             if ~isempty(lickTimesOfTrial)
+%                 spikeTimeofTrialAlignedToLickOnset(indPredTrial) = {spikesOfTrial - lickTimesOfTrial(1)}; % align according to Lever Release           
+%             end
+
+%             indPredTrial=indPredTrial+1;
+        end
+
+        %*************************** PLOT OMISSION vs NON-OMISSION TRIALS *******************************
+
+        f = figure;
+        f.Position = [globalX globalY globalW globalH];
+        hold on
+        grid on
+
+        arrOmissionTrialsSpikeTimes = cell2mat(spikeTimeofOmissionTrialsAlignedToLeverRelease');
+        arrOmissionTrialsLickTimes = cell2mat(lickTimeofOmissionTrialsAlignedToLeverRelease');
+        omissionTrialCount = length(spikeTimeofOmissionTrialsAlignedToLeverRelease);
+
+        arrNonOmissionTrialsSpikeTimes = cell2mat(spikeTimeofNonOmissionTrialsAlignedToLeverRelease');
+        arrNonOmissionTrialsLickTimes = cell2mat(lickTimeofNonOmissionTrialsAlignedToLeverRelease');
+        nonOmissionTrialCount = length(spikeTimeofNonOmissionTrialsAlignedToLeverRelease);
+
+        minEdge = min([min(arrNonOmissionTrialsSpikeTimes) min(arrOmissionTrialsSpikeTimes)]); % what this means? => get the bigger time point for minEdge so that both distr are treated equatibly
+        maxEdge = max([max(arrNonOmissionTrialsSpikeTimes) max(arrOmissionTrialsSpikeTimes)]); % what this means? => get the smaller time point for maxEdge so that both distr are treated equatibly
+        edges = minEdge-BIN_SIZE_PSTH:BIN_SIZE_PSTH:maxEdge+BIN_SIZE_PSTH;
+
+        xline(mean(rewardOnsetAlignedToRelease), 'LineWidth',1.5, 'Color', 'blue');
+
+        yyaxis right
+        
+        optimumBinCount = sshist(arrOmissionTrialsLickTimes, [MIN_BIN_COUNT:MAX_BIN_COUNT]);
+        [binCounts, optimumEdges] = histcounts(arrOmissionTrialsLickTimes, optimumBinCount); % edges
+        optimumBinSize = optimumEdges(2)-optimumEdges(1);
+        omissionLickRates = binCounts/(omissionTrialCount*optimumBinSize); % averaged over trials and specified bin size % BIN_SIZE_PSTH
+        edgesPlt = optimumEdges(1:end-1)+(optimumEdges(2)-optimumEdges(1))/2;        
+        plot(edgesPlt, omissionLickRates, 'LineStyle','--', 'LineWidth',2, 'Color', [1 0 0 0.7]);
+
+%         binCountsForOmissionLicks = histcounts(arrOmissionTrialsLickTimes,edges);
+%         omissionLickRates = binCountsForOmissionLicks/(omissionTrialCount*BIN_SIZE_PSTH); % averaged over trials and specified bin
+%         edgesPlt = edges(1:end-1)+(edges(2)-edges(1))/2;
+%         smtOmissionLickRates = smooth(edgesPlt,omissionLickRates, SPIKE_SPAN, SMOOTH_TYPE_L);
+%         plot(edgesPlt, smtOmissionLickRates, 'LineStyle','--', 'LineWidth',2, 'Color', 'red');
+        
+        optimumBinCount = sshist(arrNonOmissionTrialsLickTimes, [MIN_BIN_COUNT:MAX_BIN_COUNT]);
+        [binCounts, optimumEdges] = histcounts(arrNonOmissionTrialsLickTimes, optimumBinCount); % edges
+        optimumBinSize = optimumEdges(2)-optimumEdges(1);
+        nonOmissionLickRates = binCounts/(omissionTrialCount*optimumBinSize); % averaged over trials and specified bin size % BIN_SIZE_PSTH
+        edgesPlt = optimumEdges(1:end-1)+(optimumEdges(2)-optimumEdges(1))/2;        
+        plot(edgesPlt, nonOmissionLickRates, 'LineStyle','--', 'LineWidth',2, 'Color', [0 0 1 0.7]);
+
+%         binCountsForNonOmissionLicks = histcounts(arrNonOmissionTrialsLickTimes,edges); % optimumBinCount);
+%         nonOmissionLickRates = binCountsForNonOmissionLicks/(nonOmissionTrialCount*BIN_SIZE_PSTH); % averaged over trials and specified bin
+%         edgesPlt = edges(1:end-1)+(edges(2)-edges(1))/2;
+%         smtNonOmissionLickRates = smooth(edgesPlt,nonOmissionLickRates, SPIKE_SPAN, SMOOTH_TYPE_L);
+%         plot(edgesPlt, smtNonOmissionLickRates, 'LineStyle','--', 'LineWidth',2, 'Color', 'blue');
+
+        ylim([0 max(max(omissionLickRates),max(nonOmissionLickRates))*1.5]);
+        ylabel('Lick rate');
+
+        yyaxis left
+
+        optimumBinCount = sshist(arrOmissionTrialsSpikeTimes, [MIN_BIN_COUNT:MAX_BIN_COUNT]); 
+        [binCounts, optimumEdges] = histcounts(arrOmissionTrialsSpikeTimes, optimumBinCount); % edges
+        optimumBinSize = optimumEdges(2)-optimumEdges(1);
+        omissionSpikeRates = binCounts/(omissionTrialCount*optimumBinSize); % averaged over trials and specified bin size % BIN_SIZE_PSTH
+        edgesPlt = optimumEdges(1:end-1)+(optimumEdges(2)-optimumEdges(1))/2;        
+        plot(edgesPlt, omissionSpikeRates, 'LineStyle','-', 'LineWidth',3.5, 'Color', 'red');
+%         smtOmissionSpikeRates = smooth(edgesPlt,omissionSpikeRates, .5, SMOOTH_TYPE_L);
+%         plot(edgesPlt, smtOmissionSpikeRates, 'LineStyle','-', 'LineWidth',3.5, 'Color', 'magenta');
+        
+        optimumBinCount = sshist(arrNonOmissionTrialsSpikeTimes, [MIN_BIN_COUNT:MAX_BIN_COUNT]); 
+        [binCounts, optimumEdges] = histcounts(arrNonOmissionTrialsSpikeTimes,optimumBinCount); % optimumBinCount);
+        optimumBinSize = optimumEdges(2)-optimumEdges(1);
+        nonOmissionSpikeRates = binCounts/(nonOmissionTrialCount*optimumBinSize); % averaged over trials and specified bin
+        edgesPlt = optimumEdges(1:end-1)+(optimumEdges(2)-optimumEdges(1))/2;        
+        plot(edgesPlt, nonOmissionSpikeRates, 'LineStyle','-', 'LineWidth',3.5, 'Color', 'blue');
+%         smtNonOmissionSpikeRates = smooth(edgesPlt,nonOmissionSpikeRates, SPIKE_SPAN, SMOOTH_TYPE_L);
+%         plot(edgesPlt, smtNonOmissionSpikeRates, 'LineStyle','-', 'LineWidth',2, 'Color', 'blue');
+        
+        
+
+        ylim([0 max(max(omissionSpikeRates),max(nonOmissionSpikeRates))*1.5]);
+        ylabel('Spikes/s');
+       
+%       scatter(holdTimesAlignedToRelease, ones(1,length(holdTimesAlignedToRelease))*max(smtLickSpikeRates)*1.1, 25, '*', 'black');
+                
+        xlabel('Time from release (s)');        
+
+        legend({'Reward timing', ['Spike rate in omission trials (mean=' num2str(mean(omissionSpikeRates),'%.2f') ') tr=' num2str(omissionTrialCount)], ...                
+                ['Spike rate in rewarded (mean=' num2str(mean(nonOmissionSpikeRates),'%.2f') ') tr=' num2str(nonOmissionTrialCount)] , ...
+                ['Lick rate in omission trials (mean=' num2str(mean(omissionLickRates),'%.2f') ], ...
+                ['Lick rate in rewarded trials (mean=' num2str(mean(nonOmissionLickRates),'%.2f')] %, ...
+                %['Reward timing']
+                }, 'Location', 'northeast', 'Color', 'none');
+        xlim([edges(1) edges(end)]);        
+        set(gca,'TickDir','out');
+        set(gca,'FontName','Times New Roman','FontWeight','bold', 'FontSize',PLOT_FONT_SIZE,'LineWidth',1.5)   
+        title([unit.neuronType ' id=' num2str(unit.id) ' layer=' unit.layer ' depth=' num2str(unit.depth) ' PSTH']);
+        
+        sOmissionsAnalysesPSTHFolder = [pathToFigureFolder '/OmissionAnalyses/PSTH/'];
+        if ~exist(sOmissionsAnalysesPSTHFolder)
+            mkdir(sOmissionsAnalysesPSTHFolder);
+        end
+
+        if ~all(nonOmissionSpikeRates==0) || ~all(omissionSpikeRates==0)
+            print([sOmissionsAnalysesPSTHFolder unit.neuronType '_' num2str(unit.id) '_psth_OmissionPSTH.tif'], '-dtiff', '-r100');
+            logger.info('checkNeuralChangeswrtRewardedVsOmissionTrials', ['OmissionPSTH is plotted for unit ' num2str(unit.id)]);
+            close all
+        else
+            logger.info('checkNeuralChangeswrtRewardedVsOmissionTrials', ['Either or both No Omission or rewarded trial spikes for unit ' num2str(unit.id) ' were empty!']);
+        end
+% 
+%         %*************************** PLOT LICK vs NO LICK TRIALS *******************************        
+%         arrSpikeTimesAlignedToLick = cell2mat(spikeTimeofTrialAlignedToLickOnset');
+%         lickTrialCount = length(indLickTrials);
+% 
+%         minEdge = min(arrSpikeTimesAlignedToLick); % what this means? => get the bigger time point for minEdge so that both distr are treated equatibly
+%         maxEdge = max(arrSpikeTimesAlignedToLick); % what this means? => get the smaller time point for maxEdge so that both distr are treated equatibly
+%         edges = minEdge-BIN_SIZE_PSTH:BIN_SIZE_PSTH:maxEdge+BIN_SIZE_PSTH;
+% 
+%         f = figure;
+%         f.Position = [globalX globalY globalW globalH];
+%         hold on
+%         grid on
+%         
+%         binCounts = histcounts(arrSpikeTimesAlignedToLick,edges); % optimumBinCount);
+%         spikeRatesLickAligned = binCounts/(lickTrialCount*BIN_SIZE_PSTH); % averaged over trials and specified bin
+%         edgesPlt = edges(1:end-1)+(edges(2)-edges(1))/2;
+%         smtSpikeRatesLickAligned = smooth(edgesPlt,spikeRatesLickAligned, SPIKE_SPAN, SMOOTH_TYPE_L);
+%         plot(edgesPlt, smtSpikeRatesLickAligned, 'LineWidth',2, 'Color', 'red');
+%         ylabel('Spikes/s');
+%         xlabel('Time from lick onset (s)');
+% 
+%         xlim([edges(1) edges(end)]);
+%         set(gca,'TickDir','out');
+%         set(gca,'FontName','Times New Roman','FontWeight','bold', 'FontSize',PLOT_FONT_SIZE,'LineWidth',1.5)   
+%         title([unit.neuronType ' id=' num2str(unit.id) ' layer=' unit.layer ' depth=' num2str(unit.depth) ' PSTH aligned to lick onset']);
+%         
+%         sLickTimeAnalysesPSTHFolder = [pathToFigureFolder '/LickTimeAnalyses/PSTH/'];
+%         if ~exist(sLickTimeAnalysesPSTHFolder)
+%             mkdir(sLickTimeAnalysesPSTHFolder);
+%         end
+% 
+%         if ~all(smtNoLickSpikeRates==0) || ~all(smtLickSpikeRates==0)
+%             print([sLickTimeAnalysesPSTHFolder unit.neuronType '_' num2str(unit.id) '_psth_LickAlignedPSTH.tif'], '-dtiff', '-r100');
+%             logger.info('checkNeuralChangeswrtLicks', ['LickAlignedPSTH is plotted for unit ' num2str(unit.id)]);
+%             close all
+%         else
+%             logger.info('checkNeuralChangeswrtLicks', ['Either or both No Lick or Lick spikes for unit ' num2str(unit.id) ' were empty!']);
+%         end
+end

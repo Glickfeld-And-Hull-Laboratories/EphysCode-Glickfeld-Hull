@@ -1,0 +1,178 @@
+function plotMultipleSpikeWaveForm(unit, allWaveForms, samplingRate, sLocalTitle)
+    
+    globals;
+    SKIP_TO_PLOT = 1;
+    uVCoeff = 10^6;
+    colors = {[0 0 0 0.6], [1 0 0 0.6], [0 0 1 0.6]};
+
+    chMatrix = getChannelMatrix(unit.ch);
+    
+%     f1 = figure('doublebuffer','off','Visible','Off');
+%     f2 = figure('doublebuffer','off','Visible','Off'); %gca is now here
+%     set(0,'CurrentFigure',f1);
+
+    f1 = figure;
+    f1.Position = [globalX globalY globalW globalH*5];     
+    x=-RAW_PRE_SPIKE:1/samplingRate:RAW_POST_SPIKE-1/samplingRate;
+    x=x.*1000; % convert to ms
+    xPlot = x(1:SKIP_TO_PLOT:end); % You don't need that high resolution to plot
+
+    avgWaveForms1=cellfun(@mean,allWaveForms{1,1},'UniformOutput',false); % Baseline
+    avgWaveForms2=cellfun(@mean,allWaveForms{1,2},'UniformOutput',false); % First Drug
+    avgWaveForms3=cellfun(@mean,allWaveForms{1,3},'UniformOutput',false); % Second Drug
+
+    avgWaveForms11=mean(cell2mat(reshape(avgWaveForms1,[1,CHANNEL_MATRIX_ROWS*CHANNEL_MATRIX_COLUMNS])'),1);
+    avgWaveForms22=mean(cell2mat(reshape(avgWaveForms2,[1,CHANNEL_MATRIX_ROWS*CHANNEL_MATRIX_COLUMNS])'),1);
+    avgWaveForms33=mean(cell2mat(reshape(avgWaveForms3,[1,CHANNEL_MATRIX_ROWS*CHANNEL_MATRIX_COLUMNS])'),1);
+
+    avgWaveForms=[];
+    if ~isnan(avgWaveForms11)
+        avgWaveForms=[avgWaveForms; avgWaveForms11];
+    end
+    if ~isnan(avgWaveForms22)
+        avgWaveForms=[avgWaveForms; avgWaveForms22];
+    end
+    if ~isnan(avgWaveForms33)
+        avgWaveForms=[avgWaveForms; avgWaveForms33];
+    end
+
+    maxWaveForms=max(max(avgWaveForms))*2; % Multiply by 2 to eliminate baseline subtraction effect
+    minWaveForms=min(min(avgWaveForms))*2; % Multiply by 2 to eliminate baseline subtraction effect
+    absMax = max(abs(maxWaveForms),abs(minWaveForms));
+
+    allEmpty = cellfun(@(x) cellfun(@isempty,x),allWaveForms,UniformOutput=false);
+    allEmptyArr = cell2mat(allEmpty);
+
+    if ~all(all(allEmptyArr))
+        legendOn = 0;
+        mainChMax = [];
+        mygca = gobjects(CHANNEL_MATRIX_ROWS*CHANNEL_MATRIX_COLUMNS,1);
+        ax = gobjects(CHANNEL_MATRIX_ROWS*CHANNEL_MATRIX_COLUMNS,1);
+        for row = 1:CHANNEL_MATRIX_ROWS
+            for col = 1:CHANNEL_MATRIX_COLUMNS
+                indRowCol = (row-1)*CHANNEL_MATRIX_COLUMNS + col;
+                ax(indRowCol) = subplot(CHANNEL_MATRIX_ROWS, CHANNEL_MATRIX_COLUMNS, indRowCol);
+                plt = zeros(1,length(allWaveForms));
+                legends = cell(1,length(allWaveForms));
+                maxY=0;
+                minY=0;
+                mygca(indRowCol) = gca;
+                for eachWF=1:length(allWaveForms)
+                    waveForms = allWaveForms{eachWF};
+                    if ~all(all(cellfun(@isempty,waveForms)))
+                        waveForm = waveForms{row,col};
+                        waveFormPlt = waveForm(:,1:SKIP_TO_PLOT:end);
+                        if ~isempty(waveForm)                    
+                            waveFormMean = mean(waveForm,1);
+                            waveFormMeanPlt = waveFormMean(1:SKIP_TO_PLOT:end);                                   
+                            %plot(xPlot,waveFormPlt,'LineWidth',.5, 'color',[.9 .9 .9 0.7]);
+                            hold on
+                            
+                            baselineSample = waveFormMeanPlt(1:floor(length(x)/7)); % get 1/6th of the whole waveform as baseline
+                            meanBaseline = mean(baselineSample);
+                            waveFormMeanPlt = waveFormMeanPlt-meanBaseline; 
+                            maxThis = max(waveFormMeanPlt);
+                            minThis = min(waveFormMeanPlt);
+                            absMaxThis = max(abs(maxThis),abs(minThis));
+                            %if absMaxThis>.5*absMax
+                                plt(eachWF) = plot(xPlot,waveFormMeanPlt*uVCoeff,'LineWidth', 1.5, 'color',colors{eachWF});
+                            %end
+    %                         if min(waveFormMeanPlt)<minY
+    %                             minY=min(waveFormMeanPlt);
+    %                         end
+    %                         if max(waveFormMeanPlt)>maxY
+    %                             maxY=max(waveFormMeanPlt);
+    %                         end
+                            legends{eachWF} = [sLocalTitle{eachWF}]; % ' n=' num2str(size(waveForm,1))];
+    %                         plot(xPlot,waveFormMinPlt,'LineWidth',1, 'color',colors{eachWF});
+    %                         plot(xPlot,waveFormMaxPlt,'LineWidth',1, 'color',colors{eachWF});
+    %                         patch([xPlot fliplr(xPlot)], [waveFormMeanPlt fliplr(waveFormMinPlt)], colors{eachWF}, 'FaceAlpha',0.1); % fill between
+    %                         patch([xPlot fliplr(xPlot)], [waveFormMeanPlt fliplr(waveFormMaxPlt)], colors{eachWF}, 'FaceAlpha',0.1); % fill between                                                
+                            
+                            xlim([-RAW_PRE_SPIKE*1000*1.01 RAW_POST_SPIKE*1000*1.01]);
+                            %ylim([uVCoeff*minWaveForms uVCoeff*maxWaveForms]);
+                            %grid on
+                            axis(ax(indRowCol),'tight');
+    
+                            if indRowCol==unit.ch                    
+                                title(num2str(unit.ch));
+                                yl = yticklabels;
+                                arrYL = cellfun(@(x) str2num(x),yl);
+                                yticks([min(arrYL), max(arrYL)]);      
+                                mainChMax = [mainChMax max(abs([min(waveFormMeanPlt*uVCoeff), max(waveFormMeanPlt*uVCoeff)]))];
+                                set(gca,'XColor', 'none');
+                                set(gca, 'color', 'none');
+                            else
+                                yticklabels({});
+                                xticklabels({});
+                                set(gca,'XColor', 'none', 'YColor','none');
+                                set(gca, 'color', 'none');
+                            end                        
+    %                         set(gca,'TickDir','out');
+                            set(gca,'FontName','Times New Roman','FontWeight','bold', 'FontSize',SMALL_PLOT_FONT_SIZE,'LineWidth',1.5)                        
+                        end
+                    end
+                end
+                if ~all(cellfun(@isempty,legends)) && ~legendOn && row==CHANNEL_MATRIX_ROWS && col==CHANNEL_MATRIX_COLUMNS
+                    legendOn = 1; % one legend is enough
+                    emptyInds = cellfun(@isempty,legends);
+                    plt = plt(~emptyInds);
+                    legends = legends(~emptyInds);
+                    legend(plt, legends{:},'Color','none','Location','NorthEastOutside', 'FontSize',8, 'Box','Off');
+    %                 if minY<0
+    %                     minY = minY*1.5;
+    %                 else
+    %                     minY = minY*0.7;
+    %                 end
+    %                 ylim([minY maxY*1.5]);
+    %                 ylim([uVCoeff*minWaveForms uVCoeff*maxWaveForms]);
+                end
+            end
+        end
+        
+        yl = cell2mat(get(mygca, 'Ylim'));
+        for indYL=1:size(yl,1)
+            if abs(yl(indYL,1))>abs(yl(indYL,2)) && yl(indYL,1) < 0
+                yl(indYL,:) = [-max(mainChMax) 10];
+            elseif abs(yl(indYL,1))<abs(yl(indYL,2)) && yl(indYL,2) > 0
+                yl(indYL,:) = [-10 abs(max(mainChMax))];    
+            end
+            if yl(indYL,1)<yl(indYL,2)
+                set(mygca(indYL), 'Ylim', yl(indYL,:));
+            end
+        end
+%         ylnew = [min(yl(:,1)) max(yl(:,2))];
+%         set(mygca, 'Ylim', ylnew);
+         %[-max(mainChMax) max(mainChMax)]);
+    
+        sgtitle(['Unit=' num2str(unit.id) ' (' unit.layer ' ch=' num2str(unit.ch) ') ' strjoin(sLocalTitle, ' ')]);
+    
+        han=axes(f1,'visible','off'); 
+        han.Title.Visible='on';
+        han.XLabel.Visible='on';
+        han.YLabel.Visible='on';
+        ylabel(han,'uV');
+        xlabel(han,'Time (ms)');
+        
+    
+    %     ylabel('uV');
+    %     xlabel('Time (ms)');     
+        %xlim([-PRE_TIME_RELEASE POST_TIME_RELEASE]);
+        
+    %     sgtitle(['Unit=' num2str(unit.id) ' (' unit.layer ' ch=' num2str(unit.ch) ') ' sLocalTitle]); % unit.expertLabel
+        set(gca,'FontName','Times New Roman','FontWeight','bold', 'FontSize',2*PLOT_FONT_SIZE,'LineWidth',1.5)
+        sFolder = [pathToFigureFolder num2str(unit.id)];
+    %     if ~isempty(unit.expertLabel)
+    %         sFolder = [sFolder '_' unit.expertLabel];
+    %     end
+        try
+            print([sFolder '/' FILE_NAME_MULTI_WAVEFORM strjoin(sLocalTitle, '_') '.tif'],'-dtiff', '-r500');    
+        catch ME
+            % If it throws Error using print Unable to create output using specified size and resolution. Specify a smaller value for the PaperPosition property of the figure or specify a smaller resolution value.
+            print([sFolder '/' FILE_NAME_MULTI_WAVEFORM strjoin(sLocalTitle, '_') '.tif'],'-dtiff', '-r400');    
+        end
+    %     exportgraphics(f1,[sFolder '/' FILE_NAME_MULTI_WAVEFORM strjoin(sLocalTitle, '_') '.pdf'], 'ContentType', 'vector', 'Resolution', 1000);
+        logger.info('plotMultipleSpikeWaveForm', ['Multi waveform is plot for unit=' num2str(unit.id)]);
+        close all
+    end
+end

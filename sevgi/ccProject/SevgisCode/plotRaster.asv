@@ -1,0 +1,68 @@
+%%%% PLOT RASTER %%%%%%%%%%%%
+% spikeTimesAligned: Spike times in sec
+%
+% SO 4/18/2025 Hull Lab
+function [arrFirstSpikeLatency, arrSecondSpikeLatency] = plotRaster(unitID, neuronType, layer, channel, spikeTimesAligned, toneTimesAligned, sTitle, sFile, colorCodes)
+
+        globals;
+
+        stepSize=3;
+        tickSize=10;    % distance between trials on y-axis in the plot
+                             
+        arrFirstSpikeLatency = [];
+        arrSecondSpikeLatency = [];
+
+        if ~all(cellfun(@isempty,spikeTimesAligned))
+
+            logger.info('plotRaster', ['Plotting raster for unit=' num2str(unitID)]);
+
+            %%%%%%%%%%%%%%% RASTER - Plot Spikes aligned to the behavioral event %%%%%%%%%%%%
+            prePlot();
+
+            trialCount = length(spikeTimesAligned);
+            spikeRates = zeros(trialCount,1);
+            arrFirstSpikeLatency = NaN*zeros(trialCount,1);
+            arrSecondSpikeLatency = NaN*zeros(trialCount,1);
+
+            % lineTriplet = [.3 .3 .3]; % gray line for spikes
+
+            for indTrial=1:trialCount 
+                if ~isempty(spikeTimesAligned{indTrial})
+                    arrSpikesOfTrial = spikeTimesAligned{indTrial};
+                    numspikes=length(arrSpikesOfTrial);
+                    xx=ones(stepSize*numspikes,1)*nan;
+                    yy=ones(stepSize*numspikes,1)*nan;
+
+                    %scale the time axis to ms
+                    xx(1:stepSize:stepSize*numspikes)=arrSpikesOfTrial;
+                    xx(2:stepSize:stepSize*numspikes)=arrSpikesOfTrial;
+                    yy(1:stepSize:stepSize*numspikes)=(indTrial-1)*tickSize;
+                    yy(2:stepSize:stepSize*numspikes)=yy(1:stepSize:stepSize*numspikes)+tickSize;
+                    plot(xx, yy, 'color', colorCodes{indTrial}, 'LineWidth',1.2); % plot spikes  in dark gray [.4 .4 .4]
+
+                    spikeRates(indTrial)=numspikes/(POST_BEHAVIORAL_EVENT+PRE_BEHAVIORAL_EVENT); % endOfTrial-startOfTrial
+                    indFirstSpike = find(arrSpikesOfTrial>0,1);
+                    if ~isempty(indFirstSpike)
+                        arrFirstSpikeLatency(indTrial) = arrSpikesOfTrial(indFirstSpike);
+
+                        if length(arrSpikesOfTrial)>=indFirstSpike+1 % If there is more than one spike
+                            arrSecondSpikeLatency(indTrial) = arrSpikesOfTrial(indFirstSpike+1);
+                        end
+                    end                    
+                end
+            end
+
+            xt = get(gca,'ytick');    
+            set(gca,'YTick',xt, 'yticklabel',xt/tickSize) % normalize back again to actual trial numbers
+
+            sTitle = [sTitle ' Unit=' num2str(unitID) ' ' neuronType ' (' layer ' ch=' num2str(channel) ') FR=' num2str(mean(spikeRates),'%.2f') ' spk/s'];
+            xline(0,LineStyle="--",Color='b');
+            emptycellfun(@isempty, toneTimesAligned, UniformOutput=false);
+
+            postPlot('Time (s)', 'Trial index', -PRE_BEHAVIORAL_EVENT_PLOT, POST_BEHAVIORAL_EVENT_PLOT, [], [], sTitle, sFile);            
+        else
+            logger.info('plotRaster', ['NO SPIKES to plot for unit=' num2str(unitID)]);
+        end       
+
+        close all;
+end

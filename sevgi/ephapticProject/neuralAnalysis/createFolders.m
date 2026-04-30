@@ -1,0 +1,176 @@
+function createFolders(ids)
+    globals;
+    for uid=1:length(ids)                
+        sFolder = [pathToFigureFolder num2str(ids(uid))];
+        if ~exist(sFolder)
+            mkdir(sFolder);
+        end
+    end
+
+    % Also create folders for interaction between cell types
+    sFolder = [pathToFigureFolder ACG];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToFigureFolder SS_CS];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToFigureFolder MF_SS];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToFigureFolder MF_GO];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToFigureFolder GO_SS];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToFigureFolder SS_MLI];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToFigureFolder SS_DCN];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToFigureFolder SS_SS];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToFigureFolder MLI_MLI];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToFigureFolder GO_GO];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToFigureFolder OTHER_SS];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToFigureFolder OTHER_CS];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToFigureFolder OTHER_MF];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToFigureFolder OTHER_GO];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToFigureFolder OTHER_MLI];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToFigureFolder OTHER_OTHER];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToFigureFolder MF_OTHER];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    %%%%%%%%%%%%%% Create Collaborators folders %%%%%%%%%%%%%%%%%%%%%%
+    sFolder = [pathToCollaboratorsFolder SS_CS];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToCollaboratorsFolder MF_SS];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToCollaboratorsFolder MF_GO];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToCollaboratorsFolder GO_SS];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToCollaboratorsFolder SS_MLI];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToCollaboratorsFolder SS_DCN];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToCollaboratorsFolder SS_SS];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToCollaboratorsFolder MLI_MLI];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToCollaboratorsFolder GO_GO];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToCollaboratorsFolder OTHER_SS];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToCollaboratorsFolder OTHER_CS];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToCollaboratorsFolder OTHER_MF];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToCollaboratorsFolder OTHER_GO];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToCollaboratorsFolder OTHER_MLI];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToCollaboratorsFolder OTHER_OTHER];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+
+    sFolder = [pathToCollaboratorsFolder MF_OTHER];
+    if ~exist(sFolder)
+        mkdir(sFolder);
+    end
+end

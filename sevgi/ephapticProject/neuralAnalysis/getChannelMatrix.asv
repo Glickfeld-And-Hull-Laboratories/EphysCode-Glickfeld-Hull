@@ -1,0 +1,22 @@
+function channelMatrix = getChannelMatrix(chCenter)
+    globals;
+
+    %channelMatrix = CHANNEL_ORGANIZATION_NP_1;
+    
+    channelMatrix = ones(CHANNEL_MATRIX_ROWS,CHANNEL_MATRIX_COLUMNS)*UNDEFINED;
+
+    if chCenter>=0 && chCenter<=MAX_CHANNELS                
+        %diffId = floor(CHANNEL_MATRIX_LENGTH/2);
+        [chCenterX, chCenterY] = find(CHANNEL_ORGANIZATION == chCenter);
+        
+        for i=1:CHANNEL_MATRIX_ROWS % along the rows
+            for j=1:CHANNEL_MATRIX_COLUMNS % along the columns
+                newX = chCenterX-floor(CHANNEL_MATRIX_ROWS/2)+i-1;
+                newY = chCenterY-floor(CHANNEL_MATRIX_COLUMNS/2)+j;
+                if newX>0 && newX<=NUM_ROWS && newY>0 && newY<=NUM_COLUMNS
+                    channelMatrix(i, j) = CHANNEL_ORGANIZATION(newX, newY);
+                end
+            end
+        end
+    end
+end

@@ -1,0 +1,32 @@
+function unitSlaves = findMultiPairs(unitSlavesAll, cellMouseDayUnitID)
+        globals; 
+        
+        % recordingDayInd
+        indSlave = [];
+        if ~isempty(cellMouseDayUnitID)
+            for indMaster=1:length(cellMouseDayUnitID)
+                sMouseDayUnitID = cellMouseDayUnitID(indMaster);
+                cellTemp = split(sMouseDayUnitID,'_');
+                mouseId = str2num(cellTemp{1});
+                recordingDayInd = str2num(cellTemp{2});
+                unitID = str2num(cellTemp{3});
+
+                for i=1:length(unitSlavesAll)
+                    unitSlave = unitSlavesAll(i);                    
+                    if FROM_CS_TO_SS
+                        % get only paired SSs
+                        indSlave = find([unitSlavesAll.RecorNum]==recordingDayInd & [unitSlavesAll.PCpair]==unitID);
+                    else
+                        % get CSs that are paired with this SSs (unitMasters)
+                        indSlave = find([unitSlavesAll.RecorNum]==recordingDayInd & [unitSlavesAll.PCpair]==unitID);
+                    end
+                end
+            end
+        end
+
+        unitSlaves = [];
+        
+        if ~isempty(indSlave)
+            unitSlaves = unitSlavesAll(indSlave);
+        end
+end

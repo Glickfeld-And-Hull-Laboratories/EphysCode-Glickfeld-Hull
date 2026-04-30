@@ -1,0 +1,117 @@
+function [phase, radius, indTunedAndHasPower] = plotPolar(arrModulations, arrHasPowerRewAligned,...
+    arrMaxIndices, arrMaxValues, ...
+    flagPlotOnlyModulatedOnes, flagPlotOnlyPowerOnes, flagPlotOnlyNarrowlyTuningOnes, ...
+    sTitle, sFile)
+
+    globals;
+
+    % Define the cycle duration (e.g., 1 second trial or oscillation)
+    cycleDuration = 1.0;
+    indTunedAndHasPower = [];
+    
+    % if any(arrHasPowerRewAligned~=0)        
+        spikeTimes = arrMaxIndices;
+        spikeMagnitudes = arrMaxValues;
+            
+        % Convert spike times to phase (0–2pi)
+        phase = mod(spikeTimes, cycleDuration) / cycleDuration * 2*pi;
+        radius = spikeMagnitudes./max(abs(spikeMagnitudes));
+    
+        if flagPlotOnlyModulatedOnes && flagPlotOnlyPowerOnes && flagPlotOnlyNarrowlyTuningOnes
+            % Plot units with power signal for licking and narrowly tuned
+            isModTunedAndHasPower = abs(arrModulations) & (arrHasPowerRewAligned~=0) ...
+                & (abs(min(phase,[],2)-max(phase,[],2))<pi/2)';
+        elseif flagPlotOnlyModulatedOnes && flagPlotOnlyPowerOnes && ~flagPlotOnlyNarrowlyTuningOnes
+            % Plot units with power signal for licking and narrowly tuned
+            isModTunedAndHasPower = abs(arrModulations) & (arrHasPowerRewAligned~=0); % ...
+                % & (abs(min(phase,[],2)-max(phase,[],2))>=pi/2)'; % no need this criteria cos includes all kinds of tuning
+        elseif flagPlotOnlyModulatedOnes && ~flagPlotOnlyPowerOnes && flagPlotOnlyNarrowlyTuningOnes
+            % Plot units with no power signal for licking and narrowly tuned
+            isModTunedAndHasPower = abs(arrModulations) ...% & ~arrHasPowerRewAligned ...
+                & (abs(min(phase,[],2)-max(phase,[],2))<pi/2)';
+        elseif flagPlotOnlyModulatedOnes && ~flagPlotOnlyPowerOnes && ~flagPlotOnlyNarrowlyTuningOnes
+            % Plot units with no power signal for licking and narrowly tuned
+            isModTunedAndHasPower = abs(arrModulations); % ...% & ~arrHasPowerRewAligned ...
+                % & (abs(min(phase,[],2)-max(phase,[],2))>=pi/2)'; % no need this criteria cos includes all kinds of tuning
+        end
+        indTunedAndHasPower = find(isModTunedAndHasPower);
+
+        % Radius - Get only tuned ones and Normalize based on max spike
+        radiusSelected = radius(indTunedAndHasPower,:);
+        phaseSelected = phase(indTunedAndHasPower, :);
+
+        % % Polar plot
+        % f = figure;
+        % f.Position = [globalX globalY globalW globalH];
+        % ax = polaraxes; %gca;
+        % ax.ThetaZeroLocation = 'top';    % 0 at top
+        % ax.ThetaDir = 'clockwise';       % clockwise direction
+        % hold(ax,"on");
+        % 
+        % for ind=1:size(phaseSelected,1)
+        %     % colorInd = mod(ind, size(COLORS,1)-1)+1;
+        %     color = randperm(20,3)/20;
+        %     p = polarplot(phaseSelected(ind,:), radiusSelected(ind, :), 'Marker', 'o', 'MarkerFaceColor', color, 'MarkerEdgeColor', 'k');
+        % end
+        % 
+        % rlim([0 1]);
+        % %     ax.RTick = [];                   % remove radial ticks
+        % 
+        % set(gca,'FontName','Times New Roman','FontWeight','bold', 'FontSize',PLOT_FONT_SIZE,'LineWidth',1.5);
+        % title([sTitle ' ratioOfCells=' num2str(round(100*sum(isModTunedAndHasPower)/length(arrHasPowerRewAligned))) '%']);
+        % print([sFile '.tif'], '-dtiff', '-r200');       
+        % exportgraphics(f,[sFile '.pdf'], 'ContentType', 'vector', 'Resolution', 1200);
+        % savefig(f,[sFile '.fig']);
+        % close all;
+
+        %%%%%%%%%%%%%%%%% AVERAGES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Polar plot
+        f = figure;
+        f.Position = [globalX globalY globalW globalH];
+        ax = polaraxes; %gca;
+        ax.ThetaZeroLocation = 'top';    % 0 at top
+        ax.ThetaDir = 'clockwise';       % clockwise direction
+        hold(ax,"on");
+
+        meanPhases = [];
+        meanRadiuses = [];
+
+        for ind=1:size(phaseSelected,1)
+            % colorInd = mod(ind, size(COLORS,1)-1)+1;
+            color = randperm(20,3)/20;
+            % phaseDegrees = phaseSelected(ind,:)*180/pi;
+            % get averages of degrees using atan2, which is immune to boundary(0,2pi) issues
+            meanPhase = atan2(mean(sin(phaseSelected(ind,:))), mean(cos(phaseSelected(ind,:))));
+            % meanPhase = meanPhaseDegrees*pi/180;
+            if meanPhase<0
+                meanPhase = meanPhase + 2*pi; % Adjust meanPhase to be in the range [0, 2*pi]
+            end
+            % semPhase = std(phaseSelected(ind,:))/sqrt(length(phaseSelected(ind,:)));
+            meanRadius = mean(radiusSelected(ind,:));
+            % semRadius = std(radiusSelected(ind,:))/sqrt(length(radiusSelected(ind,:)));
+            
+            % FLOWER STYLE POLAR PLOT
+            % polarplot([0, meanPhase], [0, meanRadius], '-o', 'Color', [color .5], ...
+            %     'LineWidth', 1.5 , 'MarkerSize', 7, 'MarkerFaceColor', color);
+            meanPhases = [meanPhases meanPhase];
+            meanRadiuses = [meanRadiuses meanRadius];
+        end
+
+
+        % ORIENTATION-TUNING STYLE POLAR PLOT
+        % Sort by angle so polarplot draws smoothly
+        [meanPhasesSorted, idx] = sort(meanPhases);
+        meanRadiusesSorted = meanRadiuses(idx);
+        polarplot([meanPhasesSorted, meanPhases(1)], [meanRadiuses, meanRadiuses(1)], ...
+                'b-o', 'LineWidth', 2, 'MarkerFaceColor', 'b', 'MarkerSize', 5);
+
+        rlim([0 1]);
+
+        set(gca,'FontName','Times New Roman','FontWeight','bold', 'FontSize',PLOT_FONT_SIZE,'LineWidth',1.5);
+        title([sTitle ' ratioOfCells=' num2str(round(100*sum(isModTunedAndHasPower)/length(arrHasPowerRewAligned))) '%']);
+        print([sFile 'Avg.tif'], '-dtiff', '-r200');       
+        exportgraphics(f,[sFile 'Avg.pdf'], 'ContentType', 'vector', 'Resolution', 1200);
+        savefig(f,[sFile 'Avg.fig']);
+        close all;
+    % end
+end

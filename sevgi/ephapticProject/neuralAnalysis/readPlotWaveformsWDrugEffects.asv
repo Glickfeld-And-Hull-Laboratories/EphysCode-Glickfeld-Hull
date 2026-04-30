@@ -1,0 +1,65 @@
+function [unitGood,unitMua,unitNoise] = readPlotWaveformsWDrugEffects(unitsList, laserOnsetTimes, laserOffsetTimes)
+
+    globals;
+    samplingRate = str2double(getMetaFile().imSampRate);
+
+    readForTheFirstTime = 0;
+    for iList = 1:length(unitsList)        
+        units = unitsList{iList};
+        for uid=1:length(units)
+            unit = units(uid);    
+            if ~iscell(unit.waveFormsBaseline) && unit.waveFormsBaseline == UNDEFINED
+                [waveFormsBaseline, samplingRate] = readWaveForm(unit, laserOnsetTimes, laserOffsetTimes, 0, MOMENT_OF_1ST_DRUG_PUT_IN);
+                units(uid).waveFormsBaseline = waveFormsBaseline;
+                readForTheFirstTime = 1;
+            end
+            if ~all(all(cellfun(@isempty,unit.waveFormsBaseline)))
+                plotSpikeWaveForm(units(uid), units(uid).waveFormsBaseline, samplingRate, BASELINE);
+            end
+    
+            if isempty(MOMENT_OF_2ND_DRUG_PUT_IN) % Only one drug applied during recording
+                secondMoment = Inf;
+            else
+                secondMoment = MOMENT_OF_2ND_DRUG_PUT_IN;
+            end
+    
+            if ~iscell(unit.waveForms1stDrug) && unit.waveForms1stDrug == UNDEFINED
+                [waveForms1stDrug, samplingRate] = readWaveForm(unit, laserOnsetTimes, laserOffsetTimes, MOMENT_OF_1ST_DRUG_WASH_IN, secondMoment);
+                units(uid).waveForms1stDrug = waveForms1stDrug;
+                readForTheFirstTime = 1;
+            end
+            if ~all(all(cellfun(@isempty,unit.waveForms1stDrug)))
+                plotSpikeWaveForm(units(uid), units(uid).waveForms1stDrug, samplingRate, FIRST_DRUG);
+            end            
+    
+            if ~isempty(MOMENT_OF_2ND_DRUG_PUT_IN)
+                if ~iscell(unit.waveForms2ndDrug) && unit.waveForms2ndDrug == UNDEFINED
+                    [chMatrix, waveForms2ndDrug, samplingRate] = readWaveForm(unit, laserOnsetTimes, laserOffsetTimes, MOMENT_OF_2ND_DRUG_WASH_IN, Inf);
+                    units(uid).waveForms2ndDrug = waveForms2ndDrug;
+                    readForTheFirstTime = 1;
+                    %[unitGood,unitMua,unitNoise] = saveUnits(unit);
+                else
+                    chMatrix = getChannelMatrix(unit.ch); 
+                end
+                if ~all(all(cellfun(@isempty,units(uid).waveForms2ndDrug)))
+                    plotSpikeWaveForm(units(uid), units(uid).waveForms2ndDrug, samplingRate, SECOND_DRUG);
+                end
+    
+                allWaveForms = {unit.waveFormsBaseline, unit.waveForms1stDrug, unit.waveForms2ndDrug};
+                plotMultipleSpikeWaveForm(unit, chMatrix, allWaveForms, samplingRate, {BASELINE, FIRST_DRUG, SECOND_DRUG});
+            elseif isempty(MOMENT_OF_2ND_DRUG_PUT_IN)
+                allWaveForms = {unit.waveFormsBaseline, unit.waveForms1stDrug};
+                plotMultipleSpikeWaveForm(unit, chMatrix, allWaveForms, samplingRate, {BASELINE, FIRST_DRUG});
+            end
+            close all;
+        end        
+    end
+
+    if readForTheFirstTime % New data appeared, needs to be saved!
+        if length(unitsList)==3 % unitGood
+            [unitGood,unitMua,unitNoise] = saveUnits({unitsList{1}, unitsList{2}, unitsList{3}});
+        elseif length(unitsList)==1
+            [unitGood,unitMua,unitNoise] = saveUnits(units(uid));
+        end
+    end
+end

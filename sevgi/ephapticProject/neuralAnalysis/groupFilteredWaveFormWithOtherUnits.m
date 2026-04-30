@@ -1,0 +1,116 @@
+function [chMatrix, waveForms, samplingRate]=groupFilteredWaveFormWithOtherUnits(unitMaster, unitsGood, unitsMua, unitsNoise)
+
+    globals;
+    
+    imecMetaFiles = dir([pathToFilteredRec '*imec*ap.meta']); % do NOT forget to put its meta file with same name
+    metaFile = imecMetaFiles(1);
+    imecBinFiles = dir([pathToFilteredRec '*imec*ap.filtered.bin']); % do NOT forget to put its meta file with same name
+    filtFiltedBinFile = imecBinFiles(1);
+    
+    imecBinFiles = dir([pathToFilteredRec '*imec*ap.bin']);
+    imecRawBinFile = imecBinFiles(1);
+    imecBinFiles = dir([pathNpyxFiltered '*imec*ap.bin']); % do NOT forget to put its meta file with same name
+    npyxFilteredBinFile = imecBinFiles(1);
+
+
+    imecMeta = readMeta(metaFile.name, pathToFilteredRec);
+    samplingRate = str2double(imecMeta.imSampRate);
+    nSamples = int64(floor((RAW_PRE_SPIKE+RAW_POST_SPIKE)*samplingRate));
+    
+%     imecRawBinFiles = dir([pathToFilteredRec '*imec*ap.bin']);
+%     imecRawBinFile = imecRawBinFiles(1);
+    %nSamples = floor(str2double(imecRawBinFile.bytes)/(SIZE_OF_INT16 * NUM_OF_CHANNELS)); % cos raw data saved in int16 data format
+    %memoryMapBinRaw = memmapfile([pathToFilteredRec imecRawBinFile.name], 'Format',{'int16',[NUM_OF_CHANNELS nSamples], 'rawData'});
+
+%     imecFilteredBinFiles = dir([pathToFilteredRec '*imec*ap.filtered.bin']); % do NOT forget to put its meta file with same name
+%     filtFiltedBinFile = imecFilteredBinFiles(1);
+    %nSamples = floor(str2double(filtFiltedBinFile.bytes)/(SIZE_OF_SINGLE * NUM_OF_CHANNELS)); % cos filtered data saved in single data format
+    %memoryMapBinFiltered = memmapfile([pathToFilteredRec filtFiltedBinFile.name], 'Format',{'int16',[NUM_OF_CHANNELS nSamples], 'rawData'});
+        
+    %[unitVSOtherForwardSpikeTimesGood, unitVSOtherBackwardSpikeTimesGood] = selectSpikesWithNeighboringUnits(unit.id, unit.spikeTimesSecs, unit.ch, unitsGood, 1, 1, RAW_POST_SPIKE, RAW_PRE_SPIKE);
+    [unitVSSpikeTimesWithMaster, unitVSSpikeTimesWithoutMaster] = selectSlaveSpikesWRTMasterSpikes(unitMaster.id, unitMaster.spikeTimesSecs, unitMaster.ch, unitsGood, 1, 1);
+
+    if ~isempty(unitVSSpikeTimesWithMaster)
+        ids = randperm(size(unitVSSpikeTimesWithMaster,1),20); % get only 100 random traces
+        startSamples = zeros(1,length(ids));
+        for i=1:length(ids)
+            % Get 3 ms interval of filtered data around the spike
+            startSec = unitVSSpikeTimesWithMaster{ids(i),3}-RAW_PRE_SPIKE;
+            if startSec<0
+                startSec = 0;
+            end
+            startSamples(i) = int64(floor(startSec*samplingRate));
+        end
+        
+        waveForm = readBinWRTDataType(startSamples, nSamples, unitMaster.ch, filtFiltedBinFile.bytes, filtFiltedBinFile.name, pathToFilteredRec, SIZE_OF_SINGLE, 'single=>double');    
+                
+        SKIP_TO_PLOT = 4;
+        
+        x=-RAW_PRE_SPIKE:1/samplingRate:RAW_POST_SPIKE-1/samplingRate;
+        x=x.*1000; % convert to ms
+        %xPlot = x(1:SKIP_TO_PLOT:end); % You don't need that high resolution to plot
+
+        if ~isempty(waveForm)    
+            f = figure;
+            f.Position = [globalX globalY 2*globalW globalH];                             
+                
+            minY = 0;
+            maxY = 0;
+
+            for iPlt=1:size(waveForm,1)
+                slaveNeuronId = unitVSSpikeTimesWithMaster{ids(iPlt),1};
+                slaveNeuronType = unitVSSpikeTimesWithMaster{ids(iPlt),2};
+                slaveSpikeTimesForward = (unitVSSpikeTimesWithMaster{ids(iPlt),5} - unitVSSpikeTimesWithMaster{ids(iPlt),3})*1000; % convert to ms
+                legends = cell(1,1+length(slaveSpikeTimesForward));
+                legPlots = zeros(1,1+length(slaveSpikeTimesForward));
+
+                waveform_uV = waveForm(iPlt,:)*10^6; % plot in uV
+                plot(x, waveform_uV,'LineWidth',1.5, 'color', [.3 .3 .3 0.4]);
+                hold on         
+                minY = min(minY, min(waveform_uV));
+                maxY = max(maxY, max(waveform_uV));
+                indType = find(ismember(NEURON_TYPES,unitMaster.neuronType));                
+                legPlots(1) = scatter(0,maxY*1.1, 80, 'filled', 'MarkerFaceColor', COLOR_CODES{indType});
+                legends{1} = ['id=' num2str(unitMaster.id) ' type=' unitMaster.neuronType ' spkTime=' num2str(unitVSSpikeTimesWithMaster{ids(iPlt),3},'%.2f') ' ms'];
+
+                for ii=1:length(slaveSpikeTimesForward)
+                    indType = find(ismember(NEURON_TYPES,slaveNeuronType));
+                    legPlots(ii+1) = scatter(slaveSpikeTimesForward(ii),minY*1.1, 60, 'filled', 'MarkerFaceColor', COLOR_CODES{indType}, 'MarkerFaceAlpha',.6,'MarkerEdgeAlpha',.6);
+                    legends{ii+1} = ['id=' num2str(slaveNeuronId) ' type=' slaveNeuronType ' At=' num2str(slaveSpikeTimesForward(ii), '%.2f') ' ms'];
+                end
+%                 if ~isnan(slaveSpikeTimesBackward)
+%                     for ij=1:length(slaveSpikeTimesBackward)
+%                         indType = find(ismember(NEURON_TYPES,slaveNeuronType));
+%                         legPlots(ij+1) = scatter(slaveSpikeTimesBackward(ij),maxY*1.1, 80, 'filled', 'MarkerFaceColor', COLOR_CODES{indType},'MarkerFaceAlpha',.2,'MarkerEdgeAlpha',.2);
+%                         legends{ij+1} = ['id=' num2str(slaveNeuronId) ' type=' slaveNeuronType ' At=' num2str(slaveSpikeTimesBackward(ij), '%.2f') ' ms'];
+%                     end
+%                 end    
+                                
+                %sgtitle(['Unit=' num2str(unit.id) ' (' unit.neuronType ' ch=' num2str(unit.ch) ') ']); % sLocalTitle
+                   
+            end
+
+            %ylim([minY*1.5 maxY*1.5]);
+                %legend(legPlots, legends{:},'Color','none','Location','SouthEast');
+            
+            xlim([-RAW_PRE_SPIKE*1000 RAW_POST_SPIKE*1000]);
+            grid on
+            title(['Unit=' num2str(unitMaster.id) ' (' unitMaster.neuronType ' ch=' num2str(unitMaster.ch) ') with Unit=' num2str(slaveNeuronId) ' 300Hz zero phase high pass filtered waveform']);
+            set(gca,'FontName','Times New Roman','FontWeight','bold', 'FontSize',PLOT_FONT_SIZE,'LineWidth',1.5)
+            
+            han=axes(f,'visible','off'); 
+            han.Title.Visible='on';
+            han.XLabel.Visible='on';
+            han.YLabel.Visible='on';
+            ylabel(han,'uV');
+            xlabel(han,'Time (ms)');    
+            
+            set(gca,'FontName','Times New Roman','FontWeight','bold', 'FontSize',PLOT_FONT_SIZE,'LineWidth',1.5)                
+
+            print([pathToGroupedWaveFormWithOtherUnits '/' 'spikeWaveForm_300HzFiltered_' num2str(unitMaster.id) '_' num2str(slaveNeuronId) '.tif'], '-dtiff', '-r100');
+            close all;
+
+            logger.info('readFilteredWaveFormWithOtherUnits', ['Filtered waveform is plot for unit=' num2str(unitMaster.id)]);
+        end    
+    end
+end

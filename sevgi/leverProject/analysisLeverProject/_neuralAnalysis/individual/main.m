@@ -1,0 +1,202 @@
+% MAIN for neural analyses
+clc
+clearvars
+clearvars -global
+close all
+
+globals;
+
+[arrHitTrials, arrFaTrials, arrMissTrials, arrStimTurnedOnTrials, arrReqHoldTimes, arrReactTimes, tooFastTime, reactTime, preHoldTime, fixedHoldStartsAtTrial, ...
+    leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, lickOnsetTimesGLX, lickOffsetTimesGLX, rewardOnsetTimesGLX, rewardOffsetTimesGLX, trialCutIndex] = init();
+trialCount = length(arrReqHoldTimes);
+allTrials = [1:trialCount];
+%%%%%%%%%%%% Read Spikes channels from SpikeGLX %%%%%%%%%%
+% Extract units with its properties from only the channels inside the cerebellum
+[unitGood, unitMua] = readUnits();
+unitGood = readExpertLabels(unitGood);
+
+% Sort units acc. to depth - from surface to deep
+unitGoodSorted = sortStruct(unitGood,'depth');
+unitMuaSorted = sortStruct(unitMua,'depth');
+
+createFolders([unitGoodSorted.id],{unitGoodSorted.expertLabel});
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% BEGINNING OF ANALYSES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 0st STEP of ANALYSES :  Plot behavioral-only analyses %%%%%%%%%%%%%%%%%%%%
+if ismember(ANALYSIS_STEP_0,ARR_DO_ANALYSES) % Do behavioral analyses
+    plotReactTimes(arrReactTimes, arrHitTrials, arrFaTrials, arrMissTrials, arrStimTurnedOnTrials, arrReqHoldTimes, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX);
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 1st STEP of ANALYSES :  Plot raster & PSTH (Qualitative) %%%%%%%%%%%%%%%%%%%%
+if ismember(ANALYSIS_STEP_1,ARR_DO_ANALYSES) 
+    if UNIT_OF_INTEREST~= -1
+        unit = unitGoodSorted(find([unitGoodSorted.id]==UNIT_OF_INTEREST));
+        if ~isempty(unit)           
+            [spikeRatesHoldRandomAll{1}, spikeRatesHoldFixedAll{1}, spikeRatesHoldRandomHFM{1}, spikeRatesHoldFixedHFM{1}, spikeRatesReleaseRandomAll{1}, spikeRatesReleaseFixedAll{1}, ...
+                spikeRatesReleaseRandomHFM{1}, spikeRatesReleaseFixedHFM{1}, spikeRatesTargetRandomAll{1}, spikeRatesTargetFixedAll{1}, spikeRatesTargetRandomHFM{1}, spikeRatesTargetFixedHFM{1}, ...
+                responseTypeHoldFixedAll{1}, responseTypeHoldFixedHFM{1}, responseTypeReleaseFixedAll{1}, responseTypeReleaseFixedHFM{1}, responseTypeTargetFixedAll{1}, responseTypeTargetFixedHFM{1}] = ...
+            plotRasterPSTH(unit, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, allTrials, arrHitTrials, arrFaTrials, arrMissTrials);
+        else % If UOI cannot be found in GOOD units, it may be in MUA
+            unit = unitMuaSorted(find([unitMuaSorted.id]==UNIT_OF_INTEREST));
+            if ~isempty(unit)           
+                [spikeRatesHoldRandomAll{1}, spikeRatesHoldFixedAll{1}, spikeRatesHoldRandomHFM{1}, spikeRatesHoldFixedHFM{1}, spikeRatesReleaseRandomAll{1}, spikeRatesReleaseFixedAll{1}, ...
+                    spikeRatesReleaseRandomHFM{1}, spikeRatesReleaseFixedHFM{1}, spikeRatesTargetRandomAll{1}, spikeRatesTargetFixedAll{1}, spikeRatesTargetRandomHFM{1}, spikeRatesTargetFixedHFM{1}, ...
+                    responseTypeHoldFixedAll{1}, responseTypeHoldFixedHFM{1}, responseTypeReleaseFixedAll{1}, responseTypeReleaseFixedHFM{1}, responseTypeTargetFixedAll{1}, responseTypeTargetFixedHFM{1}] = ...
+                plotRasterPSTH(unit, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, allTrials, arrHitTrials, arrFaTrials, arrMissTrials);                
+            else
+                disp('No unit info!')
+            end
+        end
+    else % plot all selected units
+        for uid=1:length(unitGoodSorted)
+            unit = unitGoodSorted(uid);
+            [spikeRatesHoldRandomAll{uid}, spikeRatesHoldFixedAll{uid}, spikeRatesHoldRandomHFM{uid}, spikeRatesHoldFixedHFM{uid}, spikeRatesReleaseRandomAll{uid}, spikeRatesReleaseFixedAll{uid}, ...
+                spikeRatesReleaseRandomHFM{uid}, spikeRatesReleaseFixedHFM{uid}, spikeRatesTargetRandomAll{uid}, spikeRatesTargetFixedAll{uid}, spikeRatesTargetRandomHFM{uid}, spikeRatesTargetFixedHFM{uid}, ...
+                responseTypeHoldFixedAll{uid}, responseTypeHoldFixedHFM{uid}, responseTypeReleaseFixedAll{uid}, responseTypeReleaseFixedHFM{uid}, responseTypeTargetFixedAll{uid}, responseTypeTargetFixedHFM{uid}] = ...
+            plotRasterPSTH(unit, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, allTrials, arrHitTrials, arrFaTrials, arrMissTrials);
+        end
+    end   
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 2_0 st STEP of ANALYSES :  Plot ACGs (Qualitative) %%%%%%%%%%%%%%%%%%%%
+if ismember(ANALYSIS_STEP_2_0,ARR_DO_ANALYSES) 
+    unitGoodSorted = acgAnalyses(unitGoodSorted, unitMuaSorted, preHoldTime, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, arrStimTurnedOnTrials, allTrials, arrHitTrials, arrMissTrials, arrFaTrials);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SAVE ALL UNITS and BEHAV. VARIABLES INTO .mat FILE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% It only tries to save if it runs STEP_1 and STEP_2_0 analyses with the whole neurons
+if ismember(ANALYSIS_STEP_1,ARR_DO_ANALYSES) && ismember(ANALYSIS_STEP_2_0,ARR_DO_ANALYSES) && UNIT_OF_INTEREST== -1
+    saveUnitswBehavVars(unitGoodSorted, unitMuaSorted, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, trialCutIndex, ...
+    allTrials, arrHitTrials, arrFaTrials, arrMissTrials, arrStimTurnedOnTrials, arrReqHoldTimes, arrReactTimes, tooFastTime, reactTime, preHoldTime, fixedHoldStartsAtTrial,...
+    spikeRatesHoldRandomAll, spikeRatesHoldFixedAll, spikeRatesHoldRandomHFM, spikeRatesHoldFixedHFM, spikeRatesReleaseRandomAll, spikeRatesReleaseFixedAll, ...
+                    spikeRatesReleaseRandomHFM, spikeRatesReleaseFixedHFM, spikeRatesTargetRandomAll, spikeRatesTargetFixedAll, spikeRatesTargetRandomHFM, spikeRatesTargetFixedHFM, ...
+                    responseTypeHoldFixedAll, responseTypeHoldFixedHFM, responseTypeReleaseFixedAll, responseTypeReleaseFixedHFM, responseTypeTargetFixedAll, responseTypeTargetFixedHFM);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 2_1 st STEP of ANALYSES :  Plot CCG pairs (Qualitative) %%%%%%%%%%%%%%%%%%%%
+if ismember(ANALYSIS_STEP_2_1,ARR_DO_ANALYSES) 
+    [suppressedPairs_CS_SS, pairs_CS_SS] = ccgAnalyses(unitGoodSorted, unitMuaSorted, preHoldTime, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, arrStimTurnedOnTrials, allTrials, arrHitTrials, arrMissTrials, arrFaTrials);
+end
+
+if ismember(ANALYSIS_STEP_2_1,ARR_DO_ANALYSES) && ismember(ANALYSIS_STEP_2_A,ARR_DO_ANALYSES)
+    checkTwoConseqTrialsforCSSS(suppressedPairs_CS_SS, pairs_CS_SS,unitGoodSorted,'CS','SS',CS_SS,preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, allTrials, arrHitTrials, arrMissTrials, arrFaTrials);
+end
+
+if ismember(ANALYSIS_STEP_2_1,ARR_DO_ANALYSES) && ismember(ANALYSIS_STEP_2_B,ARR_DO_ANALYSES)
+    checkCSSSandBehavEventTimes(suppressedPairs_CS_SS, pairs_CS_SS,unitGoodSorted,'CS','SS',CS_SS,preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrReactTimes, arrStimTurnedOnTrials, allTrials, 'All');
+    checkCSSSandBehavEventTimes(suppressedPairs_CS_SS, pairs_CS_SS,unitGoodSorted,'CS','SS',CS_SS,preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrReactTimes, arrStimTurnedOnTrials, arrHitTrials, 'Hit');
+    checkCSSSandBehavEventTimes(suppressedPairs_CS_SS, pairs_CS_SS,unitGoodSorted,'CS','SS',CS_SS,preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrReactTimes, arrStimTurnedOnTrials, arrFaTrials, 'Fa');
+    checkCSSSandBehavEventTimes(suppressedPairs_CS_SS, pairs_CS_SS,unitGoodSorted,'CS','SS',CS_SS,preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrReactTimes, arrStimTurnedOnTrials, arrMissTrials, 'Miss');
+end
+
+if ismember(ANALYSIS_STEP_2_1,ARR_DO_ANALYSES) && ismember(ANALYSIS_STEP_2_C,ARR_DO_ANALYSES)
+    plotPairedRaster(suppressedPairs_CS_SS, pairs_CS_SS,unitGoodSorted,'CS','SS',CS_SS,preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, allTrials, 'All');
+    plotPairedRaster(suppressedPairs_CS_SS, pairs_CS_SS,unitGoodSorted,'CS','SS',CS_SS,preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, arrHitTrials, 'Hit');
+    plotPairedRaster(suppressedPairs_CS_SS, pairs_CS_SS,unitGoodSorted,'CS','SS',CS_SS,preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, arrFaTrials, 'Fa');
+    plotPairedRaster(suppressedPairs_CS_SS, pairs_CS_SS,unitGoodSorted,'CS','SS',CS_SS,preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, arrMissTrials, 'Miss');    
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 3rd STEP of ANALYSES :  Compare FR & ISI (Quantitative) %%%%%%%%%%%%%%%%%%%%
+if ismember(ANALYSIS_STEP_3,ARR_DO_ANALYSES) 
+    if UNIT_OF_INTEREST~= -1
+        unit = unitGoodSorted(find([unitGoodSorted.id]==UNIT_OF_INTEREST));
+        if ~isempty(unit) 
+            compareFR_ISI(unit.id, unit.expertLabel, unit.layer, unit.ch, unit.spikeTimesSecs, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, allTrials, '');
+            compareFR_ISI(unit.id, unit.expertLabel, unit.layer, unit.ch, unit.spikeTimesSecs, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, arrHitTrials, 'Hit');
+            compareFR_ISI(unit.id, unit.expertLabel, unit.layer, unit.ch, unit.spikeTimesSecs, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, arrFaTrials, 'Fa');
+            compareFR_ISI(unit.id, unit.expertLabel, unit.layer, unit.ch, unit.spikeTimesSecs, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, arrMissTrials, 'Miss');
+        else
+            unit = unitMuaSorted(indUnit);
+            if ~isempty(unit)           
+                compareFR_ISI(unit.id, unit.expertLabel, unit.layer, unit.ch, unit.spikeTimesSecs, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, allTrials, '');
+                compareFR_ISI(unit.id, unit.expertLabel, unit.layer, unit.ch, unit.spikeTimesSecs, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, arrHitTrials, 'Hit');
+                compareFR_ISI(unit.id, unit.expertLabel, unit.layer, unit.ch, unit.spikeTimesSecs, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, arrFaTrials, 'Fa');
+                compareFR_ISI(unit.id, unit.expertLabel, unit.layer, unit.ch, unit.spikeTimesSecs, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, arrMissTrials, 'Miss');
+            else
+                disp('No unit info!')
+            end
+        end
+    else % plot all selected units
+        for uid=1:length(unitGoodSorted)
+            unit = unitGoodSorted(uid);
+            compareFR_ISI(unit.id, unit.expertLabel, unit.layer, unit.ch, unit.spikeTimesSecs, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, allTrials, '');
+            compareFR_ISI(unit.id, unit.expertLabel, unit.layer, unit.ch, unit.spikeTimesSecs, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, arrHitTrials, 'Hit');
+            compareFR_ISI(unit.id, unit.expertLabel, unit.layer, unit.ch, unit.spikeTimesSecs, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, arrFaTrials, 'Fa');
+            compareFR_ISI(unit.id, unit.expertLabel, unit.layer, unit.ch, unit.spikeTimesSecs, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, arrMissTrials, 'Miss');
+            close all;
+        end
+    end
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 4th STEP of ANALYSES : Read & plot waveform acc.to behavioral events (Qualitative) %%%%%%%%%%%%%%%%%%%%
+
+if ismember(ANALYSIS_STEP_4,ARR_DO_ANALYSES) 
+    %Read raw data and waveforms
+    if UNIT_OF_INTEREST~= -1    
+        unitWaveForm = unitGoodSorted(find([unitGoodSorted.id]==UNIT_OF_INTEREST));
+        [waveFormMean, waveFormMin, waveFormMax, samplingRate] = readRawWaveForm(unitWaveForm);
+        plotSpikeWaveForm(unitWaveForm, waveFormMean, waveFormMin, waveFormMax, samplingRate, '');
+%         readPlotWaveFormWEvents(unitWaveForm, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, allTrials, '');
+%         readPlotWaveFormWEvents(unitWaveForm, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, arrHitTrials, 'Hit');
+%         readPlotWaveFormWEvents(unitWaveForm, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, arrFaTrials, 'Fa');
+%         readPlotWaveFormWEvents(unitWaveForm, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, arrMissTrials, 'Miss');
+
+    else % plot all selected units
+        for uid=1:length(unitGoodSorted)
+            unit = unitGoodSorted(uid);
+            [waveFormMean, waveFormMin, waveFormMax, samplingRate] = readRawWaveForm(unit);
+            plotSpikeWaveForm(unit, waveFormMean, waveFormMin, waveFormMax, samplingRate, '');
+%             readPlotWaveFormWEvents(unit, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, allTrials, '');
+%             readPlotWaveFormWEvents(unit, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, arrHitTrials, 'Hit');
+%             readPlotWaveFormWEvents(unit, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, arrFaTrials, 'Fa');
+%             readPlotWaveFormWEvents(unit, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, arrStimTurnedOnTrials, arrMissTrials, 'Miss');
+            close all;
+        end
+    end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 5th STEP of ANALYSES : Reaction time based analyses %%%%%%%%%%%%%%%%%%%%
+
+if ismember(ANALYSIS_STEP_5,ARR_DO_ANALYSES)
+    if UNIT_OF_INTEREST~= -1
+        unit = unitGoodSorted(find([unitGoodSorted.id]==UNIT_OF_INTEREST));
+        if ~isempty(unit) 
+            checkNeuralChangeswrtReactionTime(unit, arrReactTimes, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, lickOnsetTimesGLX, lickOffsetTimesGLX, rewardOnsetTimesGLX, rewardOffsetTimesGLX, arrStimTurnedOnTrials, allTrials, arrHitTrials, arrFaTrials, arrMissTrials);        
+        else
+            unit = unitMuaSorted(indUnit);
+            if ~isempty(unit)           
+                checkNeuralChangeswrtReactionTime(unit, arrReactTimes, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, lickOnsetTimesGLX, lickOffsetTimesGLX, rewardOnsetTimesGLX, rewardOffsetTimesGLX, arrStimTurnedOnTrials, allTrials, arrHitTrials, arrFaTrials, arrMissTrials);
+            else
+                disp('No unit info!')
+            end
+        end
+    else % plot all selected units
+        checkNeuralChangeswrtReactionTime(unitGoodSorted, arrReactTimes, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, lickOnsetTimesGLX, lickOffsetTimesGLX, rewardOnsetTimesGLX, rewardOffsetTimesGLX, arrStimTurnedOnTrials, allTrials, arrHitTrials, arrFaTrials, arrMissTrials);
+    end
+    
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 6th STEP of ANALYSES : Lick related activity analyses %%%%%%%%%%%%%%%%%%%%
+
+if ismember(ANALYSIS_STEP_6,ARR_DO_ANALYSES)
+    if UNIT_OF_INTEREST~= -1
+        unit = unitGoodSorted(find([unitGoodSorted.id]==UNIT_OF_INTEREST));
+        if ~isempty(unit) 
+            checkNeuralChangeswrtLicks(unit, arrReactTimes, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, lickOnsetTimesGLX, lickOffsetTimesGLX, rewardOnsetTimesGLX, rewardOffsetTimesGLX, arrStimTurnedOnTrials, allTrials, arrHitTrials, arrFaTrials, arrMissTrials);        
+        else
+            unit = unitMuaSorted(indUnit);
+            if ~isempty(unit)           
+                checkNeuralChangeswrtLicks(unit, arrReactTimes, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, lickOnsetTimesGLX, lickOffsetTimesGLX, rewardOnsetTimesGLX, rewardOffsetTimesGLX, arrStimTurnedOnTrials, allTrials, arrHitTrials, arrFaTrials, arrMissTrials);
+            else
+                disp('No unit info!')
+            end
+        end
+    else % plot all selected units
+        for uid=1:length(unitGoodSorted)
+            unit = unitGoodSorted(uid);
+            checkNeuralChangeswrtLicks(unit, arrReactTimes, preHoldTime, fixedHoldStartsAtTrial, leverHoldTimes, leverReleaseTimesGLX, targetStimTimesGLX, baselineStimTimesGLX, lickOnsetTimesGLX, lickOffsetTimesGLX, rewardOnsetTimesGLX, rewardOffsetTimesGLX, arrStimTurnedOnTrials, allTrials, arrHitTrials, arrFaTrials, arrMissTrials);
+            close all;
+        end
+    end
+    
+end

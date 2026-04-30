@@ -1,0 +1,398 @@
+global logger FUNKY_CHANNEL MOUSE_ID depthDuringRecording dateOfRecording KS_FOLDER DART_SORTED_FOLDER CatGT_FOLDER CatGT_FOLDER_filtered KS_FILTERED_FOLDER KS_FILTERED UNIT_OF_INTEREST UNIT_OF_INTEREST2 ARR_DO_ANALYSES ANALYSIS_STEP_0 ANALYSIS_STEP_10 ANALYSIS_STEP_1 ANALYSIS_STEP_11 ANALYSIS_STEP_2 ANALYSIS_STEP_21 ANALYSIS_STEP_22 ANALYSIS_STEP_3 ANALYSIS_STEP_4 ANALYSIS_STEP_5 ANALYSIS_STEP_6 ANALYSIS_STEP_7 ANALYSIS_STEP_8 ANALYSIS_STEP_9 ANALYSIS_STEP_100...
+        pathToParentRec pathToRecFolder pathToUnitsDataFolder pathToFigureFolder pathToWaveFormWithOtherUnits pathToRawVSFilteredWaveFormAlignedToLaser pathToGroupedWaveFormWithOtherUnits pathToRasterPSTH pathToCCGWRasterPSTH UNITS_AND_VARS_FILE_NAME UNITS_AND_VARS_FILE_NAME_KS_SORTED UNITS_AND_VARS_FILE_NAME_DART_SORTED pathKS pathDartSorted pathCatGT pathCatGT_filtered pathNpyxFiltered pathTPrime pathToFilteredRec tipLength ...
+        NEURON_TYPE_MF NEURON_TYPE_SS NEURON_TYPE_CS NEURON_TYPE_DCS NEURON_TYPE_BC_SC NEURON_TYPE_GoC NEURON_TYPE_UBC NEURON_TYPE_DCN NEURON_TYPE_UNKNOWN NEURON_TYPES...
+        RAW_PRE_SPIKE RAW_POST_SPIKE RAW_PRE_SPIKE_WOTHERS RAW_POST_SPIKE_WOTHERS PRE_TIME_RASTER POST_TIME_RASTER MASTER_SLAVE_SPIKE_DISTANCE PRE_MASTER_SLAVE_SPIKE_DISTANCE EDGES_MASTER_SLAVE_SPIKE_DISTANCE EDGES_PRE_MASTER_SLAVE_SPIKE_DISTANCE EDGES_PRE_PSTH EDGES_POST_PSTH BIN_SIZE_PSTH BIN_SIZE_LASER EDGES_PSTH_LASER EXCLUDE_PRE_LASER_EFFECT_DUR EXCLUDE_POST_LASER_EFFECT_DUR RAW_RANDOM_N globalX globalY globalW globalH SMALL_PLOT_FONT_SIZE PLOT_FONT_SIZE PRINT_FONT_SIZE ...
+        CHANNEL_MATRIX_LENGTH CHANNEL_MATRIX_COLUMNS CHANNEL_MATRIX_ROWS CHANNEL_ROW_DISTANCE UNDEFINED MAX_CHANNELS NUM_OF_CHANNELS...
+        COLOR_CODE_MF COLOR_CODE_SS COLOR_CODE_CS COLOR_CODE_DCS COLOR_CODE_BC_SC COLOR_CODE_GoC COLOR_CODE_UBC COLOR_CODE_UNKNOWN COLOR_CODES...
+        GAIN_CHANGE_MOMENTS_BASELINE GAIN_CHANGE_MOMENTS_1 GAIN_CHANGE_MOMENTS_2 BASELINE FIRST_DRUG SECOND_DRUG SOME_UNITS_OF_INTEREST MOMENT_OF_1ST_DRUG_PUT_IN MOMENT_OF_1ST_DRUG_WASH_IN MOMENT_OF_2ND_DRUG_PUT_IN MOMENT_OF_2ND_DRUG_WASH_IN SPIKE_SPAN SMOOTH_TYPE_L SMOOTH_TYPE_R...
+        PAIR_TYPE_ACG PAIR_TYPE_CS_SS PAIR_TYPE_MF_SS PAIR_TYPE_MF_GO PAIR_TYPE_GO_SS PAIR_TYPE_MLI_SS PAIR_TYPE_SS_SS PAIR_TYPE_MLI_MLI PAIR_TYPE_GO_GO PAIR_TYPE_SS_DCN ...
+        PAIR_TYPE_OTHER_SS PAIR_TYPE_OTHER_CS PAIR_TYPE_OTHER_MF PAIR_TYPE_OTHER_GO PAIR_TYPE_OTHER_MLI PAIR_TYPE_OTHER_OTHER...
+        PAIR_TYPE_MF_OTHER...
+        ACG CS_SS MF_SS MF_GO GO_SS MLI_SS SS_DCN SS_SS MLI_MLI GO_GO OTHER_SS OTHER_CS OTHER_MF OTHER_GO OTHER_MLI OTHER_OTHER...
+        MF_OTHER ...
+        X_MAX_ACG BIN_SIZE_ACG X_MAX_CCG BIN_SIZE_CCG REFRACTORY_RANGE REFRACTORY_RANGE_MF CCG_DEVIATION_RANGE CCG_DEVIATION_CRITERION...
+        LASER_ONSET_TXT LASER_OFFSET_TXT PRE_TIME_LASER POST_TIME_LASER...
+        SIZE_OF_SINGLE SIZE_OF_INT16 READ_RAW_OR_FILTERED_SIGNAL...
+        NUM_OF_ROWS_IN_PROBE NUM_OF_COLUMNS_IN_PROBE DEPTH_PER_ROW ANALYSES_OUTPUT_FOLDER DART_SORTED CHANNEL_ORGANIZATION_UHD_TYPE_3 MAX_ARRAY_LENGTH...
+        FILE_NAME_WAVEFORM FILE_NAME_WAVEFORM_BASELINE FILE_NAME_WAVEFORM_FIRST_DRUG FILE_NAME_WAVEFORM_SECOND_DRUG FILE_NAME_MULTI_WAVEFORM FILE_NAME_AMPLITUDE_HEAT_MAP
+
+localPath = fileparts(which(matlab.desktop.editor.getActiveFilename));
+% if ispc % If the OS is Windows
+%     pattern = '\';
+% else
+%     pattern = '/';
+% end
+% inds = strfind(localPath,pattern);
+addpath(genpath(localPath))
+
+NUM_OF_CHANNELS = 385;
+MAX_CHANNELS = 384; % 0-384 in Phyllum
+tipLength = 175;
+
+FUNKY_CHANNEL = 365; % Our Type 3 UHD Neuropixel probe had crazy channel no 365 (In Pyllum ordering 0-384)
+CHANNEL_ROW_DISTANCE = 16; % for UHD Type 3 (One channel id = previous row's same column's channel is + 16)
+DART_SORTED = 1;
+%%%%%%%%%%%%%%%%% CHANGE THESE FOR EACH RECORDING %%%%%%%%%%%%%%%%%%%%%
+% MOUSE_ID = '3109';
+% depthDuringRecording = 880.3;
+% dateOfRecording = '20240604_UHDType3_g0';
+% KS_FOLDER = 'KS_OUT/';
+% CatGT_FOLDER = ['CatGT_OUT/catgt_' dateOfRecording '/']; % use CatGT demuxed (tshifted) version to find spike times in raw data
+% 
+% UNIT_OF_INTEREST = -1;
+% UNIT_OF_INTEREST2 = -1;
+% SOME_UNITS_OF_INTEREST = []; %KS bets GrC like cells: [7,95]; % DartSort compared these units of KS [31,7,29,15,18,28,22,71,35,70,73,80,91,95,81];
+% % Gain  Power(mW)   MomentOfChange(sec) Laser Duration(ms)
+% GAIN_CHANGE_MOMENTS_BASELINE = [0.5 0.00 284 10; 1.0 0.00 402 10; 1.4 0.00 530 10; 1.8 0.00 655 10; 2.5 0.00 806 10; 3.0 0.00 971 10; 0 0 1113 10;
+%     0.5 0.00 1153 25; 1.0 0.00 1297 25; 1.4 0.00 1423 25; 1.8 0.00 1538 25; 2.5 0.00 1669 25; 3.0 0.00 1778 25; 0 0 1946 25;]; 
+% BASELINE = 'Baseline';
+% MOMENT_OF_1ST_DRUG_PUT_IN = 2160; % sec
+% GAIN_CHANGE_MOMENTS_1 = [0.5 0.00 3391 10; 1.0 0.00 3526 10; 1.4 0.00 3655 10; 1.8 0.00 3782 10; 2.5 0.00 3923 10; 3.0 0.00 4117 10; 0 0 4315 10;
+%     0.5 0.00 4355 25; 1.0 0.00 4492 25; 1.4 0.00 4643 25; 1.8 0.00 4781 25; 2.5 0.00 4931 25; 3.0 0.00 5070 25; 0 0 5194 25;]; 
+% FIRST_DRUG = 'GABAZINE-NBQX-AP5';
+% MOMENT_OF_1ST_DRUG_WASH_IN = GAIN_CHANGE_MOMENTS_1(1,3); % firstDrugWashIn
+% 
+% GAIN_CHANGE_MOMENTS_2 = [];
+% MOMENT_OF_2ND_DRUG_PUT_IN = [];
+% SECOND_DRUG = '';
+% MOMENT_OF_2ND_DRUG_WASH_IN = []; % secondDrugWashIn
+% NUM_OF_ROWS_IN_PROBE = 24; % for UHD Type 3
+% NUM_OF_COLUMNS_IN_PROBE = 16;  % for UHD Type 3
+% CHANNEL_ORGANIZATION_UHD_TYPE_3 = reshape([0:MAX_CHANNELS-1], [NUM_OF_COLUMNS_IN_PROBE, NUM_OF_ROWS_IN_PROBE])';
+% DEPTH_PER_ROW = 3; % 3 um for UHD Type 3
+% DART_SORTED_FOLDER = 'DartSorted/';
+% if DART_SORTED
+%     ANALYSES_OUTPUT_FOLDER = 'analysis_OUT_DartSorted/';
+% else
+%     ANALYSES_OUTPUT_FOLDER = 'analysis_OUT/';
+% end
+% %%%%%%%%%%%%%%%%% CHANGE THESE FOR EACH RECORDING %%%%%%%%%%%%%%%%%%%%%
+MOUSE_ID = '3107';
+depthDuringRecording = 1071;
+dateOfRecording = '20240422_UHDType3_g0';
+NUM_OF_ROWS_IN_PROBE = 24; % for UHD Type 3
+NUM_OF_COLUMNS_IN_PROBE = 16;  % for UHD Type 3
+CHANNEL_ORGANIZATION_UHD_TYPE_3 = reshape([0:MAX_CHANNELS-1], [NUM_OF_COLUMNS_IN_PROBE, NUM_OF_ROWS_IN_PROBE])';
+DEPTH_PER_ROW = 3; % 3 um for UHD Type 3
+KS_FOLDER = 'KS_OUT_Th7_7_catGT/';
+CatGT_FOLDER = ['CatGT_OUT/catgt_' dateOfRecording '/']; % use CatGT demuxed (tshifted) version to find spike times in raw data
+% CatGT_FOLDER_DMX = ['CatGT_OUT/catgt_' dateOfRecording '/']; % use CatGT only demuxed (tshifted) version without any filtering
+%CatGT_FOLDER_loccar28 = ['CatGT_OUT_loccar28/catgt_' dateOfRecording '/']; % just for visualization purposes
+%CatGT_FOLDER_filtered = ['CatGT_OUT_loccar12/catgt_' dateOfRecording '/']; % just for visualization purposes
+KS_FILTERED_FOLDER = 'KS_temp_Th7_7_catGT'; % just for visualization purposes
+KS_FILTERED = 'ksfiltered';
+DART_SORTED_FOLDER = 'DartSorted/';
+if DART_SORTED
+    ANALYSES_OUTPUT_FOLDER = 'analysis_OUT_DartSorted/';
+else
+    ANALYSES_OUTPUT_FOLDER = 'analysis_OUT/';
+end
+
+UNIT_OF_INTEREST = -1; %24; %228;
+UNIT_OF_INTEREST2 = -1;
+SOME_UNITS_OF_INTEREST = []; %[24,29,31,25]; % 24 29, 31,25 % Dart Sorted units that look like Gr Cells % KS units DartSort compared [44, 45, 50, 23, 16, 12, 15, 20];
+% SOME_UNITS_OF_INTEREST = [228, 120, 194, 140, 207, 62];  % Court liked these as potential GrCells from KS output
+
+% Potential GrCells
+% SOME_UNITS_OF_INTEREST = [32, 62, 96, 120, 130, 165, 169, 189, 191, 194, 203, 207, 209, 210, 228];  
+
+% Potential MFs
+% SOME_UNITS_OF_INTEREST = [168, 180, 86, 87, 88, 90, 172, 173, 174, 218]; 
+
+% Potential GrCells with Contamination
+% SOME_UNITS_OF_INTEREST = [26, 40, 41, 49, 57, 59, 73, 82, 92, 93, 98, 99, 101, 102, 104, 108, 109, 110, 118, 131, 132, 137, 140, 142, 153, 155, 160, 161, 164, 167, 170, 187, 193, 197, 199, 202, 204, 205, 211, 216, 227, 229]; 
+
+BASELINE = 'Baseline';
+% Gain  Power(mW)   MomentOfChange(sec) Laser Duration(ms)
+GAIN_CHANGE_MOMENTS_BASELINE = [1.1 0.13 346 10; 1.3 2.54 470 10; 1.6 9.70 611 10; 1.9 17.80 756 10; 2.2 26.10 891 10; 0 0 1021 10;
+    1.1 0.13 1066 25; 1.3 2.54 1192 25; 1.6 9.70 1323 25; 1.9 17.80 1453 25; 2.2 26.10 1582 25; 0 0 1720 25;]; 
+
+MOMENT_OF_1ST_DRUG_PUT_IN = 1825; % sec
+GAIN_CHANGE_MOMENTS_1 = [1.1 0.13 3068 10; 1.3 2.54 3228 10; 1.6 9.70 3352 10; 1.9 17.80 3492 10; 2.2 26.10 3638 10; 0 0 3801 10;
+    1.1 0.13 3853 25; 1.3 2.54 3983 25; 1.6 9.70 4106 25; 1.9 17.80 4233 25; 2.2 26.10 4367 25; 0 0 4502 25;]; 
+MOMENT_OF_1ST_DRUG_WASH_IN = GAIN_CHANGE_MOMENTS_1(1,3); % firstDrugWashIn
+FIRST_DRUG = 'GABAZINE';
+
+MOMENT_OF_2ND_DRUG_PUT_IN = 4608; % sec
+GAIN_CHANGE_MOMENTS_2 = [1.1 0.13 5838 10; 1.3 2.54 5963 10; 1.6 9.70 6093 10; 1.9 17.80 6238 10; 2.2 26.10 6362 10; 0 0 6497 10;
+    1.1 0.13 6531 25; 1.3 2.54 6659 25; 1.6 9.70 6814 25; 1.9 17.80 6950 25; 2.2 26.10 7084 25; 0 0 7225 25;]; 
+MOMENT_OF_2ND_DRUG_WASH_IN = GAIN_CHANGE_MOMENTS_2(1,3);
+SECOND_DRUG = 'NBQX-AP5';
+
+%%%%%%%%%%%%%%%%% CHANGE THESE FOR EACH RECORDING %%%%%%%%%%%%%%%%%%%%%
+% MOUSE_ID = '3105';
+% depthDuringRecording = 695;
+% dateOfRecording = '20240321_UHDType3_iso_g0';
+% KS_FOLDER = 'KS_OUT_Th10_4_catGT/';
+% CatGT_FOLDER = ['CatGT_OUT/catgt_' dateOfRecording '/']; % use CatGT demuxed (tshifted) version with GLBCAR or LOCCAR filtering
+% CatGT_FOLDER_DMX = ['CatGT_OUT/catgt_' dateOfRecording '/']; % use CatGT only demuxed (tshifted) version without any filtering
+% CatGT_FOLDER_loccar28 = ['CatGT_OUT_loccar28/catgt_' dateOfRecording '/']; % just for visualization purposes
+% 
+% UNIT_OF_INTEREST = -1;
+% UNIT_OF_INTEREST2 = -1;
+% 
+% % Gain  Power(mW)   MomentOfChange(sec) Laser Duration(ms)
+% GAIN_CHANGE_MOMENTS_BASELINE = [0.6 0.025 337 5; 1.0 0.064 467 5; 1.5 5.84 590 5; 2.0 15.8 731 5; 2.5 25.6 857 5; 2.8 30 986 5; 3.0 35.3 1110 5; 3.3 41.3 1240 5; 0.0 0 1366 5;
+%     0.6 0.025 1563 10; 1.0 0.064 1707 10; 1.5 5.84 1843 10; 2.0 15.8 1967 10; 2.5 25.6 2092 10; 3.0 35.3 2242 10; 3.3 41.3 2373 10; 3.6 46 2497 10; 0.0 0.0 2640 10]; 
+% MOMENT_OF_1ST_DRUG_PUT_IN = 2730; % sec
+% GAIN_CHANGE_MOMENTS_1 = [0.6 0.025 3943 5; 1.0 0.064 4067 5; 1.5 5.84 4207 5; 2.0 15.8 4338 5; 2.5 25.6 4477 5; 2.8 30 4613 5; 3.0 35.3 4783 5; 3.3 41.3 4923 5; 0.0 0.0 5047 5;
+% 0.6 0.025 5131 10; 1.0 0.064 5260 10; 1.5 5.84 5390 10; 2.0 15.8 5519 10; 2.5 25.6 5673 10; 3.0 35.3 5813 10; 3.3 41.3 5955 10; 3.7 47.3 6078 10; 4.2 55.2 6208 10; 0.0 0.0 6334 10; 
+% 0.6 0.025 6423 25; 1.0 0.064 6548 25; 1.5 5.84 6679 25; 2.0 15.8 6816 25; 2.5 25.6 6937 25; 3.0 35.3 7062 25; 3.3 41.3 7196 25; 3.7 47.3 7326 25; 4.2 55.2 7466 25; 0.0 0.0 7590 25;
+% 0.6 0.025 7637 50; 1.0 0.064 7759 50; 1.5 5.84 7890 50; 2.0 15.8 8012 50; 2.5 25.6 8150 50; 3.0 35.3 8300 50; 3.3 41.3 8425 50; 3.7 47.3 8562 50; 4.2 55.2 8685 50; 0.0 0.0 8809 50];
+% FIRST_DRUG = 'GABAZINE';
+% MOMENT_OF_2ND_DRUG_PUT_IN = 8874; % sec
+% GAIN_CHANGE_MOMENTS_2 = [0.6 0.025 10385 5; 1.0 0.064 10551 5; 1.5 5.84 10683 5; 2.0 15.8 10827 5; 2.5 25.6 10960 5; 2.8 30 11151 5; 3.0 35.3 11323 5; 3.3 41.3 11451 5; 3.7 47.3 11583 5; 4.2 55.2 11715 5; 0.0 0.0 11836 5;
+% 0.6 0.025 11887 10; 1.0 0.064 12030 10; 1.5 5.84 12161 10; 2.0 15.8 12285 10; 2.5 25.6 12411 10; 3.0 35.3 12565 10; 3.3 41.3 12690 10; 3.7 47.3 12920 10; 4.2 55.2 13085 10; 0.0 0.0 13210 10;
+% 0.6 0.025 13261 25; 1.0 0.064 13386 25; 1.5 5.84 13525 25; 2.0 15.8 13651 25; 2.5 25.6 13795 25; 3.0 35.3 14030 25; 3.3 41.3 14151 25; 3.7 47.3 14281 25; 4.2 55.2 14415 25; 0.0 0.0 14641 25;
+% 0.6 0.025 14683 50; 1.0 0.064 14821 50; 1.5 5.84 15084 50; 2.0 15.8 15289 50; 2.5 25.6 15419 50; 3.0 35.3 15559 50; 3.3 41.3 15683 50; 3.7 47.3 15822 50; 4.2 55.2 16000 50; 0.0 0.0 16140 50];
+% SECOND_DRUG = 'GABAZINE_NBQX_AP5';
+%%%%%%%%%%%%%%%%% CHANGE THESE FOR EACH RECORDING %%%%%%%%%%%%%%%%%%%%%
+% MOUSE_ID = '3104';
+% depthDuringRecording = 627.8;
+% dateOfRecording = '20230312_UHDType3_2_g0';
+% KS_FOLDER = 'KS_OUT_Th7_7_GabazineHalfWashIn_2124sec/';
+% UNIT_OF_INTEREST = -1;
+% UNIT_OF_INTEREST2 = -1;
+% GAIN_CHANGE_MOMENTS = [0.5 1 307; 0.8 1 448; 1.2 1 583; 1.4 1 713; 1.6 1 854; 1.7 1 1037; 1.9 1 1127]; % Gain Power(mW) MomentOfChange(sec)
+% CHANNEL_ROW_DISTANCE = 16; % for UHD Type 3 (One channel id = previous row's same column's channel is + 16)
+% 
+%%%%%%%%%%%%%%%%% CHANGE THESE FOR EACH RECORDING %%%%%%%%%%%%%%%%%%%%%
+% MOUSE_ID = '3103';
+% depthDuringRecording = 380.2;
+% dateOfRecording = '20230126_g0';
+% KS_FOLDER = 'KS_OUT_Th7_7/';
+% UNIT_OF_INTEREST = -1; %272;  % 122; % 143; % 128;
+% UNIT_OF_INTEREST2 = 268; %116; % 124; % 222; % 268;
+% GAIN_CHANGE_MOMENTS = [1.3 3.14 20; 1.4 5.7 100; 1.5 8.15 160; 1.6 11.01 220; 1.1 0.15 285; 1.2 0.8 400; 1.3 3.14 520; 1.4 5.7 760]; % Gain Power(mW) MomentOfChange(sec)
+% CHANNEL_ROW_DISTANCE = 12; % for UHD Type 4 (One channel id = previous row's same column's channel is + 12)
+
+%%%%%%%%%%%%%%%%% CHANGE THESE FOR EACH RECORDING %%%%%%%%%%%%%%%%%%%%%
+
+globalX = 1800; % 4000
+globalY = 150;
+globalW = 2100; 
+globalH = 2100;
+
+SMALL_PLOT_FONT_SIZE = 10;
+PLOT_FONT_SIZE = 15;
+PRINT_FONT_SIZE = 30;
+PLOT_FONT_SIZE = PRINT_FONT_SIZE;
+
+SIZE_OF_SINGLE = 4; % Matlab stores single data type 4 bytes
+SIZE_OF_INT16 = 2; % Matlab stores int16 data type 2 bytes
+
+UNDEFINED = -99;
+CHANNEL_MATRIX_LENGTH = 15;
+CHANNEL_MATRIX_COLUMNS = 16;
+CHANNEL_MATRIX_ROWS = 24;
+
+
+RAW_PRE_SPIKE = 0.003; % 5 ms before spike peak while reading raw data
+RAW_POST_SPIKE = 0.003; % 10 ms after spike peak while reading raw data
+
+RAW_PRE_SPIKE_WOTHERS = 0.003; % 5 ms before spike peak while reading raw data
+RAW_POST_SPIKE_WOTHERS = 0.01; % 10 ms after spike peak while reading raw data
+
+PRE_TIME_RASTER = .03; %50 ms
+POST_TIME_RASTER = .03; %50 ms
+RAW_RANDOM_N = 1000; % 3000
+
+MASTER_SLAVE_SPIKE_DISTANCE = .04; % (sec) search distance between master and slave spike
+PRE_MASTER_SLAVE_SPIKE_DISTANCE = .04; % (sec) search distance between master and slave spike
+EDGES_MASTER_SLAVE_SPIKE_DISTANCE = 0:BIN_SIZE_PSTH:MASTER_SLAVE_SPIKE_DISTANCE;
+EDGES_PRE_MASTER_SLAVE_SPIKE_DISTANCE = -PRE_MASTER_SLAVE_SPIKE_DISTANCE:BIN_SIZE_PSTH:0;
+
+PRE_TIME_LASER = .03; %sec
+POST_TIME_LASER = .05; %sec
+BIN_SIZE_LASER = 0.0015; % 1.5 ms
+EDGES_PSTH_LASER = -PRE_TIME_LASER-BIN_SIZE_LASER:BIN_SIZE_LASER:POST_TIME_LASER+BIN_SIZE_LASER;
+EXCLUDE_POST_LASER_EFFECT_DUR = 2; % (sec.) get only the spikes 200 ms after a laser stimulation ends
+EXCLUDE_PRE_LASER_EFFECT_DUR = .02; % (sec.) get only the spikes 20 ms before a laser stimulation starts
+
+MAX_ARRAY_LENGTH = 150000; % Since it generates this error in correlogram() : Requested 333249x333249 (827.4GB) array exceeds maximum array size preference (503.5GB). This might cause MATLAB to become unresponsive
+
+LASER_ONSET_TXT = 'LaserOn.txt';
+LASER_OFFSET_TXT = 'LaserOff.txt';
+
+BIN_SIZE_PSTH = 0.002; % sec = 2 ms
+EDGES_PRE_PSTH = -PRE_TIME_RASTER-BIN_SIZE_PSTH:BIN_SIZE_PSTH:BIN_SIZE_PSTH;
+EDGES_POST_PSTH = -BIN_SIZE_PSTH:BIN_SIZE_PSTH:POST_TIME_RASTER+BIN_SIZE_PSTH;
+
+SMOOTH_TYPE_R = 'rlowess';
+SMOOTH_TYPE_L = 'lowess';
+SPIKE_SPAN = .3;
+
+if ispc % If the OS is Windows
+    pathToParentRec = ['S:/Neuropixels/uhd_recordings/'];
+    pathToRecFolder = [pathToParentRec dateOfRecording '/'];
+else
+    %pathToParentRec = ['/mnt/IsilonPerm/Neuropixels/uhd_recordings/'];
+    pathToParentRec = ['/mnt/DdriveL/sevgi/Neuropixels/uhd_recordings/'];
+    pathToRecFolder = [pathToParentRec dateOfRecording '/'];
+end
+pathToUnitsDataFolder = [pathToRecFolder 'data/'];
+
+if ~exist(pathToUnitsDataFolder)
+    mkdir(pathToUnitsDataFolder);
+end
+
+if isempty(pathKS) % if it is not defined yet within one of the recordings
+    pathKS = [pathToRecFolder KS_FOLDER]; % KS_OUT_stagg
+end
+
+if isempty(pathDartSorted) % if it is not defined yet within one of the recordings
+    pathDartSorted = [pathToRecFolder DART_SORTED_FOLDER]; % KS_OUT_stagg
+end
+
+pathTPrime = [pathToRecFolder 'TPrime_OUT/'];
+pathNpyxFiltered = [pathToRecFolder 'NeuroPyxels_ForwardBackwardCAR/'];
+pathCatGT = [pathToRecFolder CatGT_FOLDER];
+%pathCatGT_loccar28 = [pathToRecFolder CatGT_FOLDER_loccar28];
+pathCatGT_filtered = [pathToRecFolder KS_FILTERED_FOLDER];
+
+UNITS_AND_VARS_FILE_NAME_KS_SORTED = ['unitsAndVars_' dateOfRecording '.mat'];
+UNITS_AND_VARS_FILE_NAME_DART_SORTED = ['unitsAndVars_' dateOfRecording '_DartSorted.mat'];
+if DART_SORTED
+    UNITS_AND_VARS_FILE_NAME = UNITS_AND_VARS_FILE_NAME_DART_SORTED;
+else
+    UNITS_AND_VARS_FILE_NAME = UNITS_AND_VARS_FILE_NAME_KS_SORTED;
+end
+
+pathToFigureFolder = [pathToRecFolder ANALYSES_OUTPUT_FOLDER];
+if ~exist(pathToFigureFolder)
+    mkdir(pathToFigureFolder);
+end
+
+pathToWaveFormWithOtherUnits = [pathToFigureFolder 'waveFormWithOtherUnits/'];
+if ~exist(pathToWaveFormWithOtherUnits)
+    mkdir(pathToWaveFormWithOtherUnits);
+end
+
+pathToRawVSFilteredWaveFormAlignedToLaser = [pathToFigureFolder 'rawVSFilteredWaveFormAlignedToLaser/'];
+if ~exist(pathToRawVSFilteredWaveFormAlignedToLaser)
+    mkdir(pathToRawVSFilteredWaveFormAlignedToLaser);
+end
+
+pathToGroupedWaveFormWithOtherUnits = [pathToFigureFolder 'groupedWaveFormWithOtherUnits/'];
+if ~exist(pathToGroupedWaveFormWithOtherUnits)
+    mkdir(pathToGroupedWaveFormWithOtherUnits);
+end
+
+pathToCCGWRasterPSTH = [pathToFigureFolder 'CCGwRasterPSTH/'];
+if ~exist(pathToCCGWRasterPSTH)
+    mkdir(pathToCCGWRasterPSTH);
+end
+
+pathToRasterPSTH = [pathToFigureFolder 'rasterPSTH/'];
+if ~exist(pathToRasterPSTH)
+    mkdir(pathToRasterPSTH);
+end
+
+
+pathToFilteredRec = [pathToRecFolder 'filtered/'];
+if ~exist(pathToFilteredRec)
+    mkdir(pathToFilteredRec);
+end
+
+PAIR_TYPE_ACG = 0;
+PAIR_TYPE_CS_SS = 1;
+PAIR_TYPE_MF_SS = 2;
+PAIR_TYPE_MF_GO = 3;
+PAIR_TYPE_GO_SS = 4;
+PAIR_TYPE_MLI_SS = 5;
+PAIR_TYPE_SS_SS = 6;
+PAIR_TYPE_MLI_MLI = 7;
+PAIR_TYPE_GO_GO = 8;
+PAIR_TYPE_SS_DCN = 9;
+
+PAIR_TYPE_OTHER_SS = 10;
+PAIR_TYPE_OTHER_CS = 11;
+PAIR_TYPE_OTHER_MF = 12;
+PAIR_TYPE_OTHER_GO = 13;
+PAIR_TYPE_OTHER_MLI = 14;
+PAIR_TYPE_OTHER_OTHER = 20;
+
+PAIR_TYPE_MF_OTHER = 21;
+
+ACG = 'ACG';
+CS_SS = 'CS_SS';
+MF_SS = 'MF_SS';
+MF_GO = 'MF_GO';
+GO_SS = 'GO_SS';
+MLI_SS = 'MLI_SS';
+SS_DCN = 'SS_DCN';
+SS_SS = 'SS_SS';
+MLI_MLI = 'MLI_MLI';
+GO_GO = 'GO_GO';
+OTHER_SS = 'Other_SS';
+OTHER_CS = 'Other_CS';
+OTHER_MF = 'Other_MF';
+OTHER_GO = 'Other_GO';
+OTHER_MLI = 'Other_MLI';
+OTHER_OTHER = 'Other_Other';
+MF_OTHER = 'MF_Other';
+
+X_MAX_ACG = 25; % ms
+BIN_SIZE_ACG = 0.25; % ms
+X_MAX_CCG = 100; %25; % ms
+BIN_SIZE_CCG = 1; % ms
+
+REFRACTORY_RANGE = [-1 1]; % ms
+REFRACTORY_RANGE_MF = [-0.5 .5]; % ms
+CCG_DEVIATION_RANGE = 0.01;
+CCG_DEVIATION_CRITERION = 8;
+
+FILE_NAME_WAVEFORM = 'spikeWaveForm_Npyx_filtered_';
+FILE_NAME_WAVEFORM_BASELINE = ['spikeWaveForm_Npyx_filtered_' BASELINE];
+FILE_NAME_WAVEFORM_FIRST_DRUG = ['spikeWaveForm_Npyx_filtered_' FIRST_DRUG];
+FILE_NAME_WAVEFORM_SECOND_DRUG = ['spikeWaveForm_Npyx_filtered_' SECOND_DRUG];
+FILE_NAME_MULTI_WAVEFORM = 'spikeWaveFormMulti_CatGT_filtered_';
+FILE_NAME_AMPLITUDE_HEAT_MAP = 'amplitudeHeatMap';
+
+logger = log4m.getLogger([pathToFigureFolder 'neuralAnalysis.log']);
+logger.setCommandWindowLevel(logger.ALL); 
+logger.setLogLevel(logger.ALL);
+
+READ_RAW_OR_FILTERED_SIGNAL = 0; % 1 Raw 0 Filtered
+
+NEURON_TYPE_MF = 'MF';
+NEURON_TYPE_SS = 'PC SS';
+NEURON_TYPE_CS = 'PC CS';
+NEURON_TYPE_DCS = 'PC DCS';
+NEURON_TYPE_BC_SC = 'BC or SC'; % MLI
+NEURON_TYPE_GoC = 'GoC';
+NEURON_TYPE_UBC = 'UBC';
+NEURON_TYPE_DCN = 'DCN';
+NEURON_TYPE_UNKNOWN = 'Unknown';
+
+NEURON_TYPES = {NEURON_TYPE_MF, NEURON_TYPE_SS, NEURON_TYPE_CS, NEURON_TYPE_DCS, NEURON_TYPE_BC_SC, NEURON_TYPE_GoC, NEURON_TYPE_UBC, NEURON_TYPE_UNKNOWN};
+
+COLOR_CODE_MF = [0 0 1]; % 0.7]; % Blue
+COLOR_CODE_SS = [1 0 0]; % Red
+COLOR_CODE_CS = [0 1 0]; % Green
+COLOR_CODE_DCS = [0.5 1 1]; % Cyan
+COLOR_CODE_BC_SC = [0.8500 0.3250 0.0980]; % Orange
+COLOR_CODE_GoC = [1 0 1]; % Magenta
+COLOR_CODE_UBC = [.9 .9 .9]; % Grey
+COLOR_CODE_UNKNOWN = [0 0 0]; % Black
+
+COLOR_CODES = {COLOR_CODE_MF, COLOR_CODE_SS, COLOR_CODE_CS, COLOR_CODE_DCS, COLOR_CODE_BC_SC, COLOR_CODE_GoC, COLOR_CODE_UBC, COLOR_CODE_UNKNOWN};
+
+ANALYSIS_STEP_0 = 0; % Plot waveforms
+ANALYSIS_STEP_10 = 10; % Plot waveforms with DRUG EFFECTS
+ANALYSIS_STEP_1 = 1; % Plot colored spike time waveforms with other cells' spikes
+ANALYSIS_STEP_11 = 11; % Plot grouped spike time waveforms with other cells' spikes
+ANALYSIS_STEP_2 = 2; % Other type of CCG - Raster & PSTH wrt Master cell
+ANALYSIS_STEP_21 = 21; % With and without MF of other type of CCG - Raster & PSTH wrt Master cell
+ANALYSIS_STEP_22 = 22; % Regular Raster
+ANALYSIS_STEP_3 = 3; % ACG
+ANALYSIS_STEP_4 = 4; % CCG
+ANALYSIS_STEP_5 = 5; % Raster & PSTH of Master-Slave cells aligned to the laser
+ANALYSIS_STEP_6 = 6; % Plot raw traces aligned to the laser onset
+ANALYSIS_STEP_7 = 7; % Plot raw traces aligned to the laser onset
+ANALYSIS_STEP_8 = 8; % Plot amplitude distribution
+ANALYSIS_STEP_9 = 9; % Plot amplitude heat maps
+
+ANALYSIS_STEP_100 = 100; % Generate PDF report for all cells
+
+ARR_DO_ANALYSES = [100]; %[10, 8, 9, 3, 22, 100]; %[0, 10, 22, 3, 8, 9, 100];

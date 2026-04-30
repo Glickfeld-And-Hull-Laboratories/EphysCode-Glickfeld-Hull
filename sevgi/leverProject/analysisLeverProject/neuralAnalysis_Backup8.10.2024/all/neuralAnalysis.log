@@ -1,0 +1,77 @@
+2023-06-23 17:09:14,080 INFO readUnits - 110 units are selected for analysis!
+2023-06-23 17:09:14,723 INFO main - StimTurnedOnTrial numbers are equally aligned.
+2023-06-23 17:09:15,055 INFO plotRasterLeverVisStim - Plotting LEVER HOLD/RELEASE for unit=71 All
+2023-06-23 17:09:17,707 INFO plotRasterPSTH - Plotting BASELINE/TARGET VISUAL STIMULI for unit=71 All
+2023-06-23 17:09:20,729 INFO plotRasterLeverVisStim - Plotting LEVER HOLD/RELEASE for unit=71 Hit
+2023-06-23 17:09:22,670 INFO plotRasterPSTH - Plotting BASELINE/TARGET VISUAL STIMULI for unit=71 Hit
+2023-06-23 17:09:25,346 INFO plotRasterLeverVisStim - Plotting LEVER HOLD/RELEASE for unit=71 Fa
+2023-06-23 17:09:26,451 INFO plotRasterLeverVisStim - NO SPIKES to plot! BASELINE/TARGET VISUAL STIMULI for unit=71 Fa
+2023-06-23 17:09:26,555 INFO plotRasterLeverVisStim - Plotting LEVER HOLD/RELEASE for unit=71 Miss
+2023-06-23 17:09:27,534 INFO plotRasterPSTH - Plotting BASELINE/TARGET VISUAL STIMULI for unit=71 Miss
+2023-06-23 17:37:11,753 INFO readUnits - 110 units are selected for analysis!
+2023-06-23 17:37:12,572 INFO main - StimTurnedOnTrial numbers are equally aligned.
+2023-06-23 17:37:12,920 INFO plotRasterLeverVisStim - Plotting LEVER HOLD/RELEASE for unit=71 All
+2023-06-23 17:37:15,718 INFO plotRasterPSTH - Plotting BASELINE/TARGET VISUAL STIMULI for unit=71 All
+2023-06-23 17:37:18,390 INFO plotRasterLeverVisStim - Plotting LEVER HOLD/RELEASE for unit=71 Hit
+2023-06-23 17:37:20,165 INFO plotRasterPSTH - Plotting BASELINE/TARGET VISUAL STIMULI for unit=71 Hit
+2023-06-23 17:37:22,396 INFO plotRasterLeverVisStim - Plotting LEVER HOLD/RELEASE for unit=71 Fa
+2023-06-23 17:37:23,392 INFO plotRasterLeverVisStim - NO SPIKES to plot! BASELINE/TARGET VISUAL STIMULI for unit=71 Fa
+2023-06-23 17:37:23,519 INFO plotRasterLeverVisStim - Plotting LEVER HOLD/RELEASE for unit=71 Miss
+2023-06-23 17:37:24,577 INFO plotRasterPSTH - Plotting BASELINE/TARGET VISUAL STIMULI for unit=71 Miss
+2023-06-26 10:23:02,356 INFO readUnits - 110 units are selected for analysis!
+2023-06-26 10:23:03,597 INFO main - StimTurnedOnTrial numbers are equally aligned.
+2023-06-26 10:23:03,957 INFO plotRasterLeverVisStim - Plotting LEVER HOLD/RELEASE for unit=71 All
+2023-06-26 10:23:07,014 INFO plotRasterPSTH - Plotting BASELINE/TARGET VISUAL STIMULI for unit=71 All
+2023-06-26 10:23:09,652 INFO plotRasterLeverVisStim - Plotting LEVER HOLD/RELEASE for unit=71 Hit
+2023-06-26 10:23:11,526 INFO plotRasterPSTH - Plotting BASELINE/TARGET VISUAL STIMULI for unit=71 Hit
+2023-06-26 10:23:13,843 INFO plotRasterLeverVisStim - Plotting LEVER HOLD/RELEASE for unit=71 Fa
+2023-06-26 10:23:14,834 INFO plotRasterLeverVisStim - NO SPIKES to plot! BASELINE/TARGET VISUAL STIMULI for unit=71 Fa
+2023-06-26 10:23:14,945 INFO plotRasterLeverVisStim - Plotting LEVER HOLD/RELEASE for unit=71 Miss
+2023-06-26 10:23:15,990 INFO plotRasterPSTH - Plotting BASELINE/TARGET VISUAL STIMULI for unit=71 Miss
+2023-06-27 15:07:23,531 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 15:22:59,091 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 15:25:35,558 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 15:27:50,391 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 15:28:11,901 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 15:28:46,261 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 15:30:01,307 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 16:25:57,524 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 16:26:40,047 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 16:27:59,540 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 16:30:59,588 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 16:39:00,476 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 16:56:02,838 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 17:00:18,982 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 17:11:27,681 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 17:13:55,126 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 17:20:30,400 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 17:21:19,874 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 17:49:14,205 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 17:49:43,002 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 17:53:23,236 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 17:54:45,041 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 17:56:46,154 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 17:58:48,551 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 18:00:22,047 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 18:04:34,379 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 18:05:45,686 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-27 18:13:09,234 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-28 09:25:16,684 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-28 09:27:12,049 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-28 09:59:11,316 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-28 10:02:15,041 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-28 10:08:22,015 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-28 11:05:03,190 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-28 11:10:29,066 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-28 11:14:43,111 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-28 11:19:34,097 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-28 12:19:12,136 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-28 12:23:22,396 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-28 12:26:28,726 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-29 10:02:31,371 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-29 10:07:38,953 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-29 10:09:03,283 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-29 10:25:32,690 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-29 10:28:22,095 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-29 10:31:54,181 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat
+2023-06-29 11:03:34,285 INFO mainAll - 2 recordings are read from file S:/Neuropixels/test_data/pooled/allData/allRecordings.mat

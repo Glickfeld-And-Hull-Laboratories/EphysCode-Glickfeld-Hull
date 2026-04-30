@@ -1,0 +1,107 @@
+function plotCCGwRasterPSTH(unit, slaveUnitVSSpikeTimesForward, slaveUnitVSSpikeTimesBackward)
+    globals;
+
+    globals;
+    stepSize=3;
+    tickSize=30;    % distance between trials on y-axis in the plot
+
+    f = figure;
+    f.Position = [globalX globalY globalW globalH];
+    hold on
+    %yyaxis left
+
+    spikeCount = length(unit.spikeTimesSecs);
+    spikeRatesForward = zeros(spikeCount,1);
+    spikeRatesBackward = zeros(spikeCount,1);
+    ylim([0 tickSize*spikeCount]);
+
+    lineTriplet = [.3 .3 .3]; % gray line for spikes
+    
+    masterUnitSpikeTimesForward = [slaveUnitVSSpikeTimesForward{:,3}];
+    masterUnitSpikeTimesBackward = [slaveUnitVSSpikeTimesBackward{:,3}];
+
+    arrSlaveUnitSpikeTimesForwardWRTMaster = [];
+    arrSlaveUnitSpikeTimesBackwardWRTMaster = [];
+
+    for indSpike=1:spikeCount 
+        indsForward = find(unit.spikeTimesSecs(indSpike)==masterUnitSpikeTimesForward);
+        % find the moments that slave unit follows        
+        if ~isempty(indsForward)            
+            slaveUnitSpikeTimesForwardWRTMaster = slaveUnitVSSpikeTimesForward{indsForward,4}-slaveUnitVSSpikeTimesForward{indsForward,3};
+            arrSlaveUnitSpikeTimesForwardWRTMaster = [arrSlaveUnitSpikeTimesForwardWRTMaster slaveUnitSpikeTimesForwardWRTMaster];
+
+            numspikes=length(slaveUnitSpikeTimesForwardWRTMaster);
+            xx=ones(stepSize*numspikes,1)*nan;
+            yy=ones(stepSize*numspikes,1)*nan;
+
+            %scale the time axis to ms
+            xx(1:stepSize:stepSize*numspikes)=slaveUnitSpikeTimesForwardWRTMaster;
+            xx(2:stepSize:stepSize*numspikes)=slaveUnitSpikeTimesForwardWRTMaster;
+            yy(1:stepSize:stepSize*numspikes)=(indSpike-1)*tickSize;
+            yy(2:stepSize:stepSize*numspikes)=yy(1:stepSize:stepSize*numspikes)+tickSize;
+            plot(xx, yy, 'color', 'r', 'LineWidth',6); % plot spikes  in dark gray [.4 .4 .4]
+
+            spikeRatesForward(indSpike)=numspikes/(POST_TIME_RASTER); % endOfTrial-startOfTrial
+        end
+
+        indsBackward = find(unit.spikeTimesSecs(indSpike)==masterUnitSpikeTimesBackward);
+        % find the moments that slave unit follows        
+        if ~isempty(indsBackward)            
+            slaveUnitSpikeTimesBackwardWRTMaster = slaveUnitVSSpikeTimesBackward{indsBackward,4}-slaveUnitVSSpikeTimesBackward{indsBackward,3};
+            arrSlaveUnitSpikeTimesBackwardWRTMaster = [arrSlaveUnitSpikeTimesBackwardWRTMaster slaveUnitSpikeTimesBackwardWRTMaster];
+
+            numspikes=length(slaveUnitSpikeTimesBackwardWRTMaster);
+            xx=ones(stepSize*numspikes,1)*nan;
+            yy=ones(stepSize*numspikes,1)*nan;
+
+            %scale the time axis to ms
+            xx(1:stepSize:stepSize*numspikes)=slaveUnitSpikeTimesBackwardWRTMaster;
+            xx(2:stepSize:stepSize*numspikes)=slaveUnitSpikeTimesBackwardWRTMaster;
+            yy(1:stepSize:stepSize*numspikes)=(indSpike-1)*tickSize;
+            yy(2:stepSize:stepSize*numspikes)=yy(1:stepSize:stepSize*numspikes)+tickSize;
+            plot(xx, yy, 'color', 'k', 'LineWidth',6); % plot spikes  in dark gray [.4 .4 .4]
+
+            spikeRatesBackward(indSpike)=numspikes/(PRE_TIME_RASTER); % endOfTrial-startOfTrial
+        end
+    end
+    xlim([-PRE_TIME_RASTER*1.05 POST_TIME_RASTER*1.05]);
+
+    xt = get(gca,'ytick');    
+    set(gca,'YTick',xt, 'yticklabel',xt/tickSize) % normalize back again to actual trial numbers
+
+    for indGain=1:length(GAIN_CHANGE_MOMENTS)
+        moment = GAIN_CHANGE_MOMENTS(indGain,3);
+        power = GAIN_CHANGE_MOMENTS(indGain,2);
+        indFirstSpike = find(unit.spikeTimesSecs>moment,1);        
+        yline(indFirstSpike*tickSize,'--', ['Power = ' num2str(power,'%.2f') ' mW']);
+    end
+    
+    xlabel('Time (s)');
+    ylabel('Master spike index');
+    set(gca,'FontName','Times New Roman','FontWeight','bold', 'FontSize',PLOT_FONT_SIZE,'LineWidth',1.5)   
+
+    legends = cell(1,2);
+    plt = zeros(1,2);
+    yyaxis right
+    binCountsForward = histcounts(arrSlaveUnitSpikeTimesForwardWRTMaster,EDGES_POST_PSTH);
+    binnedSpikeRatesForward = binCountsForward/(spikeCount*BIN_SIZE_PSTH); % averaged over trials and specified bin
+    edgesPltForward = EDGES_POST_PSTH(1:end-1)+(EDGES_POST_PSTH(2)-EDGES_POST_PSTH(1))/2;
+    smtSpikeRatesForward = smooth(edgesPltForward,binnedSpikeRatesForward, SPIKE_SPAN, SMOOTH_TYPE_R);
+    plt(1) = plot(edgesPltForward(2:end-1), smtSpikeRatesForward(2:end-1), 'LineWidth',1.4, 'Color', 'r');
+    legends{1} = ['post-event rate = ' num2str(mean(binnedSpikeRatesForward),'%.2f') ' spk/s'];
+
+    binCountsBackward = histcounts(arrSlaveUnitSpikeTimesBackwardWRTMaster,EDGES_PRE_PSTH);
+    binnedSpikeRatesBackward = binCountsBackward/(spikeCount*BIN_SIZE_PSTH); % averaged over trials and specified bin
+    edgesPltBackward = EDGES_PRE_PSTH(1:end-1)+(EDGES_PRE_PSTH(2)-EDGES_PRE_PSTH(1))/2;
+    smtSpikeRatesBackward = smooth(edgesPltBackward,binnedSpikeRatesBackward, SPIKE_SPAN, SMOOTH_TYPE_R);
+    plt(2) = plot(edgesPltBackward(2:end-1), smtSpikeRatesBackward(2:end-1), 'LineWidth',1.4, 'LineStyle','-', 'Color', 'k');
+    legends{2} = ['pre-event rate = ' num2str(mean(binnedSpikeRatesBackward),'%.2f') ' spk/s'];
+    legend(plt, legends{:});
+    ylabel('Spikes/s');
+    ylim([0 max(max(smtSpikeRatesBackward),max(smtSpikeRatesForward))*8]);
+
+    title([unit.neuronType '(Unit=' num2str(unit.id) ') VS ' slaveUnitVSSpikeTimesForward{1,2} '(Unit=' num2str(slaveUnitVSSpikeTimesForward{1,1}) ')']); % pre=' num2str(mean(spikeRatesBackward),'%.2f') ' spk/s post=' num2str(mean(spikeRatesForward),'%.2f') ' spk/s']);
+    
+    print([pathToRasterWithOtherUnits '/' 'raster_' num2str(unit.id) '_' num2str(slaveUnitVSSpikeTimesForward{1,1}) '.tif'], '-dtiff', '-r100');
+    close all;
+end

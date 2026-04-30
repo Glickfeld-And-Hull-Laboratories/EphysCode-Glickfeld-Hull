@@ -1,0 +1,129 @@
+function polarPlotAlongSession(phasesAllMF, phasesPerDayAllUnitsPerTrialMF, ...
+    phasesAllSS, phasesPerDayAllUnitsPerTrialSS, sTitle)
+
+    globals;
+            
+    colorMF = [0.2 0.2 1.0]; % blue
+    colorSS = [1.0 0.2 0.2]; % red
+    sFile = [pathToPolarPlotFolder sTitle];
+
+    %****************** First plot the AVERAGE VECTORS *****************
+    % Polar plot
+    f = figure;
+    f.Position = [globalX globalY globalW globalH];
+    ax = polaraxes; %gca;
+    ax.ThetaZeroLocation = 'top';    % 0 at top
+    ax.ThetaDir = 'clockwise';       % clockwise direction
+    hold(ax,"on");
+
+    % PPL - Mean vector for MFs
+    [rhoMF, thetaMF] = calculatePLV(phasesAllMF);
+    zerosMFs = zeros(1,length(phasesAllMF))';
+    onesMFs = ones(1,length(phasesAllMF))';
+    for ind=1:length(phasesAllMF)
+        polarplot([zerosMFs(ind) phasesAllMF(ind)], [zerosMFs(ind) onesMFs(ind)], '-o', ... 
+                'Color', [colorMF 0.2], ...
+                'LineWidth', .2, ...
+                'MarkerSize', .5, ...
+                'MarkerFaceColor', [colorMF]);
+    end
+
+    polarplot([0, thetaMF], [0, rhoMF], '-o', ... 
+            'Color', colorMF, ...
+            'LineWidth', 2.5, ...
+            'MarkerSize', 7, ...
+            'MarkerFaceColor', colorMF);
+
+    % PPL - Mean vector for SSs
+    [rhoSS, thetaSS] = calculatePLV(phasesAllSS);
+    zerosSSs = zeros(1,length(phasesAllSS))';
+    onesSSs = ones(1,length(phasesAllSS))';
+    for ind=1:length(phasesAllSS)
+        polarplot([zerosSSs(ind) phasesAllSS(ind)], [zerosSSs(ind) onesSSs(ind)], '-o', ... 
+                'Color', [colorSS 0.2], ...
+                'LineWidth', .2, ...
+                'MarkerSize', .5, ...
+                'MarkerFaceColor', [colorSS]);
+    end
+    polarplot([0, thetaSS], [0, rhoSS], '-o', ... 
+            'Color', colorSS, ...
+            'LineWidth', 2.5, ...
+            'MarkerSize', 7, ...
+            'MarkerFaceColor', colorSS);
+
+    rlim([0 .03]);
+    set(gca,'FontName','Times New Roman','FontWeight','bold', 'FontSize',PLOT_FONT_SIZE,'LineWidth',1.5);
+    title([sTitle ' rhoMF=' num2str(rhoMF,'%.2f') ' rhoSS=' num2str(rhoSS,'%.2f') ]);
+    print([sFile '.tif'], '-dtiff', '-r200');       
+    exportgraphics(f,[sFile '.pdf'], 'ContentType', 'vector', 'Resolution', 1200);
+    % savefig(f,[sFile '_' num2str(indDay) '.fig']);
+    close all;
+
+    % for indDay=1:length(phasesPerDayAllUnitsPerTrialMF)
+    %     phasesPerDayMF = phasesPerDayAllUnitsPerTrialMF{indDay};
+    %     arrPhasesPerDayMF = cell2mat(phasesPerDayMF);
+    % 
+    %     phasesPerDaySS = phasesPerDayAllUnitsPerTrialSS{indDay};
+    %     arrPhasesPerDaySS = cell2mat(phasesPerDaySS);
+    % 
+    %     % Polar plot
+    %     f = figure;
+    %     f.Position = [globalX globalY globalW globalH];
+    %     ax = polaraxes; %gca;
+    %     ax.ThetaZeroLocation = 'top';    % 0 at top
+    %     ax.ThetaDir = 'clockwise';       % clockwise direction
+    %     hold(ax,"on");
+    % 
+    %     % % Generate blue shades from light to dark
+    %     % n = length(phasesPerDayMF);
+    %     % blues = [linspace(0.6, 0.05, n)', linspace(0.8, 0.2, n)', ones(n,1)];
+    %     % 
+    %     % z = zeros(length(arrPhasesPerDayMF), 1);
+    %     % o = ones(length(arrPhasesPerDayMF), 1);
+    %     % 
+    %     % phasesCol = [z arrPhasesPerDayMF'];
+    %     % rhosCol = [z o];
+    %     % 
+    %     % % % All vectors within a day (session)
+    %     % % for r=1:length(arrPhasesPerDay)
+    %     % %     polarplot(phasesCol(r,:), rhosCol(r,:), '-o', ... 
+    %     % %         'Color', [0 0 1], ...
+    %     % %         'LineWidth', .5, ...
+    %     % %         'MarkerSize', 2, ...
+    %     % %         'MarkerFaceColor', [0 0 1]);
+    %     % % end
+    % 
+    %     [rhoMF, thetaMF] = calculatePLV(arrPhasesPerDayMF);
+    %     polarplot([0, thetaMF], [0, rhoMF], '-o', ...
+    %     'Color',     colorMF, ...
+    %     'LineWidth', 2.5, ...
+    %     'MarkerSize', 7, ...
+    %     'MarkerFaceColor', colorMF);
+    % 
+    %     [rhoSS, thetaSS] = calculatePLV(arrPhasesPerDaySS);
+    %     polarplot([0, thetaSS], [0, rhoSS], '-o', ...
+    %     'Color',     colorSS, ...
+    %     'LineWidth', 2.5, ...
+    %     'MarkerSize', 7, ...
+    %     'MarkerFaceColor', colorSS);
+    % 
+    %     % % Observe how mean vector changes throughout the session for each day
+    %     % for indTrial=1:length(phasesPerDay)
+    %     %     [rho, theta] = calculatePLV(phasesPerDay{indTrial});
+    %     % 
+    %     %     polarplot([0, theta], [0, rho], '-o', ...
+    %     %     'Color',     blues(indTrial,:), ...
+    %     %     'LineWidth', 2.5, ...
+    %     %     'MarkerSize', 7, ...
+    %     %     'MarkerFaceColor', blues(indTrial,:));
+    %     % end
+    % 
+    %     % rlim([0 1]);
+    %     set(gca,'FontName','Times New Roman','FontWeight','bold', 'FontSize',PLOT_FONT_SIZE,'LineWidth',1.5);
+    %     title([sTitle ' rhoMF=' num2str(rhoMF,'%.2f')  ' rhoSS=' num2str(rhoSS,'%.2f') ' day' num2str(indDay)]);
+    %     print([sFile '_' num2str(indDay) '.tif'], '-dtiff', '-r200');       
+    %     exportgraphics(f,[sFile '_' num2str(indDay) '.pdf'], 'ContentType', 'vector', 'Resolution', 1200);
+    %     % savefig(f,[sFile '_' num2str(indDay) '.fig']);
+    %     close all;
+    % end
+end

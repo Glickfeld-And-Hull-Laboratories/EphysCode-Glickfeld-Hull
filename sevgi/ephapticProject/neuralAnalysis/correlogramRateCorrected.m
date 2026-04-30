@@ -1,0 +1,402 @@
+%%%% PLOT CORRELOGRAM (AUTO/CROSS) %%%%%%%%%%%%
+% unitMasterID: Master Unit ID that is modulating the Slave unit
+% unitSlaveID: Slave Unit ID that is modulated by Master unit
+% unitMasterSpikeTimesSec: Reference Unit Spike Times (s)
+% unitSlaveSpikeTimesSec: Slave Unit Spike Times (s)
+% sTitle: Title for different types of correlogram
+% see https://www.med.upenn.edu/mulab/crosscorrelation.html to learn about shift predictor
+
+% was returning refractoryViolationRate up until 8/18/2025, now refractoriness formula updated with Llobet 2022 paper
+
+% superImpose = -1 - Do not plot anything, just return suppression and synch values 
+%                0 - Plot but do not superimpose CCGs, just plot them separately
+%                1 - Plot by superimposing multiple CCGs
+% SO 1/5/2023 Hull Lab
+
+function [singleUnit, suppressed, activated, synchExc, synchInh, units, readForTheFirstTime, refractoryViolationRateLlobet, meanSlaveSpikeRate] = ...
+correlogramRateCorrected(pairs, pairType, units, startTimeSecs, endTimeSecs, movingTimes, sWhichPhase, colorLine, superImpose, doRateCorrected)
+    globals;
+
+    if nargin==9 % means doRateCorrected is not passed, so get the default value
+        doRateCorrected = 1;
+    end
+
+    suppressed = 0;
+    activated = 0;
+
+    synchExc = 0;
+    synchInh = 0;
+
+    readForTheFirstTime = 0;
+    refractoryViolationRate = 0;
+    refractoryViolationRateLlobet = 0;
+    meanSlaveSpikeRate = 0;
+
+    suppressionRange = [0 .5]; % Some default range    
+    synchRange = [-.5 .5]; % Some default range 
+    xMax = X_MAX_CCG;
+    binSize = BIN_SIZE_CCG;
+
+    nPairs = size(pairs,1);
+
+    if strcmp(pairType,ACG)
+        edges = -X_MAX_ACG-BIN_SIZE_ACG:BIN_SIZE_ACG:X_MAX_ACG+BIN_SIZE_ACG; % first and last bins are to be deleted later
+        binSize = BIN_SIZE_ACG;
+    else        
+        if strcmp(pairType,SS_MLI)
+            suppressionRange = MLI_SS_SUPPRESSION_RANGE;
+            xMax = X_MAX_CCG;
+            binSize = BIN_SIZE_CCG;
+        elseif strcmp(pairType,MLI_MLI)
+            suppressionRange = MLI_MLI_SUPPRESSION_RANGE;
+            xMax = X_MAX_CCG;
+            binSize = BIN_SIZE_CCG;
+        elseif strcmp(pairType,SS_CS)
+            suppressionRange = CS_SS_SUPPRESSION_RANGE;
+            xMax = X_MAX_CCG_SSCS;
+            binSize = BIN_SIZE_CCG_SSCS;
+        end
+
+        edges = -xMax-binSize:binSize:xMax+binSize; % first and last bins are to be deleted later
+        binSize = binSize;
+    end
+       
+    singleUnit = 0;
+    if ~isempty(pairs)        
+        for iPair=1:nPairs
+            masterId = find([units.id]==pairs(iPair,1));
+            unitMaster = units(masterId);
+
+            slaveId = find([units.id]==pairs(iPair,2));
+            unitSlave = units(slaveId);
+            
+            if ~isempty(unitMaster) && ~isempty(unitSlave)
+
+                unitMasterID = unitMaster.id;
+                unitSlaveID = unitSlave.id;
+
+                % Get spikes within a pre-defined interval
+                sPreHeader = '';
+                if ~isempty(startTimeSecs) && ~isempty(endTimeSecs) %nargin>6 &&
+                    unitMasterSpikeTimesSecWhole = unitMaster.spikeTimesSecs(startTimeSecs<unitMaster.spikeTimesSecs & unitMaster.spikeTimesSecs<endTimeSecs)';
+                    unitSlaveSpikeTimesSecWhole = unitSlave.spikeTimesSecs(startTimeSecs<unitSlave.spikeTimesSecs & unitSlave.spikeTimesSecs<endTimeSecs)'; 
+                    sPreHeader = sWhichPhase;
+                else                    
+                    unitMasterSpikeTimesSecWhole = unitMaster.spikeTimesSecs';
+                    unitSlaveSpikeTimesSecWhole = unitSlave.spikeTimesSecs'; 
+                end
+
+                if ~FLAG_STATIONARY_VS_RUNNING && ~isempty(movingTimes)
+                    movingTimesToBeExcludedCell = num2cell(movingTimes,2);
+
+                    unitMasterSpikeTimesSecWholeTemp = unitMasterSpikeTimesSecWhole;                    
+                    movingTimeSpikesCell = cellfun(@(x) (unitMasterSpikeTimesSecWholeTemp(unitMasterSpikeTimesSecWholeTemp>x(1) & unitMasterSpikeTimesSecWholeTemp<x(2))),movingTimesToBeExcludedCell,'UniformOutput',false);
+                    movingTimeSpikesCell = movingTimeSpikesCell(~cellfun(@isempty,movingTimeSpikesCell));
+                    movingTimeSpikes = cell2mat(movingTimeSpikesCell');
+                    unitMasterSpikeTimesSecWhole = setdiff(unitMasterSpikeTimesSecWholeTemp,movingTimeSpikes);
+
+                    unitSlaveSpikeTimesSecWholeTemp = unitSlaveSpikeTimesSecWhole;                    
+                    movingTimeSpikesCell = cellfun(@(x) (unitSlaveSpikeTimesSecWholeTemp(unitSlaveSpikeTimesSecWholeTemp>x(1) & unitSlaveSpikeTimesSecWholeTemp<x(2))),movingTimesToBeExcludedCell,'UniformOutput',false);
+                    movingTimeSpikesCell = movingTimeSpikesCell(~cellfun(@isempty,movingTimeSpikesCell));
+                    movingTimeSpikes = cell2mat(movingTimeSpikesCell');
+                    unitSlaveSpikeTimesSecWhole = setdiff(unitSlaveSpikeTimesSecWholeTemp,movingTimeSpikes);
+                elseif FLAG_STATIONARY_VS_RUNNING && ~isempty(movingTimes)
+                    movingTimesToBeExcludedCell = num2cell(movingTimes,2);
+
+                    unitMasterSpikeTimesSecWholeTemp = unitMasterSpikeTimesSecWhole;                    
+                    movingTimeSpikesCell = cellfun(@(x) (unitMasterSpikeTimesSecWholeTemp(unitMasterSpikeTimesSecWholeTemp>x(1) & unitMasterSpikeTimesSecWholeTemp<x(2))),movingTimesToBeExcludedCell,'UniformOutput',false);
+                    movingTimeSpikesCell = movingTimeSpikesCell(~cellfun(@isempty,movingTimeSpikesCell));
+                    movingTimeSpikes = cell2mat(movingTimeSpikesCell');
+                    unitMasterSpikeTimesSecWhole = movingTimeSpikes; %setdiff(unitMasterSpikeTimesSecWholeTemp,movingTimeSpikes);
+
+                    unitSlaveSpikeTimesSecWholeTemp = unitSlaveSpikeTimesSecWhole;                    
+                    movingTimeSpikesCell = cellfun(@(x) (unitSlaveSpikeTimesSecWholeTemp(unitSlaveSpikeTimesSecWholeTemp>x(1) & unitSlaveSpikeTimesSecWholeTemp<x(2))),movingTimesToBeExcludedCell,'UniformOutput',false);
+                    movingTimeSpikesCell = movingTimeSpikesCell(~cellfun(@isempty,movingTimeSpikesCell));
+                    movingTimeSpikes = cell2mat(movingTimeSpikesCell');
+                    unitSlaveSpikeTimesSecWhole = movingTimeSpikes; %setdiff(unitSlaveSpikeTimesSecWholeTemp,movingTimeSpikes);
+                end
+                                                       
+                if ~isempty(unitMasterSpikeTimesSecWhole) && ~isempty(unitSlaveSpikeTimesSecWhole)
+
+                    unitMasterSpikeTimesSec = unitMasterSpikeTimesSecWhole;
+                    unitSlaveSpikeTimesSec = unitSlaveSpikeTimesSecWhole;
+                    if ~isempty(unitMasterSpikeTimesSec) && ~isempty(unitSlaveSpikeTimesSec)
+                        meanSlaveSpikeRate = length(unitSlaveSpikeTimesSec)/(unitSlaveSpikeTimesSec(end)-unitSlaveSpikeTimesSec(1));
+        
+                        if 1 %isNotStoredPreviously(sWhichPhase, units, masterId, slaveId, unitMasterID, unitSlaveID, doRateCorrected) || FLAG_STATIONARY_VS_RUNNING
+                            
+                            unitSlaveSpikeTimesMSec = unitSlaveSpikeTimesSec*1000; % convert to ms
+                            unitMasterSpikeTimesMSec = unitMasterSpikeTimesSec*1000; % convert to ms
+                            if strcmp(pairType,ACG)
+                                if length(unitSlaveSpikeTimesMSec)>MAX_ARRAY_LENGTH_ACG
+                                    unitSlaveSpikeTimesMSec = unitSlaveSpikeTimesMSec(randperm(length(unitSlaveSpikeTimesMSec), MAX_ARRAY_LENGTH_ACG));
+                                end
+                                unitMasterSpikeTimesMSec = unitSlaveSpikeTimesMSec; % This array already randomized above!
+                            else % for CCG get a larger set to decrease randomness effect
+                                if length(unitSlaveSpikeTimesMSec)>MAX_ARRAY_LENGTH % Check if max array size is not exceeded!
+                                    unitSlaveSpikeTimesMSec = unitSlaveSpikeTimesMSec(randperm(length(unitSlaveSpikeTimesMSec), MAX_ARRAY_LENGTH));
+                                end
+                                if length(unitMasterSpikeTimesMSec)>MAX_ARRAY_LENGTH % Check if max array size is not exceeded!
+                                    unitMasterSpikeTimesMSec = unitMasterSpikeTimesMSec(randperm(length(unitMasterSpikeTimesMSec), MAX_ARRAY_LENGTH));
+                                end
+                            end
+    
+                            fullTimeEdges = [0:binSize:max([unitMasterSpikeTimesMSec(end) unitSlaveSpikeTimesMSec(end)])];
+                            [spikeCountsMaster, ~, binIndicesMaster] = histcounts(unitMasterSpikeTimesMSec, fullTimeEdges); %Nt bint
+                            [spikeCountsSlave, ~, binIndicesSlave] = histcounts(unitSlaveSpikeTimesMSec, fullTimeEdges);%Nf binf
+    
+                            %%%%%%%%%%%%%%%%%%% Rate corrected CCG - David Herzfeld's 2023 biorxiv paper 'Rate versus synchrony codes for cerebellar control of motor behavior'
+                            spikeCountsSlaveOrg = spikeCountsSlave;
+                            spikeCountsSlaveSmoothed = spikeCountsSlave;
+                            binIndicesNonEmptySlave = find(spikeCountsSlave); % Non-empty bin indices will tell us consequetive spike indices
+                            
+                            for n = 1:length(binIndicesNonEmptySlave)   % spread probability of spike over interspike interval (window around each spike)
+                                    if n ==1
+                                        minBinInd = 1;
+                                    else
+                                        minBinInd = floor((binIndicesNonEmptySlave(n) - binIndicesNonEmptySlave(n-1))/2) + binIndicesNonEmptySlave(n-1)+1; % time halfway between ISI previous
+                                    end
+                                    if n == length(binIndicesNonEmptySlave)
+                                        maxBinInd = length(spikeCountsSlaveSmoothed);
+                                    else
+                                        maxBinInd =floor((binIndicesNonEmptySlave(n+1) - binIndicesNonEmptySlave(n))/2)+binIndicesNonEmptySlave(n); % time halfway between ISI next
+                                    end
+                                    % Convert one sharp distribution to smoother uniform distribution
+                                    % This is the Equation (3) and null hypothesis in the paper: spiking timing was dependent solely on the local firing rate
+                                    % When you subtract this distribution from the original CCG, it will leave out the prominent deviations from the baseline
+                                    % which will be the corrected synchronization of these two units 
+                                    % [.."Any spiking of master unit that consistently affects the timing of spikes for slave unit would violate the null hypothesis
+                                    % and create a deviation in corrected CCG..]
+                                    spikeCountsSlaveSmoothed(minBinInd:maxBinInd) = spikeCountsSlaveOrg(binIndicesNonEmptySlave(n))/(length(spikeCountsSlaveOrg(minBinInd:maxBinInd)));
+                            end
+                            %%%%%%%%%%%%%%%%%%% Rate corrected CCG - David Herzfeld's 2023 biorxiv paper 'Rate versus synchrony codes for cerebellar control of motor behavior'
+    
+                            %%%%%%%%%%%%%%%%%%% Calculate Regular or Rate Corrected CCG %%%%%%%%%%%%%%%%%%%%%%
+    
+                            spikeCountIndicesNonEmptyMaster = find(spikeCountsMaster); % find non-empty spike count indices                        
+                            summedSpikeCountsSlaveModulatedByMasterPadded = zeros(1,length(edges));
+                            summedSpikeCountsSmoothedSlaveModulatedByMasterPadded = zeros(1,length(edges));
+                            midPoint = find(edges>=0,1);
+    
+                            %bint = which bin each spike is in;
+                            arrSpikeCounts = zeros(length(spikeCountIndicesNonEmptyMaster),length(edges));
+                            arrSmtSpikeCounts = zeros(length(spikeCountIndicesNonEmptyMaster),length(edges));
+                            for masterInd = 1:length(spikeCountIndicesNonEmptyMaster) % check Master spike surrounding to find any slave spiking activity
+                                masterSpikeInd = spikeCountIndicesNonEmptyMaster(masterInd);
+                                minMasterTimestamp = fullTimeEdges(masterSpikeInd)+edges(1);    % find the interval surrounding the master spike
+                                maxMasterTimestamp = fullTimeEdges(masterSpikeInd)+edges(end);
+                                
+                                minBinIndForSlave = find(fullTimeEdges>=minMasterTimestamp,1);
+                                maxBinIndForSlave = min(find(fullTimeEdges<maxMasterTimestamp,1,'last'),length(spikeCountsSlaveOrg)); % min() just in case it find the last bin, which is larger than the length of spikeCountsSlaveOrg
+    
+                                %%%%%%%%%% Regular CCG calculation %%%%%%%%%%%%%%%
+                                spikeCountsSlaveModulatedByMaster = spikeCountsSlaveOrg(minBinIndForSlave:maxBinIndForSlave);
+                                if strcmp(pairType,ACG)
+                                    spikeCountsSlaveModulatedByMaster(midPoint) = 0; % If this is an ACG, you need to exclude this very same spike from the calculation cos it's gonna inflate it erronously at time zero
+                                end
+                                
+                                shiftedInd = midPoint-(masterSpikeInd-minBinIndForSlave); % Shift accordingly so that MasterSpike will be at time zero on CCG (shiftedInd+masterSpikeInd-minBinIndForSlave= midPoint)
+                                spikeCountsSlaveModulatedByMasterPadded = zeros(1,length(edges));
+                                spikeCountsSlaveModulatedByMasterPadded(shiftedInd:shiftedInd+length(spikeCountsSlaveModulatedByMaster)-1) = spikeCountsSlaveModulatedByMaster;
+                                summedSpikeCountsSlaveModulatedByMasterPadded = summedSpikeCountsSlaveModulatedByMasterPadded + spikeCountsSlaveModulatedByMasterPadded;
+                                arrSpikeCounts(masterInd,:) = spikeCountsSlaveModulatedByMasterPadded;
+                                %%%%%%%%%% Regular CCG calculation %%%%%%%%%%%%%%%
+    
+                                %%%%%%%%%% Smoothed Slave CCG calculation %%%%%%%%%%%%%%%
+                                spikeCountsSmoothedSlaveModulatedByMaster = spikeCountsSlaveSmoothed(minBinIndForSlave:maxBinIndForSlave);
+                                if strcmp(pairType,ACG)
+                                    spikeCountsSmoothedSlaveModulatedByMaster(midPoint) = 0; % If this is an ACG, you need to exclude this very same spike from the calculation cos it's gonna inflate it erronously at time zero
+                                end
+                                shiftedInd = midPoint-(masterSpikeInd-minBinIndForSlave); % Shift accordingly so that MasterSpike will be at time zero on CCG
+                                spikeCountsSmoothedSlaveModulatedByMasterPadded = zeros(1,length(edges));
+                                spikeCountsSmoothedSlaveModulatedByMasterPadded(shiftedInd:shiftedInd+length(spikeCountsSmoothedSlaveModulatedByMaster)-1) = spikeCountsSmoothedSlaveModulatedByMaster;
+                                summedSpikeCountsSmoothedSlaveModulatedByMasterPadded = summedSpikeCountsSmoothedSlaveModulatedByMasterPadded + spikeCountsSmoothedSlaveModulatedByMasterPadded;
+                                arrSmtSpikeCounts(masterInd,:) = spikeCountsSmoothedSlaveModulatedByMasterPadded;
+                                %%%%%%%%%% Smoothed Slave CCG calculation %%%%%%%%%%%%%%%
+                            end
+                            % divide by trialCount which is length(spikeCountIndicesNonEmptyMaster) cos we added up that many times (for loop count)
+                            slaveSpikeRates = summedSpikeCountsSlaveModulatedByMasterPadded/(length(spikeCountIndicesNonEmptyMaster)*binSize/1000);% divide by 1000 if binSize in ms  % sum(binCounts)==length(relativeSpkTimes) cos we added up that many times (as many as Master.unit's spikes), average over number of spikes of master unit (to reveal y-axis be the firing rate of Slave neuron itself) and specified bin size
+                            slaveSmoothedSpikeRates = summedSpikeCountsSmoothedSlaveModulatedByMasterPadded/(length(spikeCountIndicesNonEmptyMaster)*binSize/1000); 
+    
+                            arrSpikeRates = arrSpikeCounts/(binSize/1000);
+                            arrSmtSpikeRates = arrSmtSpikeCounts/(binSize/1000);
+
+                            if doRateCorrected
+                                slaveSpikeRates = slaveSpikeRates - slaveSmoothedSpikeRates; % Rate Corrected CCG 
+                                arrSpikeRates = arrSpikeRates - arrSmtSpikeRates;
+                            end        
+                            semSpikeRates = std(arrSpikeRates,1)/sqrt(size(arrSpikeRates,1));
+                            units = storeRates(sWhichPhase, units, masterId, slaveId, unitMasterID, unitSlaveID, slaveSpikeRates, semSpikeRates, doRateCorrected);
+                            readForTheFirstTime = 1;
+                            %%%%%%%%%%%%%%%%%%% Calculate Regular or Rate Corrected CCG %%%%%%%%%%%%%%%%%%%%%%
+                        else
+                            [slaveSpikeRates, semSpikeRates] = getRates(sWhichPhase, units, slaveId, unitMasterID, doRateCorrected);
+                        end
+
+                        indsRefractory = find(edges>=REFRACTORY_RANGE(1) & edges<=REFRACTORY_RANGE(2)); % get the edges between -1 and 1 (-1 inclusive 1 exclusive since smaller than 1 ms spikes contained in the previous bin)
+                        if strcmp(pairType,ACG) && strcmp(unitMaster.neuronType,NEURON_TYPE_MFB)
+                            indsRefractory = find(edges>REFRACTORY_RANGE_MF(1) & edges<REFRACTORY_RANGE_MF(2));
+                        end
+                        indsRefractory = indsRefractory(1:end-1);% -1; % cos SlaveSpikeRates has 1 less bins
+                        refractoryViolation = slaveSpikeRates(indsRefractory);
+                        refractoryViolationRate = mean(refractoryViolation)/meanSlaveSpikeRate; %mean(slaveSpikeRates); commented since mean FR cannot be dependent on X_MAX_ACG; slaveSpikeRates are calculated only for this postion of time
+                        
+                        % If the unit is MF but we cannot classify at the moment, what would be the refractory period
+                        indsRefractoryMF = find(edges>REFRACTORY_RANGE_MF(1) & edges<REFRACTORY_RANGE_MF(2));
+                        indsRefractoryMF = indsRefractoryMF(1:end-1); % cos SlaveSpikeRates has 1 less bins
+                        refractoryViolationMF = slaveSpikeRates(indsRefractoryMF);
+                        refractoryViolationRateMF = mean(refractoryViolationMF)/meanSlaveSpikeRate; %mean(slaveSpikeRates); commented since mean FR cannot be dependent on X_MAX_ACG; slaveSpikeRates are calculated only for this postion of time
+                        refractoryViolationRateLlobet = refViolations(unitMasterSpikeTimesSec, unitMaster.neuronType);
+        
+                        singleUnit = 0;
+%                         if strcmp(pairType,ACG) && ~strcmp(unitMaster.neuronType,NEURON_TYPE_MFB) && refractoryViolationRate<=.05 % Refractory violation is 5 % for all cell types except MF
+%                             singleUnit = 1;
+%                         elseif strcmp(pairType,ACG) && strcmp(unitMaster.neuronType,NEURON_TYPE_MFB) && refractoryViolationRate<=.1 % Refractory violation is 10 % for MFs
+%                             singleUnit = 1;        
+%                         end
+
+                        if strcmp(pairType,ACG) && (~strcmp(unitMaster.neuronType,NEURON_TYPE_MFB) || isempty(unitMaster.neuronType)) && refractoryViolationRateLlobet<=REFRACTORY_VIOLATION_LIMIT % (refractoryViolationRate<=REFRACTORY_VIOLATION_LIMIT || isnan(refractoryViolationRate)) % NaN means it has no violations. Refractory violation is 6 % for all cell types except MF
+                            singleUnit = 1;
+                        elseif strcmp(pairType,ACG) && strcmp(unitMaster.neuronType,NEURON_TYPE_MFB) && (refractoryViolationRateMF<=REFRACTORY_VIOLATION_LIMIT_MF || isnan(refractoryViolationRateMF)) % NaN means it has no violations. Refractory violation is 10 % for MFs
+                            singleUnit = 1;
+                        end                        
+                    
+                        %%%%%%% TO FIND IF OTHERTYPE_MLI SUPPRESSION AMOUNT IS BIGGER THAN 4 STD %%%%%%%%%
+                        indsSupp = find(edges>=suppressionRange(1)&edges<=suppressionRange(2));
+                        indsSupp = indsSupp(1:end-1);
+                        indsSuppBaseline = find(edges>=MLI_SS_BASELINE_RANGE(1)&edges<=MLI_SS_BASELINE_RANGE(2));
+                        indsSuppBaseline = indsSuppBaseline(1:end-1);
+                        suppSlaveSpikeRates = slaveSpikeRates(indsSupp);
+                        suppSlaveSpikeRatesBaseline = slaveSpikeRates(indsSuppBaseline);
+                        %DONE:Quiescent period implemented %TODO: Update this suppression criteria until you implement quiscent period and rate corrected CCG
+                        zScoredSuppSlaveSpikeRates = (suppSlaveSpikeRates-mean(suppSlaveSpikeRatesBaseline))/std(suppSlaveSpikeRatesBaseline);
+                        zScoredSuppSlaveSpikeRatesBaseline = (suppSlaveSpikeRatesBaseline-mean(suppSlaveSpikeRatesBaseline))/std(suppSlaveSpikeRatesBaseline);
+                        std4 = 4*std(zScoredSuppSlaveSpikeRatesBaseline);
+                        whichOne = abs(zScoredSuppSlaveSpikeRates)>=std4; % absolute suppression or activation amount should be bigger than 4*STD
+                        if any(zScoredSuppSlaveSpikeRates(whichOne)>0)
+                            activated = 1;
+                        end
+                        if any(zScoredSuppSlaveSpikeRates(whichOne)<0)
+                            suppressed = 1;
+                        end                        
+                        %%%%%%% TO FIND IF OTHERTYPE_MLI SUPPRESSION AMOUNT IS BIGGER THAN 4 STD %%%%%%%%%
+
+                        %%%%%%% TO FIND IF OTHERTYPE_MLI SYNCHRONIZATION AMOUNT IS BIGGER THAN 4 STD %%%%%%%%%
+                        indsSynch = find(edges>=synchRange(1)&edges<=synchRange(2)); % only looking at time 0 is not a good idea to capture synch between MLIs! find(edges>=0,1); % get only zero(0) moment index
+                        indsSynchBaseline = find(edges>=MLI_MLI_BASELINE_RANGE(1)&edges<=MLI_MLI_BASELINE_RANGE(2));
+                        indsSynchBaseline = indsSynchBaseline(1:end-1);
+                        synchSlaveSpikeRates = slaveSpikeRates(indsSynch);
+                        synchSlaveSpikeRatesBaseline = slaveSpikeRates(indsSynchBaseline);
+                        zScoredSynchSlaveSpikeRates = (synchSlaveSpikeRates-mean(synchSlaveSpikeRatesBaseline))/std(synchSlaveSpikeRatesBaseline);
+                        zScoredSynchSlaveSpikeRatesBaseline = (synchSlaveSpikeRatesBaseline-mean(synchSlaveSpikeRatesBaseline))/std(synchSlaveSpikeRatesBaseline);
+                        std4 = 4*std(zScoredSynchSlaveSpikeRatesBaseline);
+                        whichOneSynch = abs(zScoredSynchSlaveSpikeRates)>=std4; % absolute synch suppression or activation amount should be bigger than 4*STD
+                        if any(zScoredSynchSlaveSpikeRates(whichOneSynch)>0) % SYNCH in Excitation
+                            synchExc = 1;
+                        end
+                        if any(zScoredSynchSlaveSpikeRates(whichOneSynch)<0) % SYNCH in Inhibition
+                            synchInh = 1;
+                        end
+                        %%%%%%% TO FIND IF OTHERTYPE_MLI SYNCHRONIZATION AMOUNT IS BIGGER THAN 4 STD %%%%%%%%%
+
+                        
+
+%                         deviationValue = 10; %abs(sum(corrCounts(find(edges>=-CCG_DEVIATION_RANGE&edges<=CCG_DEVIATION_RANGE)))); % Find the suppression around zero
+                    
+                        % Plot CCGs that only have higher deviation OR plot all ACGs
+                        if superImpose~=-1 % Sometimes I just don't need to plot, just get the suppression or synch values
+                            if ~isempty(slaveSpikeRates) && any(~isnan(slaveSpikeRates)) % (deviationValue > CCG_DEVIATION_CRITERION || pairType == PAIR_TYPE_ACG) &&
+                                sHeader = '';
+                                if superImpose == 0
+                                    sHeader = [sPreHeader ' '];
+                                end
+                                sHeader = [sHeader 'CCG ' num2str(unitSlaveID) ' (' unitSlave.neuronType ' depth=' num2str(unitSlave.depth) ' um) wrt ' num2str(unitMasterID) ' (' unitMaster.neuronType ' depth=' num2str(unitMaster.depth) ' um)'];
+                                if strcmp(pairType,ACG)
+                                    sSingle = 'Multi';
+                                    if singleUnit
+                                        sSingle = 'Single';
+                                    end
+                                    sHeader = [sHeader 'ACG ' sSingle ' Unit ' num2str(unitSlaveID) ' (' unitSlave.neuronType ') ContamRate=' num2str(refractoryViolationRate*100,'%.2f') '% (Llobet=' num2str(refractoryViolationRateLlobet*100,'%.2f') '% MF=' num2str(refractoryViolationRateMF*100,'%.2f') '%)'];
+                                end
+    
+                                if superImpose==0
+                                    f = figure;    
+                                    f.Position = [globalX globalY globalW globalH];  
+                                end
+
+                                edgesPlt = edges(1:end-1)+(edges(2)-edges(1))/2;                                
+                                slaveSpikeRates = slaveSpikeRates(1:end-1);
+                                semSpikeRates = semSpikeRates(1:end-1);
+                                lowerBound = slaveSpikeRates-semSpikeRates;
+                                upperBound = slaveSpikeRates+semSpikeRates;
+    
+                                inBetween = [upperBound, fliplr(lowerBound)];
+                                x2 = [edgesPlt, fliplr(edgesPlt)];
+                                fill(x2, inBetween, colorLine, 'FaceColor', colorLine, 'EdgeColor', 'none', 'FaceAlpha', ALPHA_LIGHT);
+                                plt = plot(edgesPlt, slaveSpikeRates, 'LineWidth',2, 'Color', colorLine);
+    
+                                grid on;
+                                set(gca,'box','off');
+                                xlabel('lag (ms)'); 
+                                if doRateCorrected
+                                    ylabel('Spikes/s (rate corrected)');
+                                else
+                                    ylabel('Spikes/s');
+                                end
+                                if strcmp(pairType,ACG)
+                                    xlim([-X_MAX_ACG X_MAX_ACG]);
+                                else
+                                    xlim([-xMax xMax]);
+                                end
+                                minLim = mean(slaveSpikeRates)-10*std(slaveSpikeRates);
+                                maxLim = max(slaveSpikeRates)*1.3; %mean(slaveSpikeRates)+6*std(slaveSpikeRates);
+                                if ~isempty(minLim) && ~isempty(maxLim) && minLim<maxLim
+                                    ylim([minLim maxLim]); %[max(slaveSpikeRates)*.4 max(slaveSpikeRates)*1.3]); 
+                                end
+                                if ~strcmp(pairType,ACG)
+                                    xline(0,'--',LineWidth=2);
+                                end
+                                set(gca,'FontName','Times New Roman','FontWeight','bold', 'FontSize',PLOT_FONT_SIZE); %,'LineWidth',1.5)
+                                title(sHeader); %title([sHeader ' FR=' num2str(meanSlaveSpikeRate,'%.1f') ' spk/s']); % mean(slaveSpikeRates)
+                                
+                                if superImpose==0
+                                    if strcmp(pairType,ACG)
+                                        sPrintFolder = [pathToFigureFolder num2str(unitSlaveID)];
+                                        print([sPrintFolder '/ACG_' num2str(unitSlaveID) '_' sPreHeader '.tif'], '-dtiff', '-r120');
+%                                         exportgraphics(f,[sPrintFolder '/ACG_' num2str(unitSlaveID) '_' sPreHeader '.pdf'], 'ContentType', 'vector', 'Resolution', 1000);
+                                        logger.info('correlogram',[pairType ' ' num2str(unitSlaveID) ' wrt ' num2str(unitMasterID) ' ContamRate=' num2str(refractoryViolationRate*100,'%.2f')  '% (Llobet=' num2str(refractoryViolationRateLlobet,'%.2f') ' plotted for ' sPreHeader ':' pairType '/CCG_' num2str(unitSlaveID) 'wrt' num2str(unitMasterID) '_' sPreHeader '.tif']);
+                                    else
+                                        print([pathToFigureFolder pairType '/CCG_' num2str(unitSlaveID) 'wrt' num2str(unitMasterID) '_' sPreHeader '.tif'], '-dtiff', '-r120');
+                                        exportgraphics(f,[pathToFigureFolder pairType '/CCG_' num2str(unitSlaveID) 'wrt' num2str(unitMasterID) '_' sPreHeader '.pdf'], 'ContentType', 'vector', 'Resolution', 1000);
+                                        savefig([pathToFigureFolder pairType '/CCG_' num2str(unitSlaveID) 'wrt' num2str(unitMasterID) '_' sPreHeader '.fig']);
+            
+                                        logger.info('correlogram',[pairType ' ' num2str(unitSlaveID) ' wrt ' num2str(unitMasterID) ' plotted for ' sPreHeader ':' pairType '/CCG_' num2str(unitSlaveID) 'wrt' num2str(unitMasterID) '_' sPreHeader '.tif']);
+                                    end
+                            
+                                    % exportgraphics(f,[pathToFigureFolder pairType '/' sHeader '_' num2str(unitMasterID) '_' num2str(unitSlaveID) '_' sTitle '_' num2str(X_MAX_ACG) 'sec_xlim_' num2str(PRE_TIME_RELEASE) '_' num2str(PRE_TIME_RELEASE) '.pdf'], 'ContentType', 'vector', 'Resolution', 200);
+                            
+                                    close all
+                                else
+                                    if strcmp(pairType,ACG)
+                                        logger.info('correlogram',[pairType ' ' num2str(unitSlaveID) ' wrt ' num2str(unitMasterID) ' ContamRate=' num2str(refractoryViolationRate*100,'%.2f')  '% (Llobet=' num2str(refractoryViolationRateLlobet*100,'%.2f') '% plotted for ' sPreHeader ':' pairType '/CCG_' num2str(unitSlaveID) 'wrt' num2str(unitMasterID) '_' sPreHeader '.tif']);
+                                    end
+                                end                                
+            %                     deviated = 1;
+                            else
+                                logger.info('correlogram',[pairType ' ' num2str(unitSlaveID) ' wrt ' num2str(unitMasterID) ' had no spikes for ' sPreHeader ':' pairType '/CCG_' num2str(unitSlaveID) 'wrt' num2str(unitMasterID) '_' sPreHeader '.tif']);
+                            end
+                        end
+                    else
+                        logger.info('correlogram',[pairType ' ' num2str(unitSlaveID) ' wrt ' num2str(unitMasterID) ' had no spikes for ' sPreHeader ':' pairType '/CCG_' num2str(unitSlaveID) 'wrt' num2str(unitMasterID) '_' sPreHeader '.tif']);
+                    end
+                else
+                    logger.info('correlogram',[pairType ' ' num2str(unitSlaveID) ' wrt ' num2str(unitMasterID) ' had no spikes for ' sPreHeader ':' pairType '/CCG_' num2str(unitSlaveID) 'wrt' num2str(unitMasterID) '_' sPreHeader '.tif']);
+                end
+%                 else
+%                     logger.info('correlogram',[pairType '_' num2str(unitMasterID) '_' num2str(unitSlaveID) ' could NOT pass the deviation criterion or spikes are empty! deviationValue=' num2str(deviationValue)]);  
+%                     deviated = 0;
+%                 end
+            end
+        end
+    end
+end

@@ -1,0 +1,294 @@
+% GLOBAL variables
+global logger pathToParentRec pathToRecFolder pathToUnitsDataFolder pathToFigureFolder UNITS_FILE_NAME UNITS_AND_VARS_FILE_NAME pathKS pathTPrime chList tipLength depthDuringRecording dw digitalChList ...
+HOLD_LEVER_TXT RELEASE_LEVER_TXT UNIT_OF_INTEREST VIS_STIM_ON_TXT VIS_STIM_OFF_TXT LICK_ONSET_TXT LICK_OFFSET_TXT REWARD_ONSET_TXT REWARD_OFFSET_TXT ...
+MOUSE_ID dateOfRecording pathNpyxFiltered pathNpyxOrgDataFolder LAG_SGLX PAIRED_CS_SS PAIRED_MF_SS PAIRED_MF_GO PAIRED_GO_SS PAIRED_MLI_SS PAIRED_SS_DCN ...
+X_MAX_CORRELOGRAM BIN_SIZE_CORRELOGRAM REFRACTORY_RANGE REFRACTORY_RANGE_MF RAW_PRE_SPIKE RAW_POST_SPIKE RAW_RANDOM_N RAW_RANDOM_PER_TRIAL_N SAVE_LOCAL ...
+NEURON_TYPE_MF NEURON_TYPE_SS NEURON_TYPE_CS NEURON_TYPE_DCS NEURON_TYPE_BC_SC NEURON_TYPE_GoC NEURON_TYPE_UBC NEURON_TYPE_DCN NEURON_TYPE_OTHER NEURON_TYPES...
+PAIR_TYPE_ACG PAIR_TYPE_CS_SS PAIR_TYPE_MF_SS PAIR_TYPE_MF_GO PAIR_TYPE_GO_SS PAIR_TYPE_MLI_SS PAIR_TYPE_SS_SS PAIR_TYPE_MLI_MLI PAIR_TYPE_GO_GO PAIR_TYPE_SS_DCN ...
+PAIR_TYPE_OTHER_SS PAIR_TYPE_OTHER_CS PAIR_TYPE_OTHER_MF PAIR_TYPE_OTHER_GO PAIR_TYPE_OTHER_MLI PAIR_TYPE_OTHER_OTHER...
+PAIR_CS_SS_MAX_LAYER_DISTANCE PAIR_MF_SS_MAX_LAYER_DISTANCE PAIR_MF_GO_MAX_LAYER_DISTANCE PAIR_GO_SS_MAX_LAYER_DISTANCE PAIR_MLI_SS_MAX_LAYER_DISTANCE PAIR_SS_DCN_MAX_LAYER_DISTANCE PAIR_SS_SS_MAX_LAYER_DISTANCE PAIR_MLI_MLI_MAX_LAYER_DISTANCE PAIR_GO_GO_MAX_LAYER_DISTANCE PAIR_OTHER_MAX_LAYER_DISTANCE...
+ACG CS_SS MF_SS MF_GO GO_SS MLI_SS SS_DCN SS_SS MLI_MLI GO_GO OTHER_SS OTHER_CS OTHER_MF OTHER_GO OTHER_MLI OTHER_OTHER ...
+UNDEFINED P_VALUE_THRESHOLD X_LIM_ISI CCG_DEVIATION_RANGE CCG_DEVIATION_CRITERION ...
+SS_ANALYSIS_RANGE CS_ANALYSIS_RANGE CHUNK_OF_REACTION_TIMES CHUNK_NAMES ...
+ARR_DO_ANALYSES ANALYSIS_STEP_0 ANALYSIS_STEP_1 ANALYSIS_STEP_2_0 ANALYSIS_STEP_2_1 ANALYSIS_STEP_2_A ANALYSIS_STEP_2_B ANALYSIS_STEP_2_C ANALYSIS_STEP_3 ANALYSIS_STEP_4 ANALYSIS_STEP_5 ANALYSIS_STEP_6 ...
+PLOT_00 PLOT_01 PLOT_10 PLOT_11 MIN_SAMPLE_SIZE SOFT_CUT SOFT_CUT_PARTITION HARD_CUT HARD_CUT_PARTITION EXPERT_LABELS_TXT
+
+localPath = fileparts(which(matlab.desktop.editor.getActiveFilename));
+if ispc % If the OS is Windows
+    pattern = '\';
+else
+    pattern = '/';
+end
+inds = strfind(localPath,pattern);
+addpath(genpath(localPath(1:inds(length(inds))-1)))
+
+globalsCommon;
+
+UNDEFINED = -99; % For some data points that are undefined, not to be processed
+SOFT_CUT = Inf;
+SOFT_CUT_PARTITION = 1;
+HARD_CUT = Inf;
+HARD_CUT_PARTITION = 1;
+
+SAVE_LOCAL = 0;
+
+P_VALUE_THRESHOLD = 0.05;
+X_LIM_ISI = 75;
+
+SS_ANALYSIS_RANGE = [-.5 .5]; %[-.05 .05];
+CS_ANALYSIS_RANGE = [-.075 .175];
+CHUNK_OF_REACTION_TIMES = [-200 0 200 400 600 800]; % ms
+CHUNK_NAMES = {'<=0','<=200','<=400','<=600','<=800'};
+
+%MAX_PRE_RELEASE = 4; % There could be spikes at most 4 s (max randHold parameter in behavioral task)before the lever release
+
+X_MAX_CORRELOGRAM = 25; % ms
+BIN_SIZE_CORRELOGRAM = 0.25; % ms
+REFRACTORY_RANGE = [-1 1]; % ms
+REFRACTORY_RANGE_MF = [-0.5 .5]; % ms
+CCG_DEVIATION_RANGE = 0.01;
+CCG_DEVIATION_CRITERION = 8;
+
+RAW_PRE_SPIKE = 0.001; % sec before spike peak while reading raw data
+RAW_POST_SPIKE = 0.003; % sec after spike peak while reading raw data
+RAW_RANDOM_N = 2000;
+RAW_RANDOM_PER_TRIAL_N = 200;
+
+NEURON_TYPE_MF = 'MF';
+NEURON_TYPE_SS = 'PC SS';
+NEURON_TYPE_CS = 'PC CS';
+NEURON_TYPE_DCS = 'PC DCS';
+NEURON_TYPE_BC_SC = 'BC or SC'; % MLI
+NEURON_TYPE_GoC = 'GoC';
+NEURON_TYPE_UBC = 'UBC';
+NEURON_TYPE_DCN = 'DCN';
+NEURON_TYPE_OTHER = '';
+
+NEURON_TYPES = {NEURON_TYPE_MF, NEURON_TYPE_SS, NEURON_TYPE_CS, NEURON_TYPE_DCS, NEURON_TYPE_BC_SC, NEURON_TYPE_GoC, NEURON_TYPE_UBC};
+
+PAIR_TYPE_ACG = 0;
+PAIR_TYPE_CS_SS = 1;
+PAIR_TYPE_MF_SS = 2;
+PAIR_TYPE_MF_GO = 3;
+PAIR_TYPE_GO_SS = 4;
+PAIR_TYPE_MLI_SS = 5;
+PAIR_TYPE_SS_SS = 6;
+PAIR_TYPE_MLI_MLI = 7;
+PAIR_TYPE_GO_GO = 8;
+PAIR_TYPE_SS_DCN = 9;
+
+PAIR_TYPE_OTHER_SS = 10;
+PAIR_TYPE_OTHER_CS = 11;
+PAIR_TYPE_OTHER_MF = 12;
+PAIR_TYPE_OTHER_GO = 13;
+PAIR_TYPE_OTHER_MLI = 14;
+PAIR_TYPE_OTHER_OTHER = 20;
+
+ACG = 'ACG';
+CS_SS = 'CS_SS';
+MF_SS = 'MF_SS';
+MF_GO = 'MF_GO';
+GO_SS = 'GO_SS';
+MLI_SS = 'MLI_SS';
+SS_DCN = 'SS_DCN';
+SS_SS = 'SS_SS';
+MLI_MLI = 'MLI_MLI';
+GO_GO = 'GO_GO';
+OTHER_SS = 'Other_SS';
+OTHER_CS = 'Other_CS';
+OTHER_MF = 'Other_MF';
+OTHER_GO = 'Other_GO';
+OTHER_MLI = 'Other_MLI';
+OTHER_OTHER = 'Other_Other';
+
+PAIR_CS_SS_MAX_LAYER_DISTANCE = 1500; % (um) max layer distance between CS and SS
+PAIR_MF_SS_MAX_LAYER_DISTANCE = 3000;
+PAIR_MF_GO_MAX_LAYER_DISTANCE = 1500;
+PAIR_GO_SS_MAX_LAYER_DISTANCE = 1500;
+PAIR_MLI_SS_MAX_LAYER_DISTANCE = 1000;
+PAIR_SS_DCN_MAX_LAYER_DISTANCE = 3000;
+PAIR_SS_SS_MAX_LAYER_DISTANCE = 2000;
+PAIR_MLI_MLI_MAX_LAYER_DISTANCE = 2000;
+PAIR_GO_GO_MAX_LAYER_DISTANCE = 2000;
+PAIR_OTHER_MAX_LAYER_DISTANCE = 2000;
+
+PLOT_00 = 1;
+PLOT_01 = 0;
+PLOT_10 = 1;
+PLOT_11 = 0;
+
+MIN_SAMPLE_SIZE = 5;
+
+%%%%%%%%%%%%%%%%% CHANGE THESE FOR EACH RECORDING %%%%%%%%%%%%%%%%%%%%%
+%************************************
+% MOUSE_ID = '2823';
+% depthDuringRecording = 1361;
+% dateOfRecording = '20231115';
+% UNIT_OF_INTEREST = -1; %71; %331;
+% LAG_SGLX = 21; %ms
+% PAIRED_CS_SS = []; % the only good pair is [291 285]
+% %SOFT_CUT = 1185; % (sec) Divide the recording into two from this point and analyze seperately
+% %SOFT_CUT_PARTITION = 1; % 1=Analyze between [0-SOFT_CUT] 2=Analyze between [SOFT_CUT-Inf] 
+%************************************
+
+%************************************
+MOUSE_ID = '2823';
+depthDuringRecording = 3387;
+dateOfRecording = '20231104';
+UNIT_OF_INTEREST = -1; %71; %331;
+LAG_SGLX = 21; %ms
+PAIRED_CS_SS = []; % the only good pair is [291 285]
+SOFT_CUT = 1185; % (sec) Divide the recording into two from this point and analyze seperately
+SOFT_CUT_PARTITION = 1; % 1=Analyze between [0-SOFT_CUT] 2=Analyze between [SOFT_CUT-Inf] 
+%************************************
+
+%************************************
+% MOUSE_ID = '2824';
+% depthDuringRecording = 3009;
+% dateOfRecording = '20231018';
+% UNIT_OF_INTEREST = -1; %71; %331;
+% LAG_SGLX = 21; %ms
+% PAIRED_CS_SS = []; % the only good pair is [291 285]
+% SOFT_CUT = 475; % (sec) Divide the recording into two from this point and analyze seperately
+% SOFT_CUT_PARTITION = 1; % 1=Analyze between [0-SOFT_CUT] 2=Analyze between [SOFT_CUT-Inf] 
+%************************************
+
+%************************************
+% MOUSE_ID = '2811';
+% depthDuringRecording = 3795;
+% dateOfRecording = '20230210_1';
+% UNIT_OF_INTEREST = -1; %71; %331;
+% LAG_SGLX = 21; %ms
+% PAIRED_CS_SS = [[297 279]; [650 279]; [291 285]]; % the only good pair is [291 285]
+% SOFT_CUT = 1540; % (sec) Divide the recording into two from this point and analyze seperately
+% SOFT_CUT_PARTITION = 1; % 1=Analyze between [0-SOFT_CUT] 2=Analyze between [SOFT_CUT-Inf] 
+% %************************************
+
+%************************************
+% MOUSE_ID = '2811';
+% depthDuringRecording = 3345;
+% dateOfRecording = '20230201_1';
+% UNIT_OF_INTEREST = -1; %132;
+% LAG_SGLX = 21; %ms
+% pathKS = [pathToRecFolder 'KS_OUT_3000/']; % Hard-Cut the recording in KS, got only between [0-3000 sec]
+% PAIRED_CS_SS = [[441 439]; [441 440]];
+% HARD_CUT = 3000; % (sec) Divide the recording into two from this point in Kilosort and analyze seperately
+% HARD_CUT_PARTITION = 1; % 1=Analyze between [0-HARD_CUT] 2=Analyze between [HARD_CUT-Inf]
+%************************************
+
+%************************************
+% MOUSE_ID = '2811';
+% depthDuringRecording = 3195;
+% dateOfRecording = '20230131_1';
+% UNIT_OF_INTEREST = -1;
+% LAG_SGLX = 21; %ms
+% PAIRED_CS_SS = [[460 364]]; 
+% SOFT_CUT = 2070; % (sec) Divide the recording into two from this point and analyze seperately
+% SOFT_CUT_PARTITION = 1; % 1=Analyze between [0-SOFT_CUT] 2=Analyze between [SOFT_CUT-Inf] 
+%************************************
+
+% depthDuringRecording = 3200;
+% dateOfRecording = '20221221_1';
+% LAG_SGLX = 21; %ms
+% UNIT_OF_INTEREST = -1; %173; %-1; % 11-MF [20-SS 23-CS]
+% PAIRED_CS_SS = [[21 22]; [304 69]; [45 66]; [45 69]; [523 74]; [524 74]; [310 74]; [310 307]; [310 308]];
+% PAIRED_MF_SS = []; % Compare MF vs SS in CCG to see if any interaction
+% PAIRED_MF_GO = []; % Compare MF vs GO in CCG to see if any interaction
+% PAIRED_GO_SS = [];% Compare GO vs SS in CCG to see if any interaction
+%************************************
+% depthDuringRecording = 2395;
+% dateOfRecording = '20221222_1';
+% FIXED_HOLD_START_TRIAL = 0;
+% LAG_SGLX = 21; %ms
+% UNIT_OF_INTEREST = -1; % 11-MF [20-SS 23-CS]
+% PAIRED_SS_CS = [[];];    
+%************************************
+% depthDuringRecording = 2760; 
+% dateOfRecording = '20221223_1';
+% FIXED_HOLD_START_TRIAL = 4;
+%LAG_SGLX = 12; %ms
+%************************************
+% depthDuringRecording = 2265; %1795;
+% dateOfRecording = '20221201_2'; %'20221104';
+% FIXED_HOLD_START_TRIAL = 124;
+
+%LAG_HIT_SGLX = 76.1; % ms
+%LAG_MISS_SGLX = 2164; % ms
+%%%%%%%%%%%%%%%%% CHANGE THESE FOR EACH RECORDING %%%%%%%%%%%%%%%%%%%%%
+
+if ispc % If the OS is Windows
+    pathToParentRec = ['S:/Neuropixels/test_data/'];
+    pathToRecFolder = [pathToParentRec dateOfRecording '_g0/'];
+else
+%     if SAVE_LOCAL
+%         pathToRecFolder = ['/mnt/DdriveL/sevgi/Neuropixels/test_data/' dateOfRecording '_g0/']; % to avoid network traffic on NB-LAMBDAHULL
+    pathToParentRec = ['/mnt/IsilonPerm/Neuropixels/test_data/'];
+    pathToRecFolder = [pathToParentRec dateOfRecording '_g0/'];
+end
+
+if atLab
+    pathToUnitsDataFolder = [pathToRecFolder 'data/'];    
+else
+    pathToUnitsDataFolder = ['C:/sevgi/Neuropixels/test_data/' dateOfRecording '_g0/data/'];
+end
+if ~exist(pathToUnitsDataFolder)
+    mkdir(pathToUnitsDataFolder);
+end
+
+if isempty(pathKS) % if it is not defined yet within one of the recordings
+    pathKS = [pathToRecFolder 'KS_OUT/']; % KS_OUT_stagg
+end
+pathTPrime = [pathToRecFolder 'TPrime_OUT/']; % TPrime_OUT2D/
+pathNpyxFiltered = [pathToRecFolder 'NeuroPyxels/'];
+pathNpyxOrgDataFolder = [pathNpyxFiltered 'original_data/'];
+
+chList = 1:384;
+tipLength = 195;
+
+HOLD_LEVER_TXT = 'holdLever.txt';
+RELEASE_LEVER_TXT = 'releaseLever.txt';
+VIS_STIM_ON_TXT = 'visStimOn.txt';
+VIS_STIM_OFF_TXT = 'visStimOff.txt';
+LICK_ONSET_TXT = 'lickOnsetTimes.txt';
+LICK_OFFSET_TXT = 'lickOffsetTimes.txt';
+REWARD_ONSET_TXT = 'rewardOn.txt';
+REWARD_OFFSET_TXT = 'rewardOff.txt';
+
+EXPERT_LABELS_TXT = 'expertLabels.txt';
+
+UNITS_FILE_NAME = ['units_' dateOfRecording '_' num2str(SOFT_CUT) '_part' num2str(SOFT_CUT_PARTITION) '.mat'];
+UNITS_AND_VARS_FILE_NAME = ['unitsAndVars_' dateOfRecording '_' num2str(SOFT_CUT) '_part' num2str(SOFT_CUT_PARTITION) '.mat'];
+
+pathToFigureFolder = [pathToRecFolder 'analysis_OUT_' num2str(SOFT_CUT) '_part' num2str(SOFT_CUT_PARTITION) '/'];
+if ~exist(pathToFigureFolder)
+    mkdir(pathToFigureFolder);
+end
+
+% Which digital word to read. 
+% For imec, there is only 1 digital word, dw = 0.
+% For NI, digital lines 0-15 are in word 1, lines 16-31 are in word 2, etc.
+% (1-based for MATLAB)
+dw = 1;
+
+% Read these lines in dw (0-based). For 3B2 imec data: the sync pulse is stored in line 6.
+% Which lines within the digital word, zero-based 
+digitalChList = [0,5,6]; % 0 synch, 5 trial start/stop (hold/release lever), 6 Visual Stim ON/OFF
+
+ANALYSIS_STEP_0 = 0; % Behavioral Analyses
+ANALYSIS_STEP_1 = 1; % Plot raster & PSTH (Qualitative)
+ANALYSIS_STEP_2_0 = 2; % Plot ACGs (Qualitative)
+ANALYSIS_STEP_2_1 = 20; % Plot CCG pairs (Qualitative)
+ANALYSIS_STEP_2_A = 21; % Check Two Conseq Trials for CS-SS
+ANALYSIS_STEP_2_B = 22; % Check CS-SS and BehavEventTimes
+ANALYSIS_STEP_2_C = 23; % plotPairedRaster
+ANALYSIS_STEP_3 = 3; % Compare FR & ISI (Quantitative)
+ANALYSIS_STEP_4 = 4; % Read & plot waveform acc.to behavioral events (Qualitative)
+ANALYSIS_STEP_5 = 5; % Reaction time based analyses
+ANALYSIS_STEP_6 = 6; % Lick related activity analyses
+
+ARR_DO_ANALYSES = [0,1,2]; %[0,1,2,3,4];
+
+logger = log4m.getLogger([pathToFigureFolder 'neuralAnalysis.log']);
+logger.setCommandWindowLevel(logger.ALL); 
+logger.setLogLevel(logger.ALL);
+

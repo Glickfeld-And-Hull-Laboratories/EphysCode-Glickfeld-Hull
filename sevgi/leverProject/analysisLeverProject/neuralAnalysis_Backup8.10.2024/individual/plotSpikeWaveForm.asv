@@ -1,0 +1,61 @@
+function plotSpikeWaveForm(unit, waveForms, waveFormMean, waveFormStd, samplingRate, sLocalTitle)
+    
+    globals;
+        
+    % Step 2: Calculate the noise by subtracting the average waveform
+    % from each trial and then calculating the variance
+    waveFormsNoise = waveForms - waveFormMean;
+    
+    % Calculate the power of the signal
+    signal_power = mean(waveFormMean.^2);
+    
+    % Calculate the power of the noise (variance across trials)
+    %noise_power = mean(var(waveformsNoise, 0, 1));
+    % Calculate the power of the noise (variance across trials)
+    % Using mean squared error (MSE) approach
+    noise_power = mean(mean(waveFormsNoise.^2));
+    
+    % Step 3: Compute SNR
+    snr = signal_power / noise_power;
+    
+    % Convert SNR to decibels (dB)
+    snr_dB = 10 * log10(snr);
+
+
+    % https://spikeinterface.readthedocs.io/en/latest/modules/qualitymetrics/snr.html
+    noise_level = mad(waveForms,1,'all');
+    amplitude = max(abs(waveFormMean));
+    SNR = amplitude / noise_level;
+
+    f = figure;
+    f.Position = [globalX globalY globalW globalH];     
+    x=-RAW_PRE_SPIKE:1/samplingRate:RAW_POST_SPIKE-1/samplingRate;
+    x=x.*1000; % convert to ms
+
+    plot(x,waveForms,'LineWidth',0.02, 'color',[0 0 1 0.3]);
+    hold on    
+    waveFormMin = waveFormMean-waveFormStd;
+    waveFormMax = waveFormMean+waveFormStd;
+    plot(x,waveFormMean, 'LineWidth',2, 'color','black')
+    plot(x,waveFormMin, 'LineStyle', '--', 'LineWidth',1.5, 'color','black')
+    plot(x,waveFormMax, 'LineStyle', '--', 'LineWidth',1.5, 'color','black')
+    patch([x fliplr(x)], [waveFormMean fliplr(waveFormMin)], 'blue', 'FaceAlpha',0.1); % fill between
+    patch([x fliplr(x)], [waveFormMean fliplr(waveFormMax)], 'b', 'FaceAlpha',0.1); % fill between
+        
+    ylabel('uV');
+    xlabel('Time (ms)');        
+    %xlim([-PRE_TIME_RELEASE POST_TIME_RELEASE]);
+    ylim([-max(abs(waveFormMean))*5 max(abs(waveFormMean))*5]);
+    set(gca,'TickDir','out');
+    set(gca,'FontName','Times New Roman','FontWeight','bold', 'FontSize',PLOT_FONT_SIZE,'LineWidth',1.5)
+    title(['Unit=' num2str(unit.id) ' ' unit.neuronType ' (' unit.layer ' ch=' num2str(unit.ch) ' SNR= ' num2str(unit.SNR,'%.2f') ' SNRmine= ' num2str(snr_dB,'%.2f') ') ' sLocalTitle])
+
+    sFolder = [pathToFigureFolder num2str(unit.id)];
+    if ~isempty(unit.neuronType)
+        sFolder = [sFolder '_' unit.neuronType];
+    end
+    print([sFolder '/' 'spikeWaveForm_' sLocalTitle '.tif'], '-dtiff', '-r100');    
+    % exportgraphics(f,[sFolder '/' 'spikeWaveForm_' sLocalTitle '.pdf'], 'ContentType', 'vector', 'Resolution', 200);
+    logger.info('plotSpikeWaveForm', ['Raw waveform is plot for unit=' num2str(unit.id)]);
+    close all
+end

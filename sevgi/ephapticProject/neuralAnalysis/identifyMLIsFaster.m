@@ -1,0 +1,174 @@
+function [unitGoodSorted,unitMuaSorted,unitNoiseSorted]=identifyMLIsFaster(unitGoodSorted,unitMuaSorted,unitNoiseSorted, movingTimesToBeExcluded)
+        globals;
+
+        sMLI1 = '';
+        sMLI2 = '';        
+        readForTheFirstTime = 0;
+
+        tic
+        for indMLI=1:length(unitGoodSorted)
+            % If found an MLI and it is not processed yet
+            if strcmp(unitGoodSorted(indMLI).neuronType,NEURON_TYPE_MLI) && isempty(unitGoodSorted(indMLI).neuronSubType)  && ...
+                    (~isfield(unitGoodSorted(indMLI),'sMLIClassificationResult') || (isfield(unitGoodSorted(indMLI),'sMLIClassificationResult') && isempty(unitGoodSorted(indMLI).sMLIClassificationResult))) 
+                
+                sMLI = [num2str(unitGoodSorted(indMLI).id) '(' num2str(unitGoodSorted(indMLI).depth) 'um)'];
+                sMLIClassificationResult = '';
+                logger.info('identifyMLIsFaster', ['CHECKING ' NEURON_TYPE_MLI '_' num2str(unitGoodSorted(indMLI).id) ' layer=' unitGoodSorted(indMLI).layer ' (' num2str(unitGoodSorted(indMLI).depth) 'um)']);
+                
+                [unitGoodSorted,unitMuaSorted,unitNoiseSorted, flagInhibitSS, flagSynchedExcSS, flagSynchedInhSS, sInhibitSS, sSynchExcitationSS, sSynchInhibitionSS] = ...
+                    identifyMLIs_Inhibits_Synched(NEURON_TYPE_SS, SS_MLI, PAIR_SS_MLI_MAX_LAYER_DISTANCE, unitGoodSorted,unitMuaSorted,unitNoiseSorted, movingTimesToBeExcluded, indMLI);
+
+                if flagSynchedExcSS==1
+                    logger.info('identifyMLIsFaster', ['WHOOOOOAAAA there is a synchrony between this MLI ' sMLI ' in excitation! ' sSynchExcitationSS]);
+                end
+
+                if flagSynchedInhSS==1
+                    logger.info('identifyMLIsFaster', ['WHOOOOOAAAA there is a synchrony between this MLI ' sMLI ' in inhibition with SS : ' sSynchInhibitionSS]); 
+                end
+
+                [unitGoodSorted,unitMuaSorted,unitNoiseSorted, flagInhibitMLI, flagSynchedExcMLI, flagSynchedInhMLI, sInhibitMLI, sSynchExcitationMLI, sSynchInhibitionMLI] = ...
+                    identifyMLIs_Inhibits_Synched(NEURON_TYPE_MLI, MLI_MLI, PAIR_MLI_MLI_MAX_LAYER_DISTANCE, unitGoodSorted,unitMuaSorted,unitNoiseSorted, movingTimesToBeExcluded, indMLI);
+
+               if flagSynchedExcMLI==1
+                    logger.info('identifyMLIsFaster', ['WHOOOOOAAAA there is a synchrony between this MLI ' sMLI ' in excitation! ' sSynchExcitationMLI]);
+                end
+
+                if flagSynchedInhMLI==1
+                    logger.info('identifyMLIsFaster', ['WHOOOOOAAAA there is a synchrony between this MLI ' sMLI ' in inhibition! ' sSynchInhibitionMLI]); 
+                end
+
+
+                %%%%%%%%%% MLI2 RULE 4: MLI2 should be around SS  %%%%%%
+                flagCloseToSS = -1; % -1 means No SS around at all
+                ssCountCloseBy = 0;
+                sSSIds = '';
+
+                for indSS=1:length(unitGoodSorted)
+                    if strcmp(unitGoodSorted(indSS).neuronType,NEURON_TYPE_SS) % found an SS
+                        if flagCloseToSS == -1
+                            flagCloseToSS = 0; % change the state of the flag from No SS at all (-1) to 'there were some SS' (0) but they were far! since it is not the same thing that this MLI either did not have any SS or it had but they were far away
+                        end
+                        distance = abs(unitGoodSorted(indSS).depth-unitGoodSorted(indMLI).depth);
+                        % A MIN criteria to distinguish MLI2s from other PC layer interneurons (i.e; Candelabrum cells) which they also do not inhibit PCs and may inhibit MLI1s so stay 40 um away from PC layer
+                        % A MAX criteria for MLI2s since they should still be around PCs
+                        if distance>=IDENTIFY_MLI2_MIN_SS_DISTANCE && distance<=IDENTIFY_MLI2_MAX_SS_DISTANCE
+                            ssCountCloseBy = ssCountCloseBy + 1;                            
+                            sSSIds = [sSSIds NEURON_TYPE_SS '_' num2str(unitGoodSorted(indSS).id) '(' num2str(unitGoodSorted(indSS).depth) 'um), '];
+                        end
+                    end
+                end
+                if ssCountCloseBy >= 3 % Should hava at least 3 PCs around
+                    flagCloseToSS = 1; % change the state of the flag from No SS at all (-1) to 'there were some SS' (0) since it is not the same thing that this MLI either did not have any SS or it had but did not suppressed
+                    logger.info('identifyMLIsFaster', ['MLI2 ( ' sMLI ' )RULE4: HAS SS CLOSE BY: ' sSSIds]);
+                end
+                if flagCloseToSS == -1
+                    logger.info('identifyMLIsFaster', ['BROKEN MLI2(' sMLI ') NON-MANDATORY RULE4: HAD NO SS CLOSE BY: ']);
+                end
+                if flagCloseToSS == 0
+                    logger.info('identifyMLIsFaster', ['BROKEN MLI2(' sMLI ') NON-MANDATORY RULE4: HAD SS CLOSE BY but did not satisfy distance criteria: ' num2str(IDENTIFY_MLI2_MIN_SS_DISTANCE) ' <= MLI2 <= ' num2str(IDENTIFY_MLI2_MAX_SS_DISTANCE)]);
+                end
+
+                %%%%%%%%% DECISION %%%%%%%%%%%%%%%%%%%
+                if flagInhibitSS == 1 || flagSynchedInhSS == 1 %%%% MLI1 PATHWAY
+                    logger.info('identifyMLIsFaster', ['MLI1 (BROKEN MLI2) (' sMLI ') RULE1: INHIBITS SS: ' sInhibitSS]);
+%                     sMLIClassificationResult = [sMLIClassificationResult ' MLI1 (' sMLI ') RULE1: INHIBITS SS: ' sInhibitSS];
+                    
+                    if flagInhibitMLI == 0
+                        logger.info('identifyMLIsFaster', ['MLI1 FOUND ' sMLI ' satisfying Rule 1 (inhibits SS (' sInhibitSS ')) and Rule 2 (does not inhibit MLI)']);
+                        if ~isfield(unitGoodSorted(indMLI),'neuronSubType') || (isfield(unitGoodSorted(indMLI),'neuronSubType') && ~strcmp(unitGoodSorted(indMLI).neuronSubType,NEURON_TYPE_MLI1))
+                            unitGoodSorted(indMLI).neuronSubType = NEURON_TYPE_MLI1;
+                            readForTheFirstTime = 1;
+                        end
+                        sMLI1 = [sMLI1 ' ' num2str(unitGoodSorted(indMLI).id)];
+                        sMLIClassificationResult = [sMLIClassificationResult ' MLI1 FOUND ' sMLI ' satisfying Rule 1 (inhibits SS (' sInhibitSS ')) and Rule 2 (does not inhibit MLI)'];
+                    elseif flagInhibitMLI == -1
+                        logger.info('identifyMLIsFaster', ['MLI1 FOUND ' sMLI ' satisfying Rule 1 (inhibits SS (' sInhibitSS ')) and Rule 2 (does not inhibit MLI since no other MLIs around)']);
+                        if ~isfield(unitGoodSorted(indMLI),'neuronSubType') || (isfield(unitGoodSorted(indMLI),'neuronSubType') && ~strcmp(unitGoodSorted(indMLI).neuronSubType,NEURON_TYPE_MLI1))
+                            unitGoodSorted(indMLI).neuronSubType = NEURON_TYPE_MLI1;
+                            readForTheFirstTime = 1;
+                        end
+                        sMLI1 = [sMLI1 ' ' num2str(unitGoodSorted(indMLI).id)];
+                        sMLIClassificationResult = [sMLIClassificationResult ' MLI1 FOUND ' sMLI ' satisfying Rule 1 (inhibits SS (' sInhibitSS ')) and Rule 2 (does not inhibit MLI since no other MLIs around)'];
+                    elseif flagInhibitMLI == 1
+                        logger.info('identifyMLIsFaster', ['BROKEN MLI1(' sMLI ') RULE2: INHIBIT OTHER MLIs:' sInhibitMLI]);
+                        sMLIClassificationResult = [sMLIClassificationResult ' BROKEN MLI1(' sMLI ') RULE2: INHIBIT OTHER MLIs:' sInhibitMLI];
+                    end
+                elseif flagInhibitSS == 0 %%%% MLI2 PATHWAY
+                    logger.info('identifyMLIsFaster', [' MLI2 (BROKEN MLI1) (' sMLI ') RULE1: DOES NOT INHIBIT ANY SS']);
+%                     sMLIClassificationResult = [sMLIClassificationResult ' MLI2 (' sMLI ') RULE1: DOES NOT INHIBIT ANY SS']; 
+                    
+                    if flagInhibitMLI == 1
+                        logger.info('identifyMLIsFaster', ['MLI2 (' sMLI ') RULE2: INHIBIT OTHER MLIs:' sInhibitMLI]);
+                        
+                        if flagSynchedExcMLI == 0
+                            logger.info('identifyMLIsFaster', ['MLI2 FOUND ' sMLI ' satisfying Rule 1 (does not inhibit SS) and Rule 2 (inhibit MLIs) and Rule 3 (not synched with other MLIs)']);
+                            sMLIClassificationResult = [sMLIClassificationResult ' MLI2 FOUND ' sMLI ' satisfying Rule 1 (does not inhibit SS) and Rule 2 (inhibit MLIs(' sInhibitMLI ')) and Rule 3 (not synched with other MLIs)'];
+                            if ~isfield(unitGoodSorted(indMLI),'neuronSubType') || (isfield(unitGoodSorted(indMLI),'neuronSubType') && ~strcmp(unitGoodSorted(indMLI).neuronSubType,NEURON_TYPE_MLI2))
+                                unitGoodSorted(indMLI).neuronSubType = NEURON_TYPE_MLI2;
+                                readForTheFirstTime = 1;
+                            end                            
+                            sMLI2 = [sMLI2 ' ' num2str(unitGoodSorted(indMLI).id)];
+                        elseif flagSynchedExcMLI==-1 && flagCloseToSS == 1
+                            logger.info('identifyMLIsFaster', ['MLI2 FOUND ' sMLI ' satisfying Rule 1 (does not inhibit SS) and Rule 2 (inhibit MLIs(' sInhibitMLI ')) but not Rule 3 (not synched with other MLIs) since no other MLIs around since it was close to 3 PCs it it an MLI2']);
+                            sMLIClassificationResult = [sMLIClassificationResult ' MLI2 FOUND ' sMLI ' satisfying Rule 1 (does not inhibit SS) and Rule 2 (inhibit MLIs(' sInhibitMLI ')) but not Rule 3 (not synched with other MLIs) since no other MLIs around since it was close to 3 PCs it it an MLI2'];
+                            if ~isfield(unitGoodSorted(indMLI),'neuronSubType') || (isfield(unitGoodSorted(indMLI),'neuronSubType') && ~strcmp(unitGoodSorted(indMLI).neuronSubType,NEURON_TYPE_MLI2))
+                                unitGoodSorted(indMLI).neuronSubType = NEURON_TYPE_MLI2;
+                                readForTheFirstTime = 1;
+                            end                            
+                            sMLI2 = [sMLI2 ' ' num2str(unitGoodSorted(indMLI).id)];
+                        elseif flagSynchedExcMLI == 1
+                            logger.info('identifyMLIsFaster', ['BROKEN MLI2(' sMLI ') RULE3: SYNCHED WITH OTHER MLIs:' sSynchExcitationMLI ' satisfied RULE2: INHIBIT OTHER MLIs:' sInhibitMLI '  but actually satisfying Rule 1 (does not inhibit SS)']);
+                            sMLIClassificationResult = [sMLIClassificationResult ' BROKEN MLI2(' sMLI ') RULE3: SYNCHED WITH OTHER MLIs:' sSynchExcitationMLI ' satisfied RULE2: INHIBIT OTHER MLIs:' sInhibitMLI '  but actually satisfying Rule 1 (does not inhibit SS)'];
+                        end
+                    elseif flagInhibitMLI == 0
+                        if flagSynchedExcMLI == 0 
+                            if flagCloseToSS == 1 % even if it cannot satisfy Rule 2 (inhibit other MLIs) since there is no other MLIs around, if it is close to SS it is still counted as MLI2
+                                logger.info('identifyMLIsFaster', ['MLI2 FOUND ' sMLI ' satisfying Rule 1 (does not inhibit SS) and Rule 3 (not synched with other MLIs) and Rule 4 (close to SS) but NOT Rule 2 (inhibit MLIs)']);
+                                sMLIClassificationResult = [sMLIClassificationResult 'MLI2 FOUND ' sMLI ' satisfying Rule 1 (does not inhibit SS) and Rule 3 (not synched with other MLIs) and Rule 4 (close to SS) but NOT Rule 2 (inhibit MLIs)'];
+                                if ~isfield(unitGoodSorted(indMLI),'neuronSubType') || (isfield(unitGoodSorted(indMLI),'neuronSubType') && ~strcmp(unitGoodSorted(indMLI).neuronSubType,NEURON_TYPE_MLI2))
+                                    unitGoodSorted(indMLI).neuronSubType = NEURON_TYPE_MLI2;
+                                    readForTheFirstTime = 1;
+                                end                            
+                                sMLI2 = [sMLI2 ' ' num2str(unitGoodSorted(indMLI).id)];
+                            elseif flagCloseToSS==0
+                                logger.info('identifyMLIsFaster', ['BROKEN MLI2(' sMLI ') RULE 2: DOES NOT INHIBIT OTHER MLIs and RULE 4: NOT CLOSE TO SS but actually satisfying Rule 1 (does not inhibit SS) and Rule 3 (not synched with other MLIs)']); 
+                                sMLIClassificationResult = [sMLIClassificationResult 'BROKEN MLI2(' sMLI ') RULE 2: DOES NOT INHIBIT OTHER MLIs and RULE 4: NOT CLOSE TO SS but actually satisfying Rule 1 (does not inhibit SS) Rule 3 (not synched with other MLIs)'];
+                            end
+                        elseif flagSynchedExcMLI == 1
+                            logger.info('identifyMLIsFaster', ['BROKEN MLI2(' sMLI ') RULE 2: DOES NOT INHIBIT OTHER MLIs and RULE 3: SYNCHED WITH OTHER MLIs:' sSynchExcitationMLI ' but actually satisfying Rule 1 (does not inhibit SS)']);
+                            sMLIClassificationResult = [sMLIClassificationResult 'BROKEN MLI2(' sMLI ') RULE 2: DOES NOT INHIBIT OTHER MLIs and RULE 3: SYNCHED WITH OTHER MLIs:' sSynchExcitationMLI ' but actually satisfying Rule 1 (does not inhibit SS)'];
+                        elseif flagSynchedExcMLI == -1
+                            logger.info('identifyMLIsFaster', ['BROKEN MLI2(' sMLI ') RULE 2: DOES NOT INHIBIT OTHER MLIs and RULE 3: no other MLIs around to be SYNCHED WITH but actually satisfying Rule 1 (does not inhibit SS)']);
+                            sMLIClassificationResult = [sMLIClassificationResult 'BROKEN MLI2(' sMLI ') RULE 2: DOES NOT INHIBIT OTHER MLIs and RULE 3: no other MLIs around to be SYNCHED WITH but actually satisfying Rule 1 (does not inhibit SS)'];
+                        end  
+                    elseif flagInhibitMLI == -1
+                        logger.info('identifyMLIsFaster', ['CHECK POTENTIAL MLI2 ' sMLI ' satisfying Rule 1 (does not inhibit SS) but NOT Rule 2 (does not inhibit MLI) since no other MLIs around!']);
+                        sMLIClassificationResult = [sMLIClassificationResult ' CHECK POTENTIAL MLI2 ' sMLI ' satisfying Rule 1 (does not inhibit SS but NOT Rule 2 (does not inhibit MLI) since no other MLIs around!'];
+                    end
+                elseif flagInhibitSS == -1
+                    logger.info('identifyMLIsFaster', 'NO SS found! Cannot validate MLIs!');
+                    sMLIClassificationResult = [sMLIClassificationResult 'NO SS found! Cannot validate MLIs!'];
+                end
+                unitGoodSorted(indMLI).sMLIClassificationResult = sMLIClassificationResult;  
+            end
+        end        
+
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SAVE RESULTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        if readForTheFirstTime % If any new data appears, save it to the dataset
+            [unitGoodSorted,unitMuaSorted,unitNoiseSorted] = saveUnits({unitGoodSorted, unitMuaSorted, unitNoiseSorted});
+        end
+
+        totalRunningTimeSec = toc;
+        totalRunningTimeHrs = totalRunningTimeSec/3600;
+        logger.info('identifyMLIsFaster', [' TOTAL FOUND MLI1s=' sMLI1 ' and MLI2s=' sMLI2 ' elapsed time:' num2str(totalRunningTimeHrs) ' hrs']);
+
+        cellNeuronTypes = {unitGoodSorted.neuronType};
+        ids = cellfun(@(x) strcmp(x,NEURON_TYPE_MLI), cellNeuronTypes);
+
+        if isfield(unitGoodSorted,'sMLIClassificationResult')
+            sResult = [repmat({'\n'},1,sum(ids)); {unitGoodSorted(ids).id}; {unitGoodSorted(ids).neuronSubType}; {unitGoodSorted(ids).sMLIClassificationResult};];
+        else
+            sResult = 'MLI identification algorithm has not run since there were NO MLIs!';
+        end
+        logger.info('identifyMLIsFaster',string(sResult));
+end
