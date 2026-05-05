@@ -337,12 +337,10 @@ path            = binfolder.folder;
 %% find visually responsive cells
 nCells = size(resp,1);
 nStimTypes = size(resp,2);
-nTimeBins = 10; % Stimulus duration in 10 ms bin size -- i.e., 100ms / 10ms
+nTimeBinsBase = size(base{1,1},2); % Stimulus duration in 10 ms bin size -- i.e., 100ms / 10ms
+nTimeBinsResp = size(); % Stimulus duration in 10 ms bin size -- i.e., 100ms / 10ms
 
 
-% need to hardcode baseline and response period because trialStruct has
-% more info than needed for plotting, and for calculating responsivity we
-% on
 resp_cell = cellfun(@(x) x(:,1:15), resp, 'UniformOutput', false); % Response period (20ms - 120ms)
 base_cell = cellfun(@(x) x(:,end-9:end), base, 'UniformOutput', false); % Baseline period (-100ms - 0ms)
 

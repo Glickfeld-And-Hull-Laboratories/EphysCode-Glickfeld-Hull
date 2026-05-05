@@ -26,7 +26,7 @@ xlabel('Time (s)');
 ylabel('Trial Number');
 title(stimTrialIdx{2,stimIdx});
 ylim([0 length(spikeTimes) + 1]);
-xlim([-.25 .45]); % Shows baseline (-.2 to 0s) and stimulus (0 to 1s)
+xlim([-.25 1.1]); % Shows baseline (-.2 to 0s) and stimulus (0 to 1s)
 % Plot stimulus onset line at **0s**
 xline(0, 'r', 'LineWidth', 2); 
 hold off

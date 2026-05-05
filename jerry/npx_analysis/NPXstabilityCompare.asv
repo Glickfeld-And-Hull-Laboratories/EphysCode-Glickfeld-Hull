@@ -437,7 +437,7 @@ hold off
 
 %% firing synchrony measurement
 dT = 0.005; % how many seconds two spikes would need to be within to be considered synchronous
-winSize = 20; % in seconds
+winSize = 60; % in seconds
 overlap = 0.2;
 
 exptStart = stimStruct.timestamps(1);
