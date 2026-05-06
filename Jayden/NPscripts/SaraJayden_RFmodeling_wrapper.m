@@ -335,13 +335,7 @@ for jj = 1:numel(group1_ii)
     iCell = fittedCellIDs(ii);  % original index into avg_resp_dir_all
 
     % Data grating preferred orientation
-    resp = squeeze(avg_resp_dir_all(iCell, :, 1, 1, 1));
-    resp(resp < 0) = 0;
-
-    ori_resp = (resp(1:nOri) + resp(nOri + 1:end)) / 2;
-
-    [~, prefOriInd] = max(ori_resp);
-    dataOri_group1(jj) = oriDeg(prefOriInd);
+    [data_deg, ori_resp, resp] = getDataOrientation(avg_resp_dir_all, iCell);   
 
     % Model fit envelope orientation
     p = paramCell{k};
@@ -494,32 +488,18 @@ for jj = 1:numel(group1_ii)
     iCell = fittedCellIDs(ii);
 
     % Data orientation
-    resp = squeeze(avg_resp_dir_all(iCell, :, 1, 1, 1));
-    resp(resp < 0) = 0;
-
-    ori_resp = (resp(1:nOri) + resp(nOri + 1:end)) / 2;
-    [~, prefOriInd] = max(ori_resp);
-
-    data_deg = oriDeg(prefOriInd);
+    [data_deg, ori_resp, resp] = getDataOrientation(avg_resp_dir_all, iCell);
 
     % Model orientations
     p = paramCell{k};
-
-    tau = p(5);
-    theta = p(6);
-    f = p(9);
-
-    theta_env = theta;
-    if tau < 1
-        theta_env = theta + pi / 2;
-    end
-
-    env_deg = mod(rad2deg(-theta_env), 180);
-    env90_deg = mod(env_deg + 90, 180);
-
-    fx_pred = f * cos(theta);
-    fy_pred = f * sin(theta);
-    fft_deg = mod(rad2deg(atan2(fy_pred, fx_pred)), 180);
+    ori = getModelOrientations(p);
+    
+    env_deg = ori.env_deg;
+    env90_deg = ori.env90_deg;
+    fft_deg = ori.fft_deg;
+    theta_env = ori.theta_env;
+    fx_pred = ori.fx;
+    fy_pred = ori.fy;
 
     % Differences
     fftMinusData_group1(jj) = angleDiff180(fft_deg, data_deg);
@@ -572,13 +552,7 @@ for jj = 1:numel(group1_ii)
     iCell = fittedCellIDs(ii);
 
     % Data orientation
-    resp = squeeze(avg_resp_dir_all(iCell, :, 1, 1, 1));
-    resp(resp < 0) = 0;
-
-    ori_resp = (resp(1:nOri) + resp(nOri + 1:end)) / 2;
-    [~, prefOriInd] = max(ori_resp);
-
-    data_deg = oriDeg(prefOriInd);
+    [data_deg, ori_resp, resp] = getDataOrientation(avg_resp_dir_all, iCell);
     dataOri_group1(jj) = data_deg;
 
     % Offset orientation from dx/dy
@@ -619,6 +593,213 @@ grid on
 exportgraphics(gcf, 'group1_offset_axis_minus_data.pdf');
 
 %%
+%% Group 2
+%% Compute F1/F0 for fitted cells
+
+idx = sub2ind(size(F1F0_all), ...
+    (1:size(F1F0_all, 1))', DSI_prefdir(:));
+
+pref_F1F0_all = F1F0_all(idx);
+
+F1F0_fitted = pref_F1F0_all(fittedCellIDs);
+
+top20_cutoff = prctile(F1F0_fitted, 80);
+
+groupTopF1F0 = F1F0_fitted >= top20_cutoff;
+
+topF1F0_table = table( ...
+    find(groupTopF1F0), ...
+    staModelIdx(groupTopF1F0), ...
+    fittedCellIDs(groupTopF1F0), ...
+    F1F0_fitted(groupTopF1F0), ...
+    DSI(groupTopF1F0), ...
+    OSI(groupTopF1F0), ...
+    'VariableNames', { ...
+    'FittedIndex_ii', ...
+    'STA_Model_Index_k', ...
+    'Original_Cell_Index_iCell', ...
+    'F1F0', ...
+    'DSI', ...
+    'OSI'});
+
+disp(topF1F0_table);
+
+fprintf('Top 20%% F1/F0 group count: %d / %d fitted cells\n', ...
+    sum(groupTopF1F0), nFitted);
+%%
+plotGroupModelOriVsTuningPDF( ...
+    results, modelRegistry, 'DoG x cos weighted', ...
+    avg_resp_dir_all, cellIDs, topF1F0_kList, ...
+    'top20_F1F0_three_orientation_fits.pdf', ...
+    'Top 20% F1/F0 cells');
+%% Top 20% F1/F0 orientation distributions and differences
+
+topF1F0_ii = find(groupTopF1F0);
+
+dataOri_topF1F0 = nan(numel(topF1F0_ii), 1);
+modelOri_topF1F0 = nan(numel(topF1F0_ii), 1);
+diff_topF1F0 = nan(numel(topF1F0_ii), 1);
+
+for jj = 1:numel(topF1F0_ii)
+
+    ii = topF1F0_ii(jj);
+
+    k = staModelIdx(ii);
+    iCell = fittedCellIDs(ii);
+
+    [data_deg, ~, ~] = getDataOrientation(avg_resp_dir_all, iCell);
+    ori = getModelOrientations(paramCell{k});
+
+    dataOri_topF1F0(jj) = data_deg;
+    modelOri_topF1F0(jj) = ori.env_deg;
+
+    diff_topF1F0(jj) = angleDiff180( ...
+        modelOri_topF1F0(jj), dataOri_topF1F0(jj));
+end
+
+%% Plot Top 20% F1/F0 histograms
+
+edgesOri = 0:30:180;
+edgesDiff = -90:15:90;
+
+figure('Color', 'w', 'Position', [200 200 1200 400]);
+
+subplot(1, 3, 1)
+histogram(dataOri_topF1F0, edgesOri);
+xlabel('Grating preferred orientation (deg)');
+ylabel('Cell count');
+title('Top 20% F1/F0 data orientation');
+xlim([0 180]);
+xticks(0:30:180);
+grid on
+
+subplot(1, 3, 2)
+histogram(modelOri_topF1F0, edgesOri);
+xlabel('Model fit orientation (deg)');
+ylabel('Cell count');
+title('Top 20% F1/F0 model orientation');
+xlim([0 180]);
+xticks(0:30:180);
+grid on
+
+subplot(1, 3, 3)
+histogram(diff_topF1F0, edgesDiff);
+xlabel('Model - data orientation (deg)');
+ylabel('Cell count');
+title('Top 20% F1/F0 orientation difference');
+xlim([-90 90]);
+xticks(-90:30:90);
+grid on
+
+sgtitle(sprintf('Top 20%% F1/F0 cells, n = %d', ...
+    numel(topF1F0_ii)));
+
+exportgraphics(gcf, 'top20_F1F0_orientation_histograms.pdf');
+%% Group 2: Plot FFT-data and envelope+90-data differences
+
+group2_ii = find(groupTopF1F0);
+
+fftMinusData_group2 = nan(numel(group2_ii), 1);
+env90MinusData_group2 = nan(numel(group2_ii), 1);
+
+for jj = 1:numel(group2_ii)
+
+    ii = group2_ii(jj);
+
+    k = staModelIdx(ii);
+    iCell = fittedCellIDs(ii);
+
+    [data_deg, ~, ~] = getDataOrientation(avg_resp_dir_all, iCell);
+    ori = getModelOrientations(paramCell{k});
+
+    fftMinusData_group2(jj) = angleDiff180(ori.fft_deg, data_deg);
+    env90MinusData_group2(jj) = angleDiff180(ori.env90_deg, data_deg);
+end
+
+%% Group 2 histogram comparison
+
+edgesDiff = -90:15:90;
+
+figure('Color', 'w', 'Position', [200 200 900 400]);
+
+subplot(1, 2, 1)
+histogram(fftMinusData_group2, edgesDiff);
+xlabel('FFT/carrier - data orientation (deg)');
+ylabel('Cell count');
+title('Group 2: FFT - data');
+xlim([-90 90]);
+xticks(-90:30:90);
+grid on
+
+subplot(1, 2, 2)
+histogram(env90MinusData_group2, edgesDiff);
+xlabel('Envelope + 90 - data orientation (deg)');
+ylabel('Cell count');
+title('Group 2: envelope + 90 - data');
+xlim([-90 90]);
+xticks(-90:30:90);
+grid on
+
+sgtitle(sprintf('Group 2 orientation mismatch comparison, n = %d', ...
+    numel(group2_ii)));
+
+exportgraphics(gcf, 'group2_fft_and_env90_minus_data.pdf');
+%% Export all fitted STAs
+
+pdfFile = 'all_fitted_STA_only.pdf';
+
+if exist(pdfFile, 'file')
+    delete(pdfFile);
+end
+
+nPerPage = 30;
+nRows = 5;
+nCols = 6;
+
+globalClim = max(abs(STA_cropped(:)), [], 'all', 'omitnan');
+if globalClim == 0 || ~isfinite(globalClim)
+    globalClim = 1;
+end
+
+allFitted_kList = fittedIdx;
+nPages = ceil(numel(allFitted_kList) / nPerPage);
+
+for iPage = 1:nPages
+
+    fig = figure('Color', 'w', 'Position', [100 100 1600 1200]);
+
+    tiledlayout(nRows, nCols, ...
+        'TileSpacing', 'compact', ...
+        'Padding', 'compact');
+
+    idxStart = (iPage - 1) * nPerPage + 1;
+    idxEnd = min(iPage * nPerPage, numel(allFitted_kList));
+
+    for jj = idxStart:idxEnd
+
+        k = allFitted_kList(jj);
+        iCell = cellIDs(k);
+
+        nexttile
+        imagesc(STA_cropped(:, :, k), [-globalClim globalClim]);
+        axis image off
+        colormap gray
+
+        ii = find(staModelIdx == k, 1);
+
+        title(sprintf('Cell %d\nDSI %.2f | OSI %.2f', ...
+            iCell, DSI(ii), OSI(ii)), ...
+            'FontSize', 7);
+    end
+
+    sgtitle(sprintf('All fitted STAs | Page %d/%d', iPage, nPages), ...
+        'FontWeight', 'bold');
+
+    exportgraphics(fig, pdfFile, 'Append', true);
+    close(fig);
+end
+
+fprintf('Saved %s\n', pdfFile);
 %% Check fitted theta distribution
 
 theta_fit = nan(numel(fittedIdx), 1);
@@ -819,13 +1000,7 @@ function plotGroupModelOriVsTuningPDF( ...
 
             %% Get data orientation tuning
 
-            resp = squeeze(avg_resp_dir_all(iCell, :, 1, 1, 1));
-            resp(resp < 0) = 0;
-
-            ori_resp = (resp(1:nOri) + resp(nOri + 1:end)) / 2;
-
-            [~, prefOriInd] = max(ori_resp);
-            data_deg = oriDeg(prefOriInd);
+            [data_deg, ori_resp, resp] = getDataOrientation(avg_resp_dir_all, iCell);
 
             %% Get model orientations
 
@@ -946,4 +1121,40 @@ function plotOriLine(cx, cy, L, thetaDisplay, lineSpec, useHold)
     plot([cx - L * ux, cx + L * ux], ...
          [cy - L * uy, cy + L * uy], ...
          lineSpec, 'LineWidth', 1.6);
+end
+
+function [data_deg, ori_resp, resp] = getDataOrientation(avg_resp_dir_all, iCell)
+    nStimDir = size(avg_resp_dir_all, 2);
+    nOri = nStimDir / 2;
+    oriDeg = 0:(360 / nStimDir):(180 - 360 / nStimDir);
+
+    resp = squeeze(avg_resp_dir_all(iCell, :, 1, 1, 1));
+    resp(resp < 0) = 0;
+
+    ori_resp = (resp(1:nOri) + resp(nOri + 1:end)) / 2;
+    [~, prefOriInd] = max(ori_resp);
+
+    data_deg = oriDeg(prefOriInd);
+end
+
+function ori = getModelOrientations(p)
+    theta = p(6);
+    tau = p(5);
+    f = p(9);
+
+    theta_env = theta;
+    if tau < 1
+        theta_env = theta + pi / 2;
+    end
+
+    ori.env_deg = mod(rad2deg(-theta_env), 180);
+    ori.env90_deg = mod(ori.env_deg + 90, 180);
+
+    fx = f * cos(theta);
+    fy = f * sin(theta);
+
+    ori.fft_deg = mod(rad2deg(atan2(fy, fx)), 180);
+    ori.theta_env = theta_env;
+    ori.fx = fx;
+    ori.fy = fy;
 end
