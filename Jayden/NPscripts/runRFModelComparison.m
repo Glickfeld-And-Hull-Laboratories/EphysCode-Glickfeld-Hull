@@ -153,6 +153,12 @@ end
 
 k = 0;
 
+results.sgRawFit = cell(nModels, 1);
+
+for m = 1:nModels
+    results.sgRawFit{m} = cell(nValid, 1);
+end
+
 for idx = 1:numel(indLoop)
 
     ii = indLoop(idx);
@@ -188,11 +194,23 @@ for idx = 1:numel(indLoop)
                 results.params{m}{k} = params;
     
             case 'sg'
-    
+
                 resSG = modelRegistry(m).fitFcn(STA);
-    
+            
                 results.models{m}{k} = resSG.patch;
-                results.params{m}{k} = resSG.fit;   % store struct
+                results.sgRawFit{m}{k} = resSG.fit;
+                sgParams = convertSGGaborToDoGXcosParams(resSG.fit);
+                results.params{m}{k} = sgParams;
+                disp(resSG.fit)
+                disp(fieldnames(resSG.fit))
+                sgParams = convertSGGaborToDoGXcosParams(resSG.fit);
+
+                disp('Converted SG params:')
+                disp(sgParams)
+                
+                fprintf('theta p(6) = %.4f rad, %.2f deg\n', ...
+                    sgParams(6), rad2deg(sgParams(6)));
+                
     
         end
     
@@ -216,7 +234,20 @@ for idx = 1:numel(indLoop)
 
 end
 modelNames = {modelRegistry.name};
-disp(params)
+% disp(results.params)
+%% tests
+disp(resSG.fit)
+fprintf('a %.3f\n', resSG.fit.a);
+fprintf('b %.3f\n', resSG.fit.b);
+fprintf('x0 %.3f | y0 %.3f\n', resSG.fit.x0, resSG.fit.y0);
+fprintf('sigmax %.3f | sigmay %.3f\n', ...
+    resSG.fit.sigmax, resSG.fit.sigmay);
+fprintf('theta %.3f rad | %.1f deg\n', ...
+    resSG.fit.theta, rad2deg(resSG.fit.theta));
+fprintf('phi %.3f | phase %.3f\n', ...
+    resSG.fit.phi, resSG.fit.phase);
+fprintf('lambda %.3f | frequency %.3f\n', ...
+    resSG.fit.lambda, 1 / resSG.fit.lambda);
 
 %% ============================================
 % Scan parameter correlations (works for all models)
@@ -517,4 +548,42 @@ if ~isempty(compareAICModels)
     fprintf('AIC median difference: %.4f\n', median(AIC_diff));
     fprintf('Valid cells used: %d\n', sum(validIdx));
 end 
+end
+
+function p = convertSGGaborToDoGXcosParams(sgFit)
+%CONVERTSGGABORTODOGXCOSPARAMS Convert SG Gabor to 12-param format.
+%
+% DoG x cos format:
+% p = [Ac, As, sigmaC, deltaSigma, tau, theta, x0, y0, f, phi, dx, dy]
+%
+% For SG Gabor:
+% sgFit.phi   = carrier / FFT orientation
+% sgFit.theta = envelope rotation relative to carrier
+
+    p = nan(1, 12);
+
+    p(1) = sgFit.a;
+    p(2) = 0;
+
+    p(3) = sgFit.sigmax;
+    p(4) = 0;
+    p(5) = sgFit.sigmay / sgFit.sigmax;
+
+    % IMPORTANT:
+    % Store carrier / FFT orientation in p(6)
+    p(6) = sgFit.phi;
+
+    p(7) = sgFit.x0;
+    p(8) = sgFit.y0;
+
+    if isfield(sgFit, 'lambda') && isfinite(sgFit.lambda) && sgFit.lambda > 0
+        p(9) = 1 / sgFit.lambda;
+    else
+        p(9) = 0;
+    end
+
+    p(10) = sgFit.phase;
+
+    p(11) = 0;
+    p(12) = 0;
 end
