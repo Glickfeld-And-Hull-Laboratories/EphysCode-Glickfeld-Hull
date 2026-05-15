@@ -48,6 +48,8 @@ function [stimStruct] = NPXcreateStimStructMulti(exptStruct)
         
     % S = load(bName); %#ok<LOAD>
     % inputStruct = S.input;
+    
+    
     for i = 1:length(mwtime2use)
         stimStruct(i).stimElevation    = double(cell2mat(inputStruct(i).tGratingElevationDeg));
         stimStruct(i).stimAzimuth      = double(cell2mat(inputStruct(i).tGratingAzimuthDeg));
@@ -132,5 +134,16 @@ function [stimStruct] = NPXcreateStimStructMulti(exptStruct)
         stimStruct(i).timestamps       = stimBlockFinal{i};   % Cell array (number of stim blocks long) containing all stim on timestamps within each block
         % stimStruct.stimTemporalFreq = stimTemporalFreq;
     end
+    fields = fieldnames(stimStruct);
+    nTrials = length(stimStruct(1).timestamps);
+    for i = 1:numel(fields)
+        fieldName = fields{i};
+        fieldValue = stimStruct.(fieldName);
+        if length(fieldValue) > nTrials
+            stimStruct.(fieldName) = fieldValue(1:nTrials);
+        end
+    end
+
+
 end
 

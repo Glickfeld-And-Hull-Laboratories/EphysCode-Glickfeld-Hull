@@ -4,7 +4,7 @@ close all
 
 date = '260514';
 mouse = 'i3348';
-mwtime = '1407';   
+mwtime = '1329';   
 chnls = 1:2:200;
 
 fprintf([date ' ' mouse ' \n'])

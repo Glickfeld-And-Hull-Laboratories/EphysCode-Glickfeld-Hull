@@ -1,6 +1,6 @@
 clear all; close all; clc; clear global;
 
-iexp = 8; % Choose experiment
+iexp = 9; % Choose experiment
 refractoryViolationThresh   = 0.002;     % 2 ms
 nExpts = 1;
 
@@ -14,7 +14,7 @@ plotCentral = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\je
 fout = fullfile(baseDir, '\jerry\analysis\neuropixel',exptStruct.mouse,exptStruct.date,'analysis_output');
 mkdir(fout);
 
-[cluster_struct,~,~,~,~,~,goodUnitStruct,~,~] = ImportKSdataNew();  % Marie's function to tidy up ks4 and phy2 outputs for further analysis
+[cluster_struct,~,~,~,~,~,goodUnitStruct,~,allUnitStruct] = ImportKSdata_TH();  % Marie's function to tidy up ks4 and phy2 outputs for further analysis
 
 %% pull info out of mWorks data
 
@@ -52,6 +52,19 @@ binName         = binfolder.name;
 path            = binfolder.folder;
 
 %% get responsive cells
+% nExpt = length(trialStruct);
+% if nExpt > 1
+%     tempTrialStruct = struct();
+%     tempOnset = [];
+%     tempOffset = [];
+%     tempTrialTypes = [];
+%     tempTrialSpikes = [];
+%     tempTrialOFFSpikes = [];
+%     for i = 1:nExpt
+% 
+%     end
+% end
+
 
 nCells = size(resp,1);
 nStimTypes = size(resp,2);
@@ -59,8 +72,8 @@ nTimeBinsBase = size(base{1,1},2); % Stimulus duration in 10 ms bin size -- i.e.
 nTimeBinsResp = stimStruct.stimDuration/0.010; % Stimulus duration in 10 ms bin size -- i.e., 100ms / 10ms
 
 % next step gets the number of 
-resp_cell = cellfun(@(x) x(:,3:102), resp, 'UniformOutput', false); % Response period (0.020s - 1.020s)
-base_cell = cellfun(@(x) x, base, 'UniformOutput', false); % Baseline period (-200ms - 0ms)
+resp_cell = cellfun(@(x) x(:,3:102), resp{1,1}, 'UniformOutput', false); % Response period (0.020s - 1.020s)
+base_cell = cellfun(@(x) x, base{1,1}, 'UniformOutput', false); % Baseline period (-200ms - 0ms)
 
 maxTrials = max(cellfun(@(x) size(x,1), resp_cell(:))); % Find max trial count across conditions
 
@@ -99,21 +112,23 @@ end
 % Make an index of cells significantly responsive to gratings
 resp_ind_dir = find(sum(h_resp(:,:),2)); 
 
+resp_ind_dir = 1:length(goodUnitStruct);
+
 %% cell inclusion criteria
 
 cort_cells_ind = find([goodUnitStruct.depth] >= 1200); % only cortical cells
 nSpikesByCell = arrayfun(@(x) length(x.timestamps), goodUnitStruct);
-SpkThreshedInd = find(nSpikesByCell > 3000); % find cells that had more than 1500 spikes
+SpkThreshedInd = find(nSpikesByCell > 1500); % find cells that had more than 1500 spikes
 resp_cort_ind = intersect(intersect(resp_ind_dir,cort_cells_ind),SpkThreshedInd);
 includeCells = intersect(intersect(resp_ind_dir,cort_cells_ind),SpkThreshedInd); % index of cells that were responsive, cortical, and nSpikes > 1500
 
 %% extract spike events before and after trial onset
-nTrials = length(trialStruct);
+nTrials = length(trialStruct.onset);
 
 onsets = [trialStruct.onset];
 offsets = [trialStruct.offset];
-tBeforeStimOnset = 0.500;
-tAfterStimOnset = 1.2;
+tBeforeStimOnset = 0.300;
+tAfterStimOnset = 1.000;
 nCells = length(includeCells);
 unitXtrialSpikesBef = cell(nCells,nTrials); 
 unitXtrialSpikesAft = cell(nCells,nTrials); 
@@ -246,19 +261,19 @@ close all
 chunkLength = 1; % 5 trials in a chunk
 ylineDrug = floor(780/chunkLength);
 
-nChunks = floor((nTrials-2)/chunkLength); 
+% nChunks = floor((nTrials-2)/chunkLength); 
 FRoTrBase = nan(nCells,nChunks);
 FRoTrResp = nan(nCells,nChunks);
 
 for ic = 1:nCells
     for it = 1:nChunks
-        trialsInChunk = (2+(it-1)*chunkLength:1+it*chunkLength); % 2 because skipping 1st trial
-        thisTrials = uXtSpikesWithinTrial(ic,trialsInChunk);
+        % trialsInChunk = (2+(it-1)*chunkLength:1+it*chunkLength); % 2 because skipping 1st trial
+        thisTrials = uXtSpikesWithinTrial(ic,it);
         thisTrialsVector = [thisTrials{:}];
         nSpikesBase = sum(thisTrialsVector < 0);
         nSpikesResp = sum(thisTrialsVector > 0);
-        FRoTrBase(ic,it) = nSpikesBase / (0.200 * chunkLength);
-        FRoTrResp(ic,it) = nSpikesResp / (1 * chunkLength);
+        FRoTrBase(ic,it) = nSpikesBase / (0.300 * chunkLength);
+        FRoTrResp(ic,it) = nSpikesResp / (1.000 * chunkLength);
     end
 end
 FRoTrBase_Norm = zscore(FRoTrBase')';
