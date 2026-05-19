@@ -36,7 +36,7 @@ stimStruct = NPXcreateStimStructMulti(exptStruct);
 %   - gratingOFFRespMatrix (cell array),  size [nUnits x nDirections], each element is the 0.2s preceding each trial (what I am calling the "baseline" period)
 %   - resp (cell array), size [nUnits x nStimTypes], each element is then nTrials x Time (in bins of 10 ms)
 %   - base (cell array), size [nUnits x nStimTypes], same as resp but the baseline period
-if class(uniqueStims) == "cell" && size(uniqueStims,1) == 1 && size(uniqueStims,2) == 1 
+if class(uniqueStims) == "cell"
     uniqueStims = uniqueStims{1,1};
 end
 

@@ -1,6 +1,6 @@
 clear all; close all; clc; clear global;
 
-iexp = 9; % Choose experiment
+iexp = 8; % Choose experiment
 refractoryViolationThresh   = 0.002;     % 2 ms
 nExpts = 1;
 
@@ -16,11 +16,29 @@ mkdir(fout);
 
 [cluster_struct,~,~,~,~,~,goodUnitStruct,~,allUnitStruct] = ImportKSdata_TH();  % Marie's function to tidy up ks4 and phy2 outputs for further analysis
 
+[~, idx] = sort([goodUnitStruct.depth]); 
+goodUnitStruct = goodUnitStruct(idx);
+
 %% pull info out of mWorks data
 
 stimStruct = NPXcreateStimStructMulti(exptStruct); % pull stim information
 
 [trialStruct, gratingRespMatrix, gratingRespOFFMatrix, resp, base, uniqueStims] = NPXcreateTrialStructMulti(stimStruct, goodUnitStruct);   % organize neural and stim data into trial structure 
+
+[sz1 sz2] = size(resp);
+[sz3 sz4] = size(base);
+
+if sz1 == 1 && sz2 == 1
+    resp = resp{1,1};
+end
+if sz3 == 1 && sz4 == 1
+    base = base{1,1};
+end
+
+if class(uniqueStims) == "cell" && size(uniqueStims,1) == 1 && size(uniqueStims,2) == 1
+    uniqueStims = uniqueStims{1,1};
+end
+
 
 %% find neural data metadata
 
@@ -65,15 +83,14 @@ path            = binfolder.folder;
 %     end
 % end
 
-
 nCells = size(resp,1);
 nStimTypes = size(resp,2);
 nTimeBinsBase = size(base{1,1},2); % Stimulus duration in 10 ms bin size -- i.e., 100ms / 10ms
 nTimeBinsResp = stimStruct.stimDuration/0.010; % Stimulus duration in 10 ms bin size -- i.e., 100ms / 10ms
 
 % next step gets the number of 
-resp_cell = cellfun(@(x) x(:,3:102), resp{1,1}, 'UniformOutput', false); % Response period (0.020s - 1.020s)
-base_cell = cellfun(@(x) x, base{1,1}, 'UniformOutput', false); % Baseline period (-200ms - 0ms)
+resp_cell = cellfun(@(x) x(:,3:102), resp, 'UniformOutput', false); % Response period (0.020s - 1.020s)
+base_cell = cellfun(@(x) x, base, 'UniformOutput', false); % Baseline period (-200ms - 0ms)
 
 maxTrials = max(cellfun(@(x) size(x,1), resp_cell(:))); % Find max trial count across conditions
 
@@ -112,16 +129,15 @@ end
 % Make an index of cells significantly responsive to gratings
 resp_ind_dir = find(sum(h_resp(:,:),2)); 
 
-resp_ind_dir = 1:length(goodUnitStruct);
-
 %% cell inclusion criteria
 
 cort_cells_ind = find([goodUnitStruct.depth] >= 1200); % only cortical cells
 nSpikesByCell = arrayfun(@(x) length(x.timestamps), goodUnitStruct);
 SpkThreshedInd = find(nSpikesByCell > 1500); % find cells that had more than 1500 spikes
-resp_cort_ind = intersect(intersect(resp_ind_dir,cort_cells_ind),SpkThreshedInd);
+resp_cort_ind = intersect(resp_ind_dir,cort_cells_ind);
 includeCells = intersect(intersect(resp_ind_dir,cort_cells_ind),SpkThreshedInd); % index of cells that were responsive, cortical, and nSpikes > 1500
 
+includeCells = SpkThreshedInd;
 %% extract spike events before and after trial onset
 nTrials = length(trialStruct.onset);
 
@@ -259,9 +275,9 @@ end
 % resp is 20ms to 1.020ms after stim onset
 close all
 chunkLength = 1; % 5 trials in a chunk
-ylineDrug = floor(780/chunkLength);
+ylineDrug = 1040;
 
-% nChunks = floor((nTrials-2)/chunkLength); 
+nChunks = nTrials;
 FRoTrBase = nan(nCells,nChunks);
 FRoTrResp = nan(nCells,nChunks);
 
@@ -272,50 +288,128 @@ for ic = 1:nCells
         thisTrialsVector = [thisTrials{:}];
         nSpikesBase = sum(thisTrialsVector < 0);
         nSpikesResp = sum(thisTrialsVector > 0);
-        FRoTrBase(ic,it) = nSpikesBase / (0.300 * chunkLength);
-        FRoTrResp(ic,it) = nSpikesResp / (1.000 * chunkLength);
+        FRoTrBase(ic,it) = nSpikesBase / (tBeforeStimOnset * chunkLength);
+        FRoTrResp(ic,it) = nSpikesResp / (tAfterStimOnset * chunkLength);
     end
 end
-FRoTrBase_Norm = zscore(FRoTrBase')';
-FRoTrResp_Norm = zscore(FRoTrResp')';
+% FRoTrBase_Norm = zscore(FRoTrBase')';
+% FRoTrResp_Norm = zscore(FRoTrResp')';
+FRoTrResp_BaseSub = FRoTrResp - FRoTrBase; 
 
-figure
-imagesc(FRoTrBase)
-hold on
-title(['Baseline FR over time (' num2str(chunkLength) ' trials a chunk)'])
-xlabel('Trial Chunk index')
-ylabel('Cell index')
-xline(ylineDrug,"LineWidth",1,"Color",'r')
-hold off
+FRoTrBase_Norm = (FRoTrBase - mean(FRoTrBase, 2, 'omitnan')) ./ std(FRoTrBase, 0, 2, 'omitnan');
+FRoTrResp_Norm = (FRoTrResp - mean(FRoTrResp, 2, 'omitnan')) ./ std(FRoTrResp, 0, 2, 'omitnan');
+depths = 2000 - [goodUnitStruct(includeCells).depth];
+
+FRoTrBase_flip      = flipud(FRoTrBase);
+FRoTrResp_flip      = flipud(FRoTrResp);
+FRoTrResp_BaseSub_flip  = flipud(FRoTrResp_BaseSub);
+FRoTrBase_Norm_flip = flipud(FRoTrBase_Norm);
+FRoTrResp_Norm_flip = flipud(FRoTrResp_Norm);
+depths_flip         = fliplr(depths);
+
+step = max(1, round(nCells/20));
+counter = 0;
+
+for figInfo = { {'Baseline FR',           FRoTrBase_flip}, ...
+                {'Evoked FR',              FRoTrResp_flip}, ...
+                {'Baseline-Subtracted Evoked FR',     FRoTrResp_BaseSub_flip}, ...
+                {'Normalized Baseline FR', FRoTrBase_Norm_flip}, ...
+                {'Normalized Evoked FR',   FRoTrResp_Norm_flip} }
+    counter = counter + 1;
+    % if counter == 3
+        thisTitle = figInfo{1}{1};
+        thisTitleFull = [exptStruct.mouse ' ' thisTitle];
+        thisFigName = strrep(thisTitleFull, ' ', '_');
+        thisData  = figInfo{1}{2};
+    
+        figure
+        imagesc(thisData)
+        hold on
+        title(thisTitleFull)
+        xlabel('Trial Index')
+        yticks(1:step:nCells)
+        yticklabels(arrayfun(@num2str, depths_flip(1:step:end), 'UniformOutput', false))
+        ylabel('Depth (µm)')
+        xline(ylineDrug, "LineWidth", 1, "Color", 'r')
+        if counter == 3
+            clim([-120 120]);
+        end
+        cb = colorbar;
+        cb.Label.String = 'Firing Rate (Hz)';
+        hold off
+        print(gcf,fullfile(fout,thisFigName),'-dpdf','-fillpage');
+        print(gcf,fullfile(plotCentral,thisFigName),'-dpdf','-fillpage');
+    % end
+end
 
 
-figure
-imagesc(FRoTrResp)
-hold on
-title(['Evoked FR over time (' num2str(chunkLength) ' trials a chunk)'])
-xlabel('Trial Chunk index')
-ylabel('Cell index')
-xline(ylineDrug,"LineWidth",1,"Color",'r')
-hold off
+%% amplitude over time
+chunkLength = 1;
+nCells = length(includeCells);
+nChunks = nTrials;
+AmpOTrBase = nan(nCells, nChunks);
+AmpOTrResp = nan(nCells, nChunks);
 
-figure
-imagesc(FRoTrBase_Norm)
-hold on
-title(['Normalized Baseline FR over time (' num2str(chunkLength) ' trials a chunk)'])
-xlabel('Trial Chunk index')
-ylabel('Cell index')
-xline(ylineDrug,"LineWidth",1,"Color",'r')
-hold off
+for ic = 1:nCells
+    thisCellind = includeCells(ic);
+    thisCellTS  = goodUnitStruct(thisCellind).timestamps;
+    thisCellAmp = goodUnitStruct(thisCellind).amplitudes;  % parallel to timestamps
 
-figure
-imagesc(FRoTrResp_Norm)
-hold on
-title(['Normalized Evoked FR over time (' num2str(chunkLength) ' trials a chunk)'])
-xlabel('Trial Chunk index')
-ylabel('Cell index')
-xline(ylineDrug,"LineWidth",1,"Color",'r')
-hold off
+    for it = 1:nTrials
+        % Define windows
+        baseStart = onsets(it) - tBeforeStimOnset;
+        baseEnd   = onsets(it);
+        respStart = onsets(it);
+        respEnd   = onsets(it) + tAfterStimOnset;
 
+        % Index into timestamps to get amplitude values for each window
+        baseSpkIdx = thisCellTS > baseStart & thisCellTS < baseEnd;
+        respSpkIdx = thisCellTS > respStart & thisCellTS < respEnd;
+
+        if any(baseSpkIdx)
+            AmpOTrBase(ic, it) = mean(thisCellAmp(baseSpkIdx));
+        end
+        if any(respSpkIdx)
+            AmpOTrResp(ic, it) = mean(thisCellAmp(respSpkIdx));
+        end
+    end
+end
+
+AmpOTrBase_Norm = (AmpOTrBase - mean(AmpOTrBase, 2, 'omitnan')) ./ std(AmpOTrBase, 0, 2, 'omitnan');
+AmpOTrResp_Norm = (AmpOTrResp - mean(AmpOTrResp, 2, 'omitnan')) ./ std(AmpOTrResp, 0, 2, 'omitnan');
+
+depths = 2000 - [goodUnitStruct(includeCells).depth];
+step   = max(1, round(nCells/20));
+
+AmpOTrBase_flip      = flipud(AmpOTrBase);
+AmpOTrResp_flip      = flipud(AmpOTrResp);
+AmpOTrBase_Norm_flip = flipud(AmpOTrBase_Norm);
+AmpOTrResp_Norm_flip = flipud(AmpOTrResp_Norm);
+depths_flip          = fliplr(depths);
+
+for figInfo = { {'Baseline Amplitude',   AmpOTrBase_flip}, ...
+                {'Evoked Amplitude',      AmpOTrResp_flip}, ...
+                {'Normalized Baseline Amplitude',   AmpOTrBase_Norm_flip}, ...
+                {'Normalized Evoked Amplitude',     AmpOTrResp_Norm_flip} }
+    thisTitle = figInfo{1}{1};
+    thisTitleFull = [exptStruct.mouse ' ' thisTitle];
+    thisFigName = strrep(thisTitleFull, ' ', '_');
+    thisData  = figInfo{1}{2};
+
+    figure
+    imagesc(thisData)
+    hold on
+    title([exptStruct.mouse ' ' thisTitle])
+    xlabel('Trial index')
+    yticks(1:step:nCells)
+    yticklabels(arrayfun(@num2str, depths_flip(1:step:end), 'UniformOutput', false))
+    ylabel('Depth (µm)')
+    xline(ylineDrug, "LineWidth", 1, "Color", 'r')
+    hold off
+
+    print(gcf,fullfile(fout,thisFigName),'-dpdf');
+    print(gcf,fullfile(plotCentral,thisFigName),'-dpdf');   
+end
 %% ISI CDF
 
 ctrlTrialThresh = 500;
@@ -400,15 +494,15 @@ end
 
 % figure
 % hold on
-% cdfplot(ISIctrlBase{1,1})
-% cdfplot(ISIdrugBase{1,1})
+% cdfplot(ISIctrlbase)
+% cdfplot(ISIdrugbase)
 % legend({"control","drug"})
 % hold off
 % 
 % figure
 % hold on
-% cdfplot(ISIctrlResp{1,1})
-% cdfplot(ISIdrugResp{1,1})
+% cdfplot(ISIctrlresp)
+% cdfplot(ISIdrugresp)
 % legend({"control","drug"})
 % hold off
 %% summarizing above ctrl vs drug ISI
