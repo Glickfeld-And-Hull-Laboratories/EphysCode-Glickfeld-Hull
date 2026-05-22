@@ -1,6 +1,6 @@
 clear all; close all; clc; clear global;
 
-iexp = 8; % Choose experiment
+iexp = 7; % Choose experiment
 refractoryViolationThresh   = 0.002;     % 2 ms
 nExpts = 1;
 
@@ -137,7 +137,7 @@ SpkThreshedInd = find(nSpikesByCell > 1500); % find cells that had more than 150
 resp_cort_ind = intersect(resp_ind_dir,cort_cells_ind);
 includeCells = intersect(intersect(resp_ind_dir,cort_cells_ind),SpkThreshedInd); % index of cells that were responsive, cortical, and nSpikes > 1500
 
-includeCells = SpkThreshedInd;
+% includeCells = SpkThreshedInd;
 %% extract spike events before and after trial onset
 nTrials = length(trialStruct.onset);
 
@@ -331,9 +331,9 @@ for figInfo = { {'Baseline FR',           FRoTrBase_flip}, ...
         yticklabels(arrayfun(@num2str, depths_flip(1:step:end), 'UniformOutput', false))
         ylabel('Depth (µm)')
         xline(ylineDrug, "LineWidth", 1, "Color", 'r')
-        if counter == 3
-            clim([-120 120]);
-        end
+        % if counter == 3
+        %     clim([-120 120]);
+        % end
         cb = colorbar;
         cb.Label.String = 'Firing Rate (Hz)';
         hold off

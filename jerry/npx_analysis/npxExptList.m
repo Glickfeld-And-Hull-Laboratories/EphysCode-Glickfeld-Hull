@@ -15,6 +15,7 @@ expt(1).stimDur = {'0.100'};
 expt(1).eyetrack = 'n';    
 expt(1).wheeltrack = 'y';   
 expt(1).loc = 'jerry';   
+expt(1).stimPos = [-20 -10];
 %% expt 2 i3337 
 expt(2).mouse = 'i3337';  
 expt(2).date = '260225';    
@@ -32,6 +33,7 @@ expt(2).stimDur = {'0.100'};
 expt(2).eyetrack = 'n';    
 expt(2).wheeltrack = 'y';   
 expt(2).loc = 'jerry';   
+expt(2).stimPos = [-20 -10];
 %% expt 3 i3340
 expt(3).mouse = 'i3340';  
 expt(3).date = '260303';    
@@ -49,6 +51,7 @@ expt(3).stimDur = {'0.100'};
 expt(3).eyetrack = 'y';    
 expt(3).wheeltrack = 'y';   
 expt(3).loc = 'jerry';     
+expt(3).stimPos = [10 5];
 %% expt 4 i3345
 expt(4).mouse = 'i3345';  
 expt(4).date = '260310';    
@@ -66,6 +69,7 @@ expt(4).stimDur = {'0.100','0.100'};
 expt(4).eyetrack = 'y';    
 expt(4).wheeltrack = 'y';   
 expt(4).loc = 'jerry';     
+expt(4).stimPos = [0 -2.5];
 %% expt 5 i3346
 expt(5).mouse = 'i3346';  
 expt(5).date = '260326';    
@@ -83,6 +87,7 @@ expt(5).stimDur = {'1.000','0.100','0.100'};
 expt(5).eyetrack = 'y';    
 expt(5).wheeltrack = 'y';   
 expt(5).loc = 'jerry';     
+expt(5).stimPos = [5 0];
 %% expt 6 i3900
 expt(6).mouse = 'i3900';  
 expt(6).date = '260408';    
@@ -100,6 +105,7 @@ expt(6).stimDur = {'1.000','0.100','1.000','1.000'};
 expt(6).eyetrack = 'y';    
 expt(6).wheeltrack = 'y';   
 expt(6).loc = 'jerry';    
+expt(6).stimPos = [10 -5];
 %% expt 7 i3902
 expt(7).mouse = 'i3902';  
 expt(7).date = '260416';    
@@ -117,6 +123,7 @@ expt(7).stimDur = {'1.000','0.100','1.000','1.000','1.000'};
 expt(7).eyetrack = 'y';    
 expt(7).wheeltrack = 'y';   
 expt(7).loc = 'jerry';    
+expt(7).stimPos = [2.5 -12.5];
 %% expt 8 i3347
 expt(8).mouse = 'i3347';  
 expt(8).date = '260424';    
@@ -134,6 +141,7 @@ expt(8).stimDur = {'1.000','1.000'};
 expt(8).eyetrack = 'y';    
 expt(8).wheeltrack = 'y';   
 expt(8).loc = 'jerry';    
+expt(8).stimPos = [];
 %% expt 9 i3349
 expt(9).mouse = 'i3349';  
 expt(9).date = '260508';    
@@ -145,12 +153,13 @@ expt(9).sex = {'M'};
 expt(9).age = '133';             
 expt(9).cog = {'awake'};   
 expt(9).runName = 'CenterSurround';
-expt(9).exptType = {'fineRetPlaid','CenterSurround','8dirGrating'};
+expt(9).exptType = {'retinotopyFine','CenterSurround','8dirGrating'};
 expt(9).exptTime = {'1353','1408','1433'};  
 expt(9).stimDur = {'1.000','0.100','1.000'};
 expt(9).eyetrack = 'y';    
 expt(9).wheeltrack = 'y';   
 expt(9).loc = 'jerry';    
+expt(9).stimPos = [-17.5 -5];
 %% expt 10 i3348
 expt(10).mouse = 'i3348';  
 expt(10).date = '260514';    
@@ -168,3 +177,22 @@ expt(10).stimDur = {''};
 expt(10).eyetrack = 'n';    
 expt(10).wheeltrack = 'y';   
 expt(10).loc = 'jerry';    
+expt(10).stimPos = [];
+%% expt 11 i3909
+expt(11).mouse = 'i3909';  
+expt(11).date = '260520';    
+expt(11).loc  = {'V1'};      
+expt(11).depth = -2000;           
+expt(11).probe = {'NP1.0'};        
+expt(11).genotype = {'VIP/CBA'};    
+expt(11).sex = {'M'};     
+expt(11).age = '140';             
+expt(11).cog = {'awake'};   
+expt(11).runName = 'CenterSurround';
+expt(11).exptType = {'retinotopyFine','CenterSurround'};
+expt(11).exptTime = {'1754','1809'};  
+expt(11).stimDur = {'1.000','0.100'};
+expt(11).eyetrack = 'y';    
+expt(11).wheeltrack = 'y';   
+expt(11).loc = 'jerry';    
+expt(11).stimPos = [0,0];
