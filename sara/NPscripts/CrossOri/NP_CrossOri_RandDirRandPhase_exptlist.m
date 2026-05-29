@@ -414,3 +414,88 @@ expt(26).eyetrack = {'y'};
 expt(26).wheeltrack = {'y'};
 expt(26).saveLoc = 'sara';
 
+%% i3907 260409, V1
+expt(27).mouse = 'i3907';
+expt(27).date = '260409';
+expt(27).loc  = {'V1'};
+expt(27).z = -2100;
+expt(27).probe = {'NP1'};
+expt(27).genotype = {'C57/CBA'};
+expt(27).sex = {'F'};
+expt(27).age = '103';
+expt(27).cog = {'awake'};
+expt(27).layerTime = '';
+expt(27).exptTime = '1440';
+expt(27).eyetrack = {'y'};  
+expt(27).wheeltrack = {'y'};
+expt(27).saveLoc = 'sara';
+
+%% i3905 260414, V1
+expt(28).mouse = 'i3905';
+expt(28).date = '260414';
+expt(28).loc  = {'V1'};
+expt(28).z = -2000;
+expt(28).probe = {'NP1'};
+expt(28).genotype = {'C57/CBA'};
+expt(28).sex = {'F'};
+expt(28).age = '108';
+expt(28).cog = {'awake'};
+expt(28).layerTime = '';
+expt(28).exptTime = '1434';
+expt(28).eyetrack = {'y'};  
+expt(28).wheeltrack = {'y'};
+expt(28).saveLoc = 'sara';
+
+%% i3905 260415, V1
+expt(29).mouse = 'i3905';
+expt(29).date = '260415';
+expt(29).loc  = {'V1'};
+expt(29).z = -2000;
+expt(29).probe = {'NP1'};
+expt(29).genotype = {'C57/CBA'};
+expt(29).sex = {'F'};
+expt(29).age = '109';
+expt(29).cog = {'awake'};
+expt(29).layerTime = '';
+expt(29).exptTime = '1014';
+expt(29).eyetrack = {'y'};  
+expt(29).wheeltrack = {'y'};
+expt(29).saveLoc = 'sara';
+
+
+%% i3906 260421, V1
+expt(30).mouse = 'i3906';
+expt(30).date = '260421';
+expt(30).loc  = {'V1'};
+expt(30).z = -2000;
+expt(30).probe = {'NP1'};
+expt(30).genotype = {'C57/CBA'};
+expt(30).sex = {'F'};
+expt(30).age = '115';
+expt(30).cog = {'awake'};
+expt(30).layerTime = '';
+expt(30).exptTime = '1618';
+expt(30).eyetrack = {'y'};  
+expt(30).wheeltrack = {'y'};
+expt(30).saveLoc = 'sara';
+
+
+
+%% i3906 260422, V1
+expt(31).mouse = 'i3906';
+expt(31).date = '260422';
+expt(31).loc  = {'V1'};
+expt(31).z = -2300;
+expt(31).probe = {'NP1'};
+expt(31).genotype = {'C57/CBA'};
+expt(31).sex = {'F'};
+expt(31).age = '116';
+expt(31).cog = {'awake'};
+expt(31).layerTime = '';
+expt(31).exptTime = '1605';
+expt(31).eyetrack = {'y'};  
+expt(31).wheeltrack = {'y'};
+expt(31).saveLoc = 'sara';
+
+
+

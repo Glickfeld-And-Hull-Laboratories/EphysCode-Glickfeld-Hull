@@ -54,6 +54,17 @@ cellIDs = cellsSelected(:);
 
 fprintf('Selected %d cells for fitting.\n', numel(cellIDs));
 
+%%
+
+rfvisresp = intersect(resp_ind_dir_all, idxInt);
+figure; 
+    histogram(DSI_all(rfvisresp),100)
+
+ xxx = find(DSI_all(rfvisresp)<.3);
+
+
+
+
 %% Calculate time point of STA
 % The first dimension of bestTimePoint_all is the one computed by the local contrast method
 

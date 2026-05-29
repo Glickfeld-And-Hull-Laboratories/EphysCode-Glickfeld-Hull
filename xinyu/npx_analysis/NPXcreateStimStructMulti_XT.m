@@ -48,11 +48,9 @@ function [stimStruct] = NPXcreateStimStructMulti(exptStruct)
         
     % S = load(bName); %#ok<LOAD>
     % inputStruct = S.input;
-    
-    
     for i = 1:length(mwtime2use)
-        stimStruct(i).stimElevation    = cell2mat_doubles(inputStruct(i).tGratingElevationDeg);
-        stimStruct(i).stimAzimuth      = cell2mat_doubles(inputStruct(i).tGratingAzimuthDeg);
+        stimStruct(i).stimElevation    = double(cell2mat(inputStruct(i).tGratingElevationDeg));
+        stimStruct(i).stimAzimuth      = double(cell2mat(inputStruct(i).tGratingAzimuthDeg));
         stimStruct(i).centerDirs       = cell2mat(inputStruct(i).tGratingDirectionDeg);
         stimStruct(i).stimSpatialFreq  = double(inputStruct(i).gratingSpatialFreqCPD);
         stimStruct(i).stimDuration     = str2double(exptStruct.stimDur{mwtime2use(i)});    % Stimulus duration in seconds
@@ -135,7 +133,7 @@ function [stimStruct] = NPXcreateStimStructMulti(exptStruct)
         % stimStruct.stimTemporalFreq = stimTemporalFreq;
     end
     fields = fieldnames(stimStruct);
-    nTrials = length(stimStruct(1).timestamps);
+    nTrials = length(stimStruct.timestamps);
     for i = 1:numel(fields)
         fieldName = fields{i};
         fieldValue = stimStruct.(fieldName);

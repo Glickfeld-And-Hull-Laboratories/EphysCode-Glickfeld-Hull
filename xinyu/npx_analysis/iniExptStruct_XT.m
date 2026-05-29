@@ -20,5 +20,4 @@ function [exptStruct] = iniExptStruct(iexp);
     exptStruct.wheeltrack = expt(iexp).wheeltrack;
     exptStruct.runName    = expt(iexp).runName;
     exptStruct.stimDur    = expt(iexp).stimDur;
-    exptStruct.stimPos    = expt(iexp).stimPos;
 end

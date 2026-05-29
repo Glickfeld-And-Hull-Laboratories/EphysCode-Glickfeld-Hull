@@ -6,21 +6,29 @@
 %   tipDepth           = distance of tip of electrode from surface of the brain (e.g., -2000)
 
 
-function [L4_DepthShal, L4_DepthDeep, L4_shal_ch, L4_deep_ch] = alignCSDwithTemplate_L4(CSDraw, fs, chanSpacing, tipDepth)
+function [L4_DepthShal, L4_DepthDeep, L4_shal_ch, L4_deep_ch] = alignCSDwithTemplate_L4_Aligned(CSDraw, fs, chanSpacing, tipDepth, firstChInBrain)
 
 templateHeight = 140; % µm
 [nChan, nSamp] = size(CSDraw);
 
 t = (0:nSamp-1)/fs;
-yCSD = (1:nChan-1)*chanSpacing + tipDepth;   % match other figure indexing
 
-figure('Color','w','Units','normalized','Position',[0.1 0.1 0.8 0.8]);
-    imagesc(t, yCSD, -CSDraw); hold on
+% real probe channels used for CSD (every other site)
+realChannels = 2*(2:(nChan+1));  
+% explanation:
+% original LFP channels used: 2,4,6,8,... 
+% CSD removes first/last -> so indices shift
+
+% depth relative to brain surface
+yCSD = (realChannels - firstChInBrain) * (chanSpacing / 2);
+
+figure('Color','w','Units','normalized','Position',[0.4 0.1 0.15 0.8]);
+imagesc(t, yCSD, -CSDraw); hold on
         xlabel('time (s)')
         ylabel('channels (every other)')
         set(gca,'TickDir','out')
         set(gca,'YDir','normal')
-    title('current source density')
+        yline(0,'k--','Surface','LineWidth',1.5)
     annotation('textbox',[0.25 0.93 0.5 0.05],...
     'String','Move template to center L4. Press return when done. Try to align white lines with borders of channels.',...
     'EdgeColor','none',...
@@ -64,10 +72,11 @@ L4_bottom_csd_ch    = find(yBot > yCSD+10,1,'last'); % last channel above bottom
 
 % Add one to account for the dropped first channel to compute the CSD and
 % then get real channel value
-L4_shal_ch      = L4_top_csd_ch + 1;
-L4_deep_ch      = L4_bottom_csd_ch + 1;
-L4_DepthShal    = L4_shal_ch*chanSpacing;
-L4_DepthDeep    = L4_deep_ch*chanSpacing;
+L4_shal_ch = realChannels(L4_top_csd_ch);
+L4_deep_ch = realChannels(L4_bottom_csd_ch);
+
+L4_DepthShal = (L4_shal_ch - firstChInBrain) * chanSpacing/2;
+L4_DepthDeep = (L4_deep_ch - firstChInBrain) * chanSpacing/2;
 
 fprintf('Layer 4 shallow channel: %d, depth= %d\n',L4_shal_ch, L4_DepthShal)
 fprintf('Layer 4 deep channel: %d, depth= %d\n',L4_deep_ch, L4_DepthDeep)
@@ -77,7 +86,7 @@ close
     figure
         subplot 132
             imagesc(t, yCSD, -CSDraw); hold on
-            plot(1:nChan-1,yCSD,'k','LineWidth',1.5); hold on
+            plot(1:length(yCSD), yCSD, 'k', 'LineWidth', 1.5);
             % plot selected boundaries
             yline(yTop,'b--','LineWidth',1)
             yline(yBot,'r--','LineWidth',1)

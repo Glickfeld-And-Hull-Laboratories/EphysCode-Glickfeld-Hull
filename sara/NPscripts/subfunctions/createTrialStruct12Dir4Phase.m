@@ -3,14 +3,23 @@ function [trialStruct, gratingRespMatrix, gratingOFFRespMatrix, resp, base] = cr
     trialStruct = struct(); 
 
     % Create trial-by-trial structure
-    for i = 1:length(stimStruct.timestamps{b})
-        trialStruct(i).onset    = stimStruct.timestamps{b}(i);
-        trialStruct(i).offset   = stimStruct.timestamps{b}(i) + stimStruct.stimDuration;
-        trialStruct(i).stimDir  = stimStruct.stimDirection(i);
-        trialStruct(i).maskPhas = stimStruct.maskPhase(i);
-        trialStruct(i).maskCon  = stimStruct.maskContrast(i);
+    if nargin < 3
+        for i = 1:length(stimStruct.timestamps)
+            trialStruct(i).onset    = stimStruct.timestamps(i);
+            trialStruct(i).offset   = stimStruct.timestamps(i) + stimStruct.stimDuration;
+            trialStruct(i).stimDir  = stimStruct.stimDirection(i);
+            trialStruct(i).maskPhas = stimStruct.maskPhase(i);
+            trialStruct(i).maskCon  = stimStruct.maskContrast(i);
+        end
+    else
+        for i = 1:length(stimStruct.timestamps{b})
+            trialStruct(i).onset    = stimStruct.timestamps{b}(i);
+            trialStruct(i).offset   = stimStruct.timestamps{b}(i) + stimStruct.stimDuration;
+            trialStruct(i).stimDir  = stimStruct.stimDirection(i);
+            trialStruct(i).maskPhas = stimStruct.maskPhase(i);
+            trialStruct(i).maskCon  = stimStruct.maskContrast(i);
+        end
     end
-
     nUnits      = length(goodUnitStruct);
 
     % Get unique directions

@@ -27,5 +27,4 @@ for k=1:length(cluster_struct) % make vectors of units that are good, noise, or 
         
 end
 
-
 end

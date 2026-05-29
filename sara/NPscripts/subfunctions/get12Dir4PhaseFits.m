@@ -1,4 +1,4 @@
-Fpofunction get12Dir4PhaseFits(resp,base, exptStruct, doPlot)
+function get12Dir4PhaseFits(resp,base, exptStruct, goodUnitStruct, doPlot)
     
     mouse   = exptStruct.mouse;
     date    = exptStruct.date;
@@ -292,35 +292,35 @@ close all
 
 
 %% 
-
-stop
-
-colors = getColors;
-
-figure;
-n=1;
-x=[-150:30:180];
-    for iCell = [150 151 152]
-        subplot(6,4,n)
-            plot(x, avg_resp_grat(iCell,:),'k') 
-            shadedErrorBar(x,avg_resp_grat(iCell,:),sem_resp_grat(iCell,:))
-            xlabel('grating direction')
-            ylabel('hz')
-            subtitle(['cell ' num2str(iCell)])
-        subplot(6,4,n+1)
-            for im = 1:4
-                plot(x, avg_resp_plaid(iCell,:,im),'Color',colors(im,:)); hold on
-                shadedErrorBar(x,avg_resp_plaid(iCell,:,im),sem_resp_plaid(iCell,:,im),'lineProps', {'Color', colors(im,:)})
-                xlabel('plaid direction')
-                ylabel('hz')
-                subtitle(['cell ' num2str(iCell)])
-            end
-        n=n+2;
-    end
-    movegui('center')
-    sgtitle([num2str(mouse) ' ' num2str(date) ' expt' num2str(iexp)])
-    % print(fullfile(base, ['Figures/Lab_meeting/240905_joint/directiontuningplots.pdf']),'-dpdf', '-fillpage') 
-
+% 
+% stop
+% 
+% colors = getColors;
+% 
+% figure;
+% n=1;
+% x=[-150:30:180];
+%     for iCell = [150 151 152]
+%         subplot(6,4,n)
+%             plot(x, avg_resp_grat(iCell,:),'k') 
+%             shadedErrorBar(x,avg_resp_grat(iCell,:),sem_resp_grat(iCell,:))
+%             xlabel('grating direction')
+%             ylabel('hz')
+%             subtitle(['cell ' num2str(iCell)])
+%         subplot(6,4,n+1)
+%             for im = 1:4
+%                 plot(x, avg_resp_plaid(iCell,:,im),'Color',colors(im,:)); hold on
+%                 shadedErrorBar(x,avg_resp_plaid(iCell,:,im),sem_resp_plaid(iCell,:,im),'lineProps', {'Color', colors(im,:)})
+%                 xlabel('plaid direction')
+%                 ylabel('hz')
+%                 subtitle(['cell ' num2str(iCell)])
+%             end
+%         n=n+2;
+%     end
+%     movegui('center')
+%     sgtitle([num2str(mouse) ' ' num2str(date) ' expt' num2str(iexp)])
+%     % print(fullfile(base, ['Figures/Lab_meeting/240905_joint/directiontuningplots.pdf']),'-dpdf', '-fillpage') 
+% 
 
 
 end

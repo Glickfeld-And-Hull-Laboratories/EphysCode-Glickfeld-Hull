@@ -1,6 +1,6 @@
 clear all; close all; clc; clear global;
 
-iexp = 11; % Choose experiment
+iexp = 7; % Choose experiment
 refractoryViolationThresh   = 0.002;     % 2 ms
 
 %% read data from ks4 and phy2 output
@@ -11,7 +11,6 @@ baseDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
 fPathBaseIn = fullfile(baseDir, '\jerry\analysis\neuropixel',exptStruct.mouse,exptStruct.date,'kilosort4');
 cd(fPathBaseIn);
 plotCentral = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\jerry\analysis\neuropixel\plot_central';
-plotCentralVars = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\jerry\analysis\neuropixel\plot_central\savedvars';
 fout = fullfile(baseDir, '\jerry\analysis\neuropixel',exptStruct.mouse,exptStruct.date,'analysis_output');
 mkdir(fout);
 
@@ -19,67 +18,25 @@ mkdir(fout);
 
 %% Stimulus info
 
-stimStruct = NPXcreateStimStructMulti(exptStruct);
+% Load stimulus "on" timestamps
+% I have already synced these stimulus on timestamps to the neural signal
+% using CatGT and TPrime. Syncing needs to be done before this step.
+
+stimStruct = NPXcreateStimStruct(exptStruct);
+
+% Again, I recommend reading through the above function as an example of 
+% one way to extract relevant stimulus information from the MWorks behavior 
+% file.
 
 % Sort spike times into trials and bins
 
-[trialStruct, gratingRespMatrix, gratingRespOFFMatrix, resp, base, uniqueStims] = NPXcreateTrialStructMulti(stimStruct, goodUnitStruct);     
+[trialStruct, gratingRespMatrix, gratingRespOFFMatrix, resp, base, uniqueStims] = NPXcreateTrialStruct(stimStruct, goodUnitStruct);     
 % Outputs
 %   - gratingRespMatrix (cell array), size [nUnits x nDirections], each element contains a cell array of spike times for each trial
 %   - gratingOFFRespMatrix (cell array),  size [nUnits x nDirections], each element is the 0.2s preceding each trial (what I am calling the "baseline" period)
 %   - resp (cell array), size [nUnits x nStimTypes], each element is then nTrials x Time (in bins of 10 ms)
 %   - base (cell array), size [nUnits x nStimTypes], same as resp but the baseline period
-if class(uniqueStims) == "cell" && size(uniqueStims,1) == 1 && size(uniqueStims,2) == 1 
-    uniqueStims = uniqueStims{1,1};
-end
 
-%% find ret fit information - select ret run to get ret fit data
-[sz1 sz2] = size(resp);
-[sz3 sz4] = size(base);
-
-if sz1 == 1 && sz2 == 1
-    resp = resp{1,1};
-end
-if sz3 == 1 && sz4 == 1
-    base = base{1,1};
-end
-
-if class(uniqueStims) == "cell" && size(uniqueStims,1) == 1 && size(uniqueStims,2) == 1
-    uniqueStims = uniqueStims{1,1};
-end
-
-baseLength = size(base{1,1},2);
-respLength = size(resp{1,1},2);
-
-basefrMatrix = cellfun(@(x) sum(x, 2), base, 'UniformOutput', false);
-baseMat = cell2mat(basefrMatrix')' / (baseLength * 0.010);
-
-respfrMatrix = cellfun(@(x) sum(x, 2), resp, 'UniformOutput', false);
-respMat = cell2mat(respfrMatrix')' / (respLength * 0.010);
-
-[goodfit_ind edge_ind dist_vec] = retFitWithBootstrap(stimStruct,respMat,baseMat,50,exptStruct.stimPos,plotCentralVars);
-
-
-%% second time's the charm
-
-clearvars -except iexp refractoryViolationThresh baseDir exptStruct fPathBaseIn plotCentral plotCentralVars fout goodUnitStruct goodfit_ind edge_ind dist_vec
-close all; clc; clear global;
-
-%% Stimulus info - now select for the actual iso cross run
-
-stimStruct = NPXcreateStimStructMulti(exptStruct);
-
-% Sort spike times into trials and bins
-
-[trialStruct, gratingRespMatrix, gratingRespOFFMatrix, resp, base, uniqueStims] = NPXcreateTrialStructMulti(stimStruct, goodUnitStruct);     
-% Outputs
-%   - gratingRespMatrix (cell array), size [nUnits x nDirections], each element contains a cell array of spike times for each trial
-%   - gratingOFFRespMatrix (cell array),  size [nUnits x nDirections], each element is the 0.2s preceding each trial (what I am calling the "baseline" period)
-%   - resp (cell array), size [nUnits x nStimTypes], each element is then nTrials x Time (in bins of 10 ms)
-%   - base (cell array), size [nUnits x nStimTypes], same as resp but the baseline period
-if class(uniqueStims) == "cell" && size(uniqueStims,1) == 1 && size(uniqueStims,2) == 1 
-    uniqueStims = uniqueStims{1,1};
-end
 
 %% find neural data metadata
 
@@ -378,31 +335,15 @@ path            = binfolder.folder;
 %     sgtitle('Refractory period violations')
 
 %% find visually responsive cells
-
-[sz1 sz2] = size(resp);
-[sz3 sz4] = size(base);
-
-if sz1 == 1 && sz2 == 1
-    resp = resp{1,1};
-end
-if sz3 == 1 && sz4 == 1
-    base = base{1,1};
-end
-
-if class(uniqueStims) == "cell" && size(uniqueStims,1) == 1 && size(uniqueStims,2) == 1
-    uniqueStims = uniqueStims{1,1};
-end
-
-% baseLength = size(base{1,1},2);
-% respLength = size(resp{1,1},2);
-
 nCells = size(resp,1);
 nStimTypes = size(resp,2);
-nTimeBins = 10;
+nTimeBins = 10; % Stimulus duration in 10 ms bin size -- i.e., 100ms / 10ms
+
+
 % need to hardcode baseline and response period because trialStruct has
 % more info than needed for plotting, and for calculating responsivity we
 % on
-resp_cell = cellfun(@(x) x(:,3:12), resp, 'UniformOutput', false); % Response period (20ms - 120ms)
+resp_cell = cellfun(@(x) x(:,1:15), resp, 'UniformOutput', false); % Response period (20ms - 120ms)
 base_cell = cellfun(@(x) x(:,end-9:end), base, 'UniformOutput', false); % Baseline period (-100ms - 0ms)
 
 % Convert cell arrays to padded numeric arrays for computations
@@ -415,7 +356,7 @@ for ic = 1:nCells
     for id = 1:nStimTypes
         if ~isempty(resp_cell{ic,id})
             nTrials = size(resp_cell{ic,id},1);
-            resp_numeric(ic,id,1:nTrials,:) = resp_cell{ic,id}; % Assign data
+            resp_numeric(ic,id,1:nTrials,:) = resp_cell{ic,id}(:,3:12); % Assign data
         end
         if ~isempty(base_cell{ic,id})
             nTrials = size(base_cell{ic,id},1);
@@ -451,19 +392,18 @@ resp_ind_dir = find(sum(h_resp(:,:),2));
 %% Cell inclusion criteria
 % find index of cells from goodUnitStruct that match these inclusion
 % criteria
-ret_criterion = intersect(goodfit_ind,find(dist_vec<7.5));
 
 cort_cells_ind = find([goodUnitStruct.depth] >= 1200); % only cortical cells
 nSpikesByCell = arrayfun(@(x) length(x.timestamps), goodUnitStruct);
-SpkThreshedInd = find(nSpikesByCell > 2000); % find cells that had more than 1500 spikes
-% resp_cort_ind = intersect(intersect(resp_ind_dir,cort_cells_ind),SpkThreshedInd);
-includeCells = intersect(intersect(intersect(resp_ind_dir,cort_cells_ind),SpkThreshedInd),ret_criterion); % index of cells that were responsive, cortical, and nSpikes > 1000
+SpkThreshedInd = find(nSpikesByCell > 1500); % find cells that had more than 1500 spikes
+resp_cort_ind = intersect(intersect(resp_ind_dir,cort_cells_ind),SpkThreshedInd);
+includeCells = intersect(intersect(resp_ind_dir,cort_cells_ind),SpkThreshedInd); % index of cells that were responsive, cortical, and nSpikes > 1500
 
 %% extract spike timestamps before and after stim onset 
 % because createTrialStruct only gives resp and base spikes within -100 to
 % 100 ms 
 
-nTrials = length(trialStruct.onset);
+nTrials = length(trialStruct);
 
 onsets = [trialStruct.onset];
 offsets = [trialStruct.offset];
@@ -508,52 +448,52 @@ for i = 1:nStimTypes
 end
 
 %% plot example raster 
-% 
-% ic = max(nCells)-1; % example cell
-% stimIdx = 6; % example direction
-% depth = exptStruct.depth + goodUnitStruct(ic).depth;
-% 
-% % Get spike times for the specified unit and direction
-% spikeTimes  = uXtSpikesWithinTrial(ic, stimTrialIdx{1,stimIdx}); % Spikes in baseline
-% 
-% figure;
-% hold on
-% % Loop over each trial and plot the spikes
-% for trialIdx = 1:length(spikeTimes)
-%     % Get spike times for this trial
-%     trialSpikeTimes     = spikeTimes{trialIdx};
-% 
-%     % Y-axis position for this trial
-%     yPosition = trialIdx; 
-% 
-%     % Plot **stimulus-related spikes** (stimulus duration--0 to 1s)
-%     plot(trialSpikeTimes, yPosition * ones(size(trialSpikeTimes)), 'k.', 'MarkerSize', 5);
-% end
-% 
-% xlabel('Time (s)');
-% ylabel('Trial Number');
-% title(uniqueStims(stimIdx));
-% ylim([0 length(spikeTimes) + 1]);
-% xlim([-.25 .45]); % Shows baseline (-.2 to 0s) and stimulus (0 to 1s)
-% % Plot stimulus onset line at **0s**
-% xline(0, 'r', 'LineWidth', 2); 
-% hold off
-% 
-% cells2include = includeCells(max(nCells)-1:max(nCells));
-% 
-% 
-% for ic = cells2include'  % These are example cells I handpicked 
-%     depth = exptStruct.depth + goodUnitStruct(ic).depth;
-%     uIdx = find(includeCells == ic);
-%     fig = figure;
-%         for i=1:nStimTypes
-%             subplot(6,3,i)
-%                 plotRaster_TH(uXtSpikesWithinTrial,stimTrialIdx, uIdx,i)        
-%         end
-%     sgtitle(['unit '  num2str(ic) ', depth= ' num2str(depth)])
-%     set(gcf, 'Position', get(0, 'Screensize'));
-%     movegui('center')
-% end
+
+ic = max(nCells)-1; % example cell
+stimIdx = 6; % example direction
+depth = exptStruct.depth + goodUnitStruct(ic).depth;
+
+% Get spike times for the specified unit and direction
+spikeTimes  = uXtSpikesWithinTrial(ic, stimTrialIdx{1,stimIdx}); % Spikes in baseline
+
+figure;
+hold on
+% Loop over each trial and plot the spikes
+for trialIdx = 1:length(spikeTimes)
+    % Get spike times for this trial
+    trialSpikeTimes     = spikeTimes{trialIdx};
+
+    % Y-axis position for this trial
+    yPosition = trialIdx; 
+    
+    % Plot **stimulus-related spikes** (stimulus duration--0 to 1s)
+    plot(trialSpikeTimes, yPosition * ones(size(trialSpikeTimes)), 'k.', 'MarkerSize', 5);
+end
+
+xlabel('Time (s)');
+ylabel('Trial Number');
+title(uniqueStims(stimIdx));
+ylim([0 length(spikeTimes) + 1]);
+xlim([-.25 .45]); % Shows baseline (-.2 to 0s) and stimulus (0 to 1s)
+% Plot stimulus onset line at **0s**
+xline(0, 'r', 'LineWidth', 2); 
+hold off
+
+cells2include = includeCells(max(nCells)-1:max(nCells));
+
+
+for ic = cells2include'  % These are example cells I handpicked 
+    depth = exptStruct.depth + goodUnitStruct(ic).depth;
+    uIdx = find(includeCells == ic);
+    fig = figure;
+        for i=1:nStimTypes
+            subplot(6,3,i)
+                plotRaster_TH(uXtSpikesWithinTrial,stimTrialIdx, uIdx,i)        
+        end
+    sgtitle(['unit '  num2str(ic) ', depth= ' num2str(depth)])
+    set(gcf, 'Position', get(0, 'Screensize'));
+    movegui('center')
+end
 
 %% tidy spike events for PSTH
 
@@ -571,7 +511,7 @@ nBins = int64((preStimTime + postStimTime)/binSize);
 edges = linspace(t_start, t_end, nBins + 1);
 
 psth_data = nan(nStimTypes,nCells,nBins);
-psth_data_raw = nan(nStimTypes,nCells,nBins);
+
 
 for ic = 1:nCells
     trialDat = uXtSpikesWithinTrial(ic,:);
@@ -585,11 +525,8 @@ for ic = 1:nCells
         thisStimAvg = mean(thisCellBinFR(stimIdx,:),1); % average across all trials in that trial type
         smoothStimAvg = smoothdata(thisStimAvg,'gaussian',smooth_window);
         psth_data(iStim,ic,:) = smoothStimAvg;
-        psth_data_raw(iStim,ic,:) = thisStimAvg;
     end
 end
-
-% save(fullfile(plotCentralVars,[exptStruct.mouse '_psthData.mat']),'psth_data','psth_data_raw');
 
 %% plot psth
 % plot psth from psth_data (nStimTypes, nCells, nBins) **
@@ -620,61 +557,6 @@ end
 
 saveas(gcf, fullfile(fout,[exptStruct.mouse '_rawPSTH.pdf']))
 saveas(gcf, fullfile(plotCentral,[exptStruct.mouse '_rawPSTH.pdf']))
-
-%% find preferred ori of includeCells and plot psth only for preferred center ori.
-% last two conditions of uniqueStims are 0deg and 90deg center 
-
-baseCentFRMat = base_cell_trials(includeCells,5:6,:);
-respCentFRMat = resp_cell_trials(includeCells,5:6,:);
-
-trialDeltaFR = respCentFRMat - baseCentFRMat;
-meanDeltaFR = nanmean(trialDeltaFR,3); % average across trials in each condition 
-
-vals = [0 90];  % e.g. [0 90]
-[~, idx] = max(meanDeltaFR, [], 2);
-prefOris = vals(idx)'; % for all the includeCells
-
-condOri = [0 90 0 90 0 90];
-pairs = [1 2; 3 4; 5 6];
-
-for iPair = 1:3
-    cond1 = pairs(iPair, 1);
-    cond2 = pairs(iPair, 2);
-    
-    match1 = prefOris == condOri(cond1);
-    match2 = prefOris == condOri(cond2);
-    
-    psth_combined(iPair, :) = (squeeze(mean(psth_data(cond1, match1, :), 2)) + ...
-                                squeeze(mean(psth_data(cond2, match2, :), 2))) / 2;
-end
-
-titles = {'cross', 'iso', 'center'};
-
-for iCond = 1:3
-    figure
-    plot(-0.19:0.010:0.40,psth_combined(iCond,:))
-    hold on
-    title(titles{iCond})
-    xlabel('t')
-    ylabel('FR')
-    ylim([ymin ymax])
-    plot([0 0.1],[stimBarY stimBarY], 'r-', 'LineWidth', 2)
-    hold off
-end
-
-save(fullfile(plotCentralVars,[exptStruct.mouse '_psthData.mat']),'psth_data','psth_data_raw','prefOris');
-
-%%
-
-
-
-
-
-
-
-
-
-
 
 
 %% Extract waveforms during stim on
