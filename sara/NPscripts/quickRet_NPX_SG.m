@@ -2,9 +2,9 @@ clear all
 clear all global
 close all
 
-date = '260213';
-mouse = 'i3903';
-mwtime = '1257';   
+date = '260422';
+mouse = 'i3906';
+mwtime = '1502';   
 chnls = 1:2:200;
 
 fprintf([date ' ' mouse ' \n'])
@@ -146,27 +146,13 @@ LFPdata = (LFPdata-LFPdata(300,:));
    xTime        = 1:size(LFPbyStim,2);  % Get length of time axis
    yChannels    = 1:length(chnls);  % Get length of channel axis
 
-   figure; % Waterfall plots
-   for is = 1:nStim
-        subplot(nElevations,nAzimuths,is)
-            waterfall(xTime,yChannels,LFPbyStim(:,:,is))
-            hold on
-            clim([-20 20])
-            xlabel('time')
-            ylabel('channel')
-            zlabel('amp (mV)'); zlim([-20 20])
-        title(num2str(stims(is,:)))
-   end
-   movegui('center')
-   print(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\' date '\' date '_' mouse '_retinotopy_waterfall_HighFiltNormAfter.pdf'], '-dpdf','-bestfit')
- 
-
    figure; % Heat map of first 200 ms
    for is = 1:nStim
         subplot(nElevations,nAzimuths,is)
             imagesc(xTime,yChannels,LFPbyStim(:,:,is))
             hold on
-            clim([-20 20])
+            xline(.04*2500)
+            clim([-30 30])
             xlabel('time (200 ms)')
             ylabel('channel')
             xlim([0 500])

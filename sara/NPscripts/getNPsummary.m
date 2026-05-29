@@ -48,6 +48,9 @@ dir_sse = [];
 dir_rsq = [];
 k1_all = [];
 
+L4top_all = [];
+L4bot_all = [];
+
 resp_ind_dir_all = [];
 avg_resp_dir_all = [];
 
@@ -64,21 +67,36 @@ bestTimePoint_all = [];
 
 layer_all = [];
 
+bottomOfBrainDepth = [];
+bottomOfBrainDepth(1)   = -1100; %13
+bottomOfBrainDepth(2)   = -1100; %18
+bottomOfBrainDepth(3)   = -1100; %19
+bottomOfBrainDepth(4)   = -1100; %20
+bottomOfBrainDepth(5)   = -1300; %21
+bottomOfBrainDepth(6)   = -1100; %22
+bottomOfBrainDepth(7)   = -1300; %23
+bottomOfBrainDepth(8)   = -1100; %24
+bottomOfBrainDepth(9)   = -1300; %25
+bottomOfBrainDepth(10)  = -1300; %26
+bottomOfBrainDepth(11)  = -1300; %27
+bottomOfBrainDepth(12)  = -1200; %28
+bottomOfBrainDepth(13)  = -1100; %29
+bottomOfBrainDepth(14)  = -1000; %30
+bottomOfBrainDepth(15)  = -1500; %31
 
-% V1 -- 11 13 18 19 20 21 22 23 24 25 26
+% V1 -- 11 13 18 19 20 21 22 23 24 25 26 28
 
-% V1 -- 13 18 19 20 21 22 23 25 26, throwing out 11 for RF position,
+% V1 -- 13 18 19 20 21 22 23 25 26 28 29, throwing out 11 for RF position,
 % throwing out 24 because eye camera frames collected ~= timestamps of frames
 
-expts = [ 25 26];
+expts = [13 18 19 20 21 22 23 24 25 26 27 28 29 30 31];
 
 start=1;
-for iexp                = expts     % 11 13 14 16 17
+for iexp                = expts   
     mouse               = expt(iexp).mouse;
     mouse_list          = strvcat(mouse_list, mouse);
     date                = expt(iexp).date;
     probeTipDepth       = expt(iexp).z;
-        
     load(fullfile(base, 'Analysis\Neuropixel', date, [date '_' mouse '_spikeAnalysis.mat']))
     load(fullfile(base, 'Analysis\Neuropixel', date, [date '_' mouse '_unitStructs.mat']))
     load(fullfile(base, 'Analysis\Neuropixel', date, [date '_' mouse '_F1F0.mat']))
@@ -87,6 +105,14 @@ for iexp                = expts     % 11 13 14 16 17
     load(fullfile(base, 'Analysis\Neuropixel', date, [mouse '-' date '_spatialRFs.mat']))
     load(fullfile(base, 'Analysis\Neuropixel', date, [date '_' mouse '_stimStruct.mat']))
     load(fullfile(base, 'Analysis\Neuropixel', date, [date '_' mouse '_layerStruct.mat']))
+
+
+    L4_DepthShal_AlignedToSurface = L4_DepthShal; clear L4_DepthShal;
+    L4_DepthDeep_AlignedToSurface = L4_DepthDeep; clear L4_DepthDeep;
+    L4_DepthShal = L4_DepthShal_AlignedToSurface+firstChInBrain*20/2;
+    L4_DepthDeep = L4_DepthDeep_AlignedToSurface+firstChInBrain*20/2;
+    L56_DepthDeep = bottomOfBrainDepth(start)+firstChInBrain*20/2;
+
 
     indexpt = intersect(resp_ind_dir, find(DSI>.5));
 
@@ -122,21 +148,30 @@ for iexp                = expts     % 11 13 14 16 17
 
     L4top = L4_DepthShal+probeTipDepth;
     L4bot = L4_DepthDeep+probeTipDepth;
+    L56bot = L56_DepthDeep+probeTipDepth;
+
     for ic = 1:nCells
-        if depths(ic) > L4top
-            layer(ic) = 3;
-        elseif depths(ic) < L4bot
-            layer(ic) = 5;
-        elseif depths(ic) <= L4top && depths(ic) >= L4bot
-            layer(ic) = 4;
-        else
-            error('Depth classification failed')
-        end
+            if depths(ic) > L4top
+                layer(ic) = 3;
+            elseif depths(ic) < L4bot && depths(ic) > L56bot
+                layer(ic) = 5;
+            elseif depths(ic) <= L4top && depths(ic) >= L4bot
+                layer(ic) = 4;
+            else
+                layer(ic) = NaN;
+            end
     end
     layer_all = [layer_all, layer];
-    stop
-    clear layer
+    
+    % Expand to per-cell vectors
+    L4top_cells = repmat(L4top, 1, nCells);
+    L4bot_cells = repmat(L4bot, 1, nCells);
+    
+    % Append to global arrays
+    L4top_all = [L4top_all, L4top_cells];
+    L4bot_all = [L4bot_all, L4bot_cells];
 
+    clear layer L4top_cells L4bot_cells
 
     F1F0_all                    = [F1F0_all; f1overf0mat];
 
@@ -168,38 +203,37 @@ for iexp                = expts     % 11 13 14 16 17
     % analyze RF locations per experiment 
         ind_RF = find(ind_sigRF>0);
 
-        % azAvg = mean(els(ind_RF))*2; % switch to get correct az and el
-        % azStd = std(els(ind_RF))*2;
-        % elAvg = mean(azs(ind_RF))*2;
-        % elStd = std(els(ind_RF))*2;
-        % elMax = 29*2;
-        % elAvg_flip = elMax - elAvg;
-        % D  = 30;   % stimulus diameter
-        % r = D/2;
+        azAvg = mean(els(ind_RF),"omitnan")*2; % switch to get correct az and el
+        azStd = std(els(ind_RF),'omitnan')*2;
+        elAvg = mean(azs(ind_RF),"omitnan")*2;
+        elStd = std(els(ind_RF),'omitnan')*2;
+        elMax = 29*2;
+        elAvg_flip = elMax - elAvg;
+        D  = 30;   % stimulus diameter
+        r = D/2;
 
-        % figure; movegui('center')
-        %     d = hypot((azAvg) - (stimAz+52), (elAvg_flip) - (stimEl+29));
-        %     subplot 211
-        %         h2 = scatter(azAvg,elAvg_flip);
-        %         hold on
-        %         ylim([0 29*2])
-        %         xlim([0 52*2])
-        %         errorbar(azAvg,elAvg_flip,azStd,'Color',[.7 .7 .7],"LineStyle","none")
-        %         errorbar(azAvg,elAvg_flip,elStd,"horizontal",'Color',[.7 .7 .7],"LineStyle","none")
-        %         set(gca,'TickDir','out'); box off;  grid off
-        %         sgtitle([mouse ', ' num2str(length(ind_RF)) '/' num2str(nCells) ' cells, ' num2str(round(d,1)) ' deg diff (hypot)'])
-        %         subtitle('st dev')
-        %         rectangle('Position',[(stimAz+52)-r, (stimEl+29)-r, D, D],'Curvature',[1 1], 'EdgeColor','k', 'LineWidth',1.5);
-
-
+        figure; movegui('center')
+            d = hypot((azAvg*2) - (stimAz+52), (elAvg_flip) - (stimEl+29));
+            subplot 432
+                h2 = scatter(azAvg,elAvg_flip);
+                hold on
+                ylim([0 29*2])
+                xlim([0 52*2])
+                errorbar(azAvg,elAvg_flip,azStd,'Color',[.7 .7 .7],"LineStyle","none")
+                errorbar(azAvg,elAvg_flip,elStd,"horizontal",'Color',[.7 .7 .7],"LineStyle","none")
+                set(gca,'TickDir','out'); box off;  grid off
+                sgtitle([mouse ', ' num2str(length(ind_RF)) '/' num2str(nCells) ' cells, ' num2str(round(d,1)) ' deg diff (hypot)'])
+                subtitle('st dev')
+                rectangle('Position',[(stimAz+52)-r, (stimEl+29)-r, D, D],'Curvature',[1 1], 'EdgeColor','k', 'LineWidth',1.5);
+    print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\', date, [ '\' date '-' mouse '_RFpopulationCenterAlignment.pdf']]),'-dpdf','-bestfit');
+start=start+1;
 end
-
+stop
 
 totalCells = totCells+nCells;
 ind = intersect(resp_ind_dir_all, find(DSI_all>.5));
 outDir=('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase');
 
-stop
 analysisDir=('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase');
 save(...
     fullfile([analysisDir '\CrossOri_randDirFourPhase_summary.mat']), ...
@@ -244,6 +278,8 @@ save(...
         'dir_sse', ...
         'dir_rsq', ...
         'k1_all', ...
+        'L4top_all', ...
+        'L4bot_all', ...
         'resp_ind_dir_all', ...
         'avg_resp_dir_all', ...
         'totalCells', ...

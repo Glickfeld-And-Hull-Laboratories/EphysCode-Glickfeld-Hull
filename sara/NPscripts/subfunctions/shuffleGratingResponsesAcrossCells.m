@@ -18,11 +18,11 @@ function [data_shuf] = shuffleGratingResponsesAcrossCells(data, ind)
     data_shuf = [];
 
     for ic = 1:length(ind)
-        data_shuf(ic,:,1,1,1) = data(newIdx(ic),:,1,1,1); % Take the grating direction tuning of the newIdx cell (mean)
-        data_shuf(ic,:,1,1,2) = data(newIdx(ic),:,1,1,2); % Take the grating direction tuning of the newIdx cell (sem)
+        data_shuf(ic,:,1,1,1) = data(ind(ic),:,1,1,1); % Take the grating direction tuning of the original cell (mean)
+        data_shuf(ic,:,1,1,2) = data(ind(ic),:,1,1,2); % Take the grating direction tuning of the original cell (sem)
         for ip =1:4
-            data_shuf(ic,:,ip,2,1) = data(ind(ic),:,ip,2,1); % Keep the plaid direction tuning of the original cell (mean)
-            data_shuf(ic,:,ip,2,2) = data(ind(ic),:,ip,2,2); % Keep the plaid direction tuning of the original cell (sem)
+            data_shuf(ic,:,ip,2,1) = data(newIdx(ic),:,ip,2,1); % Keep the plaid direction tuning of the newIdx cell (mean)
+            data_shuf(ic,:,ip,2,2) = data(newIdx(ic),:,ip,2,2); % Keep the plaid direction tuning of the newIdx cell (sem)
         end
     end
 end

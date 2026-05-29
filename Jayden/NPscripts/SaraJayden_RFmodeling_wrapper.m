@@ -42,6 +42,17 @@ idxCon      = setdiff(indRF_con,indRF_pix); % contrast method only
 ind         = intersect(resp_ind_dir_all, find(DSI_all>.5));
 ind_DS      = intersect(idxInt,ind); % visually responsive and direction-selective
 
+%%
+
+rfvisresp = intersect(resp_ind_dir_all, idxInt);
+figure; 
+    histogram(DSI_all(rfvisresp),100)
+
+ xxx = find(DSI_all(rfvisresp)<.3);
+
+
+
+
 %% Calculate time point of STA
 % The first dimension of bestTimePoint_all is the one computed by the local contrast method
 

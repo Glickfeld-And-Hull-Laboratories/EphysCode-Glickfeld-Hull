@@ -1,6 +1,6 @@
 clear all; close all; clc
 base = '/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/';
-iexp = 26; % Choose experiment
+iexp = 31; % Choose experiment
 exptloc = 'V1';
 nboots = 100; %100
 

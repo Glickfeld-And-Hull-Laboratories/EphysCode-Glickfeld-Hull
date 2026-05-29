@@ -1,15 +1,13 @@
-%% optional - load data
-
-clear all; close all; clc
-baseDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
-iexp = 26; % Choose experiment
-exptloc = 'V1'; %LG
-[exptStruct] = createExptStruct(iexp,exptloc); % Load relevant times and directories for this experiment
-
-load(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStruct.date '_' exptStruct.mouse '_unitStructs.mat']), 'allUnitStruct', 'goodUnitStruct');
+% For plotting STAs for a given experiment.
+% Requires running getSpatialRF_Wiesel first
 
 
+function getSpatialRF(iexp, exptloc)
 
+% Load data
+    baseDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
+    [exptStruct] = createExptStruct(iexp,exptloc); % Load relevant times and directories for this experiment
+    load(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStruct.date '_' exptStruct.mouse '_unitStructs.mat']), 'allUnitStruct', 'goodUnitStruct');
 
 %% Run STA at multiple time points
 
@@ -317,15 +315,20 @@ for ic = 1:nCells
     is=1;
         for it = [2 3 4]
             xtempz(:,:) = medfilt2(imgaussfilt(squeeze(averageImageZscore(ic,it,:,:)),1)); %3:27,12:36
+
+            if isnan(xtempz(1,1))
+                xtempz(:,:) = ones(size(xtempz,1),size(xtempz,2));
+            end
+
             jtempz(:,:) = rangefilt(xtempz(:,:),ones(5));
 
-            subplot(5,3,is)
+            % subplot(5,3,is)
                 imagesc(squeeze(xtempz(:,:))); colormap('gray'); clim([-5 5]) %axis square;
                 subtitle(['zscore STA,' num2str(beforeSpike(it)) ' ms'])
-            subplot(5,3,is+1)
+            % subplot(5,3,is+1)
                 imagesc(squeeze(jtempz(:,:))); colormap('gray'); clim([0 10]) %axis square
                 subtitle('local contrast map')
-            subplot(5,3,is+2)
+            % subplot(5,3,is+2)
                 j = squeeze(jtempz(:,:));
                 q(it) = quantile(j(:),0.9);
                 histogram(j); xlim([0 15])
@@ -347,7 +350,7 @@ for ic = 1:nCells
         els(ic) = el;
         
 
-        sgtitle([num2str(ic) '- best STA, ' num2str(beforeSpike(i)) ' ms'])
+        % sgtitle([num2str(ic) '- best STA, ' num2str(beforeSpike(i)) ' ms'])
     %     print( ...
     %         fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs'], ...
     %         [mouse '-' date '_RFs_testLocalContrastAnalysis_smooth_cell' num2str(ic) '.pdf']), ...
@@ -382,359 +385,359 @@ save( ...
     'els' ...
     );
 
-stop
 
-
- %% Get 2D gaussian fit of subunits
-
-for ic = 1:length(ind)
-    iCell = ind(ic);
-    figure;
-    for it = 1:length(beforeSpike)
-        timeBeforeSpike = beforeSpike(it);
-
-        subunitOnFound  = cells_sigRFbyTime_On(iCell,it);
-        subunitOffFound = cells_sigRFbyTime_Off(iCell,it);
-
-        if subunitOnFound
-            dataOn      = squeeze(averageImageZscore(iCell,it,:,:));
-            gStructOn   = get2DgaussfitRF_SG(dataOn);
-            plot = 1;
-        end
-        if subunitOffFound
-            dataOff     = squeeze(averageImageZscore(iCell,it,:,:))*-1;
-            gStructOff  = get2DgaussfitRF_SG(dataOff);
-            plot = 1;
-        end
-        
-        if xor(subunitOnFound, subunitOffFound)     % Exclusive 'or' (i.e., if exactly one is true...)
-            if subunitOnFound
-                gaussFit            = gStructOn.k2b_plot; 
-                gaussFitoversamp    = gStructOn.k2_plot_oversamp;
-            else 
-                gaussFit            = gStructOff.k2b_plot*-1; 
-                gaussFitoversamp    = gStructOff.k2_plot_oversamp*-1;
-            end
-        elseif subunitOnFound && subunitOffFound      % Both true
-            gaussFit            = gStructOff.k2b_plot*-1 + gStructOn.k2b_plot; 
-            gaussFitoversamp    = gStructOff.k2_plot_oversamp*-1 + gStructOn.k2_plot_oversamp;
-        else 
-            plot = 0;    % Only plot if passes 4x4 pixel test   
-        end
-
-            subplot(4,5,it)
-                imagesc(squeeze(averageImageZscore(iCell,it,:,:)))
-                colormap('gray'); clim([-10 10]); axis image
-                subtitle([num2str(timeBeforeSpike) 's'])
-            subplot(4,5,5+it)
-                imagesc(squeeze(averageImageZscoreThresh(iCell,it,:,:)))  
-                colormap('gray'); axis image
-        if plot == 1
-            subplot(4,5,10+it)
-                imagesc(gaussFit)
-                colormap('gray'); clim([-5 5]);axis image
-            subplot(4,5,15+it)
-                imagesc(gaussFitoversamp); 
-                colormap('gray'); clim([-5 5]);axis image
-        end
-    end    
-    sgtitle(['cell ' num2str(iCell) ', ' num2str(totalSpikesUsed(iCell)) ' spikes'])
-    movegui('center')
-    print( ...
-        fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs'], ...
-        [mouse '-' date '_RFs_2dGaussianFits_cell' num2str(iCell) '.pdf']), ...
-        '-dpdf', '-fillpage')
-    close all
-end        
-
-
-
-
-
-%% Fit 2D gabor using FFT via fit()
-
-listnc  = 1:nCells;
-ind     = listnc(ind_sigRF>0);
-
-RFpatch = [];
-RFrsq = [];
-
-options.shape   = 'elliptical';
-options.runs    = 48;
-
-for ic = 1:length(ind)
-    iCell   = ind(ic);
-    data    = squeeze(averageImageZscore(iCell,4,:,:));
-    results         = fit2dGabor_SG(data,options);
-    RFpatch(ic,:,:) = results.patch;
-    RFrsq(ic)       = results.r2;
 end
 
-
-
-
-%%
-close all;
-
-[m, bestTime] = max(squeeze(sum(sum(abs(averageImageZscore),3),4)),[],2);
-
-listnc  = 1:nCells;
-ind     = listnc(sum(cells_sigRFbyTime_On,2)>0);
-
-ind     = [51 60 95 105 112 127 130 132 135];
-nc      = length(ind);
-
-% Preallocate struct array for props
-clear props
-xmask = zeros(29,52);
-
-for ic = 1:nc
-    iCell = ind(ic);
-    xx = squeeze(averageImageZscore(iCell,bestTime(iCell),:,:));
-    maskOn = xx;
-    maskOn(maskOn<0) = 0;
-    figure;
-        subplot(4,4,1); imagesc(xx); colormap('gray'); subtitle('Zscore'); clim([-7 7])
-    
-    xmask(10:20,10:30) = 1; 
-    bw = activecontour(maskOn,xmask);
-    cc = bwconncomp(bw);
-    p = regionprops(cc,"Area");
-    [maxArea,maxIdx] = max([p.Area]);
-    bw2 = cc2bw(cc,ObjectsToKeep=maxIdx);
-    [B,L] = bwboundaries(bw2,'noholes');
-    boundary = B{1};
-        subplot(4,4,2); imagesc(maskOn); colormap('gray'); subtitle('Zscore'); clim([-7 7])
-        subplot(4,4,3); imshow(bw)
-        subplot(4,4,4); imshow(label2rgb(L, @jet, [.5 .5 .5]))
-        
-    
-    % get properties of shape
-    clear tmp
-    tmp = regionprops(bw2, ...
-             'Area', ...
-             'BoundingBox', ...
-             'Circularity', ...
-             'Centroid', ...
-             'ConvexHull', ...
-             'Eccentricity', ...
-             'EquivDiameter', ...
-             'Extent', ...
-             'MajorAxisLength', ...
-             'MinorAxisLength', ...
-             'Orientation');
-      props(ic) = tmp();
-
-      aspRatio = [props(ic).MajorAxisLength]./[props(ic).MinorAxisLength];
-      subplot(4,4,5); imshow(label2rgb(L, @jet, [.5 .5 .5]))
-            hold on
-            plot(boundary(:,2), boundary(:,1), 'w', 'LineWidth', 2);
-            title(['A.R. = ' num2str(aspRatio)])
-    sgtitle(['cell ' num2str(iCell)])
-        
-end
-
-aspRatio = [props.MajorAxisLength]./[props.MinorAxisLength];
-circ = [props.Circularity];
-
-figure;
-    scatter(aspRatio,circ)
-    xlabel('aspect ratio (maj axis length/min axis length)')
-    ylabel('circularity')
-figure;
-    scatter(aspRatio,circ)
-    xlabel('aspect ratio (maj axis length/min axis length)')
-    ylabel('circularity')
-
-
-
-
-
-
-
-
-
-ZpAvg = mean(Zp,1);
-ZcAvg = mean(Zc,1);
-ZpMax = max(Zp,[],1);
-ZcMax = max(Zc,[],1);
-PCIavg = mean(PCI,1);
-PCImax = max(PCI,[],1);
-
-
-figure;
-    subplot 361
-        scatter([props.Circularity],ZpAvg(ind))
-        ylabel('avg Zp across phases')
-        xlabel('circularity')
-    subplot 362
-        scatter([props.Circularity],ZcAvg(ind))
-        ylabel('avg Zc across phases')
-        xlabel('circularity')
-    subplot 363
-        scatter([props.Circularity],ZpMax(ind))
-        ylabel('max Zp across phases')
-        xlabel('circularity')
-    subplot 364
-        scatter([props.Circularity],ZcMax(ind))
-        ylabel('max Zc across phases')
-        xlabel('circularity')
-    subplot 365
-        scatter([props.Circularity],PCIavg(ind))
-        ylabel('avg PCI across phases')
-        xlabel('circularity')
-    subplot 366
-        scatter([props.Circularity],PCImax(ind))
-        ylabel('max PCI across phases')
-        xlabel('circularity')
-    subplot 367
-        scatter([props.Eccentricity],ZpAvg(ind))
-        ylabel('avg Zp across phases')
-        xlabel('eccentricity')
-    subplot 368
-        scatter([props.Eccentricity],ZcAvg(ind))
-        ylabel('avg Zc across phases')
-        xlabel('eccentricity')
-    subplot 369
-        scatter([props.Eccentricity],ZpMax(ind))
-        ylabel('max Zp across phases')
-        xlabel('eccentricity')
-    subplot(3,6,10)
-        scatter([props.Eccentricity],ZcMax(ind))
-        ylabel('max Zc across phases')
-        xlabel('eccentricity')
-    subplot(3,6,11)
-        scatter([props.Eccentricity],PCIavg(ind))
-        ylabel('avg PCI across phases')
-        xlabel('circularity')
-    subplot(3,6,12)
-        scatter([props.Eccentricity],PCImax(ind))
-        ylabel('max PCI across phases')
-        xlabel('circularity')
-    subplot(3,6,13)
-        scatter(aspRatio,ZcAvg(ind))
-        ylabel('avg Zc across phases')
-        xlabel('maj ax length / min ax length')
-    subplot(3,6,14)
-        scatter(aspRatio,ZpAvg(ind))
-        ylabel('avg Zp across phases')
-        xlabel('maj ax length / min ax length')
-    subplot(3,6,15)
-        scatter(aspRatio,ZcMax(ind))
-        ylabel('max Zc across phases')
-        xlabel('maj ax length / min ax length')
-    subplot(3,6,16)
-        scatter(aspRatio,ZpMax(ind))
-        ylabel('max Zp across phases')
-        xlabel('maj ax length / min ax length')
-    subplot(3,6,17)
-        scatter(aspRatio,PCIavg(ind))
-        ylabel('avg PCI across phases')
-        xlabel('maj ax length / min ax length')
-    subplot(3,6,18)
-        scatter(aspRatio,PCImax(ind))
-        ylabel('max PCI across phases')
-        xlabel('maj ax length / min ax length')
- 
-    
-    
-
-
-
-
-
-
-
-
-%%  testing local contrast analysis
-
-
-% for exp 13 -- zscore does look the best
-xtemp = squeeze(averageImagesAll(133,3,3:27,10:34));
-xtempz = squeeze(averageImageZscore(133,3,3:27,10:34));
-xtempsm = imgaussfilt(xtemp,1);
-jtemp = rangefilt(xtemp,ones(5));
-jtempz = rangefilt(xtempz,ones(5));
-jtempsm = rangefilt(xtempsm,ones(5));
-
-
-figure; 
-    subplot 331
-        imagesc(xtemp); colormap('gray'); axis square; movegui('center')
-        subtitle('unsmoothed STA')
-    subplot 332
-        imagesc(jtemp); colormap('gray'); axis square
-        subtitle('local contrast map')
-    subplot 333
-        histogram(jtemp(:)); movegui('center')
-    subplot 334
-        imagesc(xtempz); colormap('gray'); axis square; movegui('center')
-        subtitle('zscore STA')
-    subplot 335
-        imagesc(jtempz); colormap('gray'); axis square
-        subtitle('local contrast map')
-    subplot 336
-        histogram(jtempz(:))
-    subplot 337
-        imagesc(xtempsm); colormap('gray'); axis square
-        subtitle('smoothed zscore STA')
-    subplot 338
-        imagesc(jtempsm); colormap('gray'); axis square
-        subtitle('local contrast map')
-    subplot 339
-        histogram(jtempsm(:))
-
-
-
-% how come in Matteucci paper their colobar is the same across STA and
-% contrast map? taking the absolute value of the zscored image doesn't do
-% this
-jtempabs = rangefilt(xtempz,ones(5));
-
-figure;
-    subplot 331
-        imagesc(xtempz); colormap('gray'); axis square; movegui('center'); colorbar
-        subtitle('zscore STA')
-    subplot 332
-        imagesc(jtempz); colormap('gray'); axis square; colorbar
-        subtitle('local contrast map')
-    subplot 333
-        histogram(jtempz(:))
-    subplot 334
-        imagesc(abs(xtempz)); colormap('gray'); axis square; movegui('center'); colorbar
-        subtitle('zscore STA')
-    subplot 335
-        imagesc(jtempabs); colormap('gray'); axis square; colorbar
-        subtitle('local contrast map')
-    subplot 336
-        histogram(jtempabs(:))
-
-
-% does it choose the correct STA time point?
-
-clear xtempz jtempz
-for it = 1:5
-    xtempz(it,:,:) = squeeze(averageImageZscore(133,it,3:27,10:34));
-    jtempz(it,:,:) = rangefilt(squeeze(xtempz(it,:,:)),ones(5));
-end
-
-figure;
-movegui('center')
-is=1;
-    for it = 1:5
-        subplot(5,3,is)
-            imagesc(squeeze(xtempz(it,:,:))); colormap('gray'); axis square;
-            subtitle('zscore STA')
-        subplot(5,3,is+1)
-            imagesc(squeeze(jtempz(it,:,:))); colormap('gray'); axis square
-            subtitle('local contrast map')
-        subplot(5,3,is+2)
-            j = squeeze(jtempz(it,:,:));
-            q(it) = quantile(j(:),0.9);
-            histogram(j); xlim([0 15])
-            xline(q(it))
-            subtitle([num2str(q(it))])
-        is=is+3;
-    end
-    [m,i] = max(q);
-    sgtitle(['best STA, ' num2str(beforeSpike(i)) ' ms'])
+%  %% Get 2D gaussian fit of subunits
+% 
+% for ic = 1:length(ind)
+%     iCell = ind(ic);
+%     figure;
+%     for it = 1:length(beforeSpike)
+%         timeBeforeSpike = beforeSpike(it);
+% 
+%         subunitOnFound  = cells_sigRFbyTime_On(iCell,it);
+%         subunitOffFound = cells_sigRFbyTime_Off(iCell,it);
+% 
+%         if subunitOnFound
+%             dataOn      = squeeze(averageImageZscore(iCell,it,:,:));
+%             gStructOn   = get2DgaussfitRF_SG(dataOn);
+%             plot = 1;
+%         end
+%         if subunitOffFound
+%             dataOff     = squeeze(averageImageZscore(iCell,it,:,:))*-1;
+%             gStructOff  = get2DgaussfitRF_SG(dataOff);
+%             plot = 1;
+%         end
+% 
+%         if xor(subunitOnFound, subunitOffFound)     % Exclusive 'or' (i.e., if exactly one is true...)
+%             if subunitOnFound
+%                 gaussFit            = gStructOn.k2b_plot; 
+%                 gaussFitoversamp    = gStructOn.k2_plot_oversamp;
+%             else 
+%                 gaussFit            = gStructOff.k2b_plot*-1; 
+%                 gaussFitoversamp    = gStructOff.k2_plot_oversamp*-1;
+%             end
+%         elseif subunitOnFound && subunitOffFound      % Both true
+%             gaussFit            = gStructOff.k2b_plot*-1 + gStructOn.k2b_plot; 
+%             gaussFitoversamp    = gStructOff.k2_plot_oversamp*-1 + gStructOn.k2_plot_oversamp;
+%         else 
+%             plot = 0;    % Only plot if passes 4x4 pixel test   
+%         end
+% 
+%             subplot(4,5,it)
+%                 imagesc(squeeze(averageImageZscore(iCell,it,:,:)))
+%                 colormap('gray'); clim([-10 10]); axis image
+%                 subtitle([num2str(timeBeforeSpike) 's'])
+%             subplot(4,5,5+it)
+%                 imagesc(squeeze(averageImageZscoreThresh(iCell,it,:,:)))  
+%                 colormap('gray'); axis image
+%         if plot == 1
+%             subplot(4,5,10+it)
+%                 imagesc(gaussFit)
+%                 colormap('gray'); clim([-5 5]);axis image
+%             subplot(4,5,15+it)
+%                 imagesc(gaussFitoversamp); 
+%                 colormap('gray'); clim([-5 5]);axis image
+%         end
+%     end    
+%     sgtitle(['cell ' num2str(iCell) ', ' num2str(totalSpikesUsed(iCell)) ' spikes'])
+%     movegui('center')
+%     print( ...
+%         fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs'], ...
+%         [mouse '-' date '_RFs_2dGaussianFits_cell' num2str(iCell) '.pdf']), ...
+%         '-dpdf', '-fillpage')
+%     close all
+% end        
+% 
+% 
+% 
+% 
+% 
+% %% Fit 2D gabor using FFT via fit()
+% 
+% listnc  = 1:nCells;
+% ind     = listnc(ind_sigRF>0);
+% 
+% RFpatch = [];
+% RFrsq = [];
+% 
+% options.shape   = 'elliptical';
+% options.runs    = 48;
+% 
+% for ic = 1:length(ind)
+%     iCell   = ind(ic);
+%     data    = squeeze(averageImageZscore(iCell,4,:,:));
+%     results         = fit2dGabor_SG(data,options);
+%     RFpatch(ic,:,:) = results.patch;
+%     RFrsq(ic)       = results.r2;
+% end
+% 
+% 
+% 
+% 
+% %%
+% close all;
+% 
+% [m, bestTime] = max(squeeze(sum(sum(abs(averageImageZscore),3),4)),[],2);
+% 
+% listnc  = 1:nCells;
+% ind     = listnc(sum(cells_sigRFbyTime_On,2)>0);
+% 
+% ind     = [51 60 95 105 112 127 130 132 135];
+% nc      = length(ind);
+% 
+% % Preallocate struct array for props
+% clear props
+% xmask = zeros(29,52);
+% 
+% for ic = 1:nc
+%     iCell = ind(ic);
+%     xx = squeeze(averageImageZscore(iCell,bestTime(iCell),:,:));
+%     maskOn = xx;
+%     maskOn(maskOn<0) = 0;
+%     figure;
+%         subplot(4,4,1); imagesc(xx); colormap('gray'); subtitle('Zscore'); clim([-7 7])
+% 
+%     xmask(10:20,10:30) = 1; 
+%     bw = activecontour(maskOn,xmask);
+%     cc = bwconncomp(bw);
+%     p = regionprops(cc,"Area");
+%     [maxArea,maxIdx] = max([p.Area]);
+%     bw2 = cc2bw(cc,ObjectsToKeep=maxIdx);
+%     [B,L] = bwboundaries(bw2,'noholes');
+%     boundary = B{1};
+%         subplot(4,4,2); imagesc(maskOn); colormap('gray'); subtitle('Zscore'); clim([-7 7])
+%         subplot(4,4,3); imshow(bw)
+%         subplot(4,4,4); imshow(label2rgb(L, @jet, [.5 .5 .5]))
+% 
+% 
+%     % get properties of shape
+%     clear tmp
+%     tmp = regionprops(bw2, ...
+%              'Area', ...
+%              'BoundingBox', ...
+%              'Circularity', ...
+%              'Centroid', ...
+%              'ConvexHull', ...
+%              'Eccentricity', ...
+%              'EquivDiameter', ...
+%              'Extent', ...
+%              'MajorAxisLength', ...
+%              'MinorAxisLength', ...
+%              'Orientation');
+%       props(ic) = tmp();
+% 
+%       aspRatio = [props(ic).MajorAxisLength]./[props(ic).MinorAxisLength];
+%       subplot(4,4,5); imshow(label2rgb(L, @jet, [.5 .5 .5]))
+%             hold on
+%             plot(boundary(:,2), boundary(:,1), 'w', 'LineWidth', 2);
+%             title(['A.R. = ' num2str(aspRatio)])
+%     sgtitle(['cell ' num2str(iCell)])
+% 
+% end
+% 
+% aspRatio = [props.MajorAxisLength]./[props.MinorAxisLength];
+% circ = [props.Circularity];
+% 
+% figure;
+%     scatter(aspRatio,circ)
+%     xlabel('aspect ratio (maj axis length/min axis length)')
+%     ylabel('circularity')
+% figure;
+%     scatter(aspRatio,circ)
+%     xlabel('aspect ratio (maj axis length/min axis length)')
+%     ylabel('circularity')
+% 
+% 
+% 
+% 
+% 
+% 
+% 
+% 
+% 
+% ZpAvg = mean(Zp,1);
+% ZcAvg = mean(Zc,1);
+% ZpMax = max(Zp,[],1);
+% ZcMax = max(Zc,[],1);
+% PCIavg = mean(PCI,1);
+% PCImax = max(PCI,[],1);
+% 
+% 
+% figure;
+%     subplot 361
+%         scatter([props.Circularity],ZpAvg(ind))
+%         ylabel('avg Zp across phases')
+%         xlabel('circularity')
+%     subplot 362
+%         scatter([props.Circularity],ZcAvg(ind))
+%         ylabel('avg Zc across phases')
+%         xlabel('circularity')
+%     subplot 363
+%         scatter([props.Circularity],ZpMax(ind))
+%         ylabel('max Zp across phases')
+%         xlabel('circularity')
+%     subplot 364
+%         scatter([props.Circularity],ZcMax(ind))
+%         ylabel('max Zc across phases')
+%         xlabel('circularity')
+%     subplot 365
+%         scatter([props.Circularity],PCIavg(ind))
+%         ylabel('avg PCI across phases')
+%         xlabel('circularity')
+%     subplot 366
+%         scatter([props.Circularity],PCImax(ind))
+%         ylabel('max PCI across phases')
+%         xlabel('circularity')
+%     subplot 367
+%         scatter([props.Eccentricity],ZpAvg(ind))
+%         ylabel('avg Zp across phases')
+%         xlabel('eccentricity')
+%     subplot 368
+%         scatter([props.Eccentricity],ZcAvg(ind))
+%         ylabel('avg Zc across phases')
+%         xlabel('eccentricity')
+%     subplot 369
+%         scatter([props.Eccentricity],ZpMax(ind))
+%         ylabel('max Zp across phases')
+%         xlabel('eccentricity')
+%     subplot(3,6,10)
+%         scatter([props.Eccentricity],ZcMax(ind))
+%         ylabel('max Zc across phases')
+%         xlabel('eccentricity')
+%     subplot(3,6,11)
+%         scatter([props.Eccentricity],PCIavg(ind))
+%         ylabel('avg PCI across phases')
+%         xlabel('circularity')
+%     subplot(3,6,12)
+%         scatter([props.Eccentricity],PCImax(ind))
+%         ylabel('max PCI across phases')
+%         xlabel('circularity')
+%     subplot(3,6,13)
+%         scatter(aspRatio,ZcAvg(ind))
+%         ylabel('avg Zc across phases')
+%         xlabel('maj ax length / min ax length')
+%     subplot(3,6,14)
+%         scatter(aspRatio,ZpAvg(ind))
+%         ylabel('avg Zp across phases')
+%         xlabel('maj ax length / min ax length')
+%     subplot(3,6,15)
+%         scatter(aspRatio,ZcMax(ind))
+%         ylabel('max Zc across phases')
+%         xlabel('maj ax length / min ax length')
+%     subplot(3,6,16)
+%         scatter(aspRatio,ZpMax(ind))
+%         ylabel('max Zp across phases')
+%         xlabel('maj ax length / min ax length')
+%     subplot(3,6,17)
+%         scatter(aspRatio,PCIavg(ind))
+%         ylabel('avg PCI across phases')
+%         xlabel('maj ax length / min ax length')
+%     subplot(3,6,18)
+%         scatter(aspRatio,PCImax(ind))
+%         ylabel('max PCI across phases')
+%         xlabel('maj ax length / min ax length')
+% 
+% 
+% 
+% 
+% 
+% 
+% 
+% 
+% 
+% 
+% 
+% %%  testing local contrast analysis
+% 
+% 
+% % for exp 13 -- zscore does look the best
+% xtemp = squeeze(averageImagesAll(133,3,3:27,10:34));
+% xtempz = squeeze(averageImageZscore(133,3,3:27,10:34));
+% xtempsm = imgaussfilt(xtemp,1);
+% jtemp = rangefilt(xtemp,ones(5));
+% jtempz = rangefilt(xtempz,ones(5));
+% jtempsm = rangefilt(xtempsm,ones(5));
+% 
+% 
+% figure; 
+%     subplot 331
+%         imagesc(xtemp); colormap('gray'); axis square; movegui('center')
+%         subtitle('unsmoothed STA')
+%     subplot 332
+%         imagesc(jtemp); colormap('gray'); axis square
+%         subtitle('local contrast map')
+%     subplot 333
+%         histogram(jtemp(:)); movegui('center')
+%     subplot 334
+%         imagesc(xtempz); colormap('gray'); axis square; movegui('center')
+%         subtitle('zscore STA')
+%     subplot 335
+%         imagesc(jtempz); colormap('gray'); axis square
+%         subtitle('local contrast map')
+%     subplot 336
+%         histogram(jtempz(:))
+%     subplot 337
+%         imagesc(xtempsm); colormap('gray'); axis square
+%         subtitle('smoothed zscore STA')
+%     subplot 338
+%         imagesc(jtempsm); colormap('gray'); axis square
+%         subtitle('local contrast map')
+%     subplot 339
+%         histogram(jtempsm(:))
+% 
+% 
+% 
+% % how come in Matteucci paper their colobar is the same across STA and
+% % contrast map? taking the absolute value of the zscored image doesn't do
+% % this
+% jtempabs = rangefilt(xtempz,ones(5));
+% 
+% figure;
+%     subplot 331
+%         imagesc(xtempz); colormap('gray'); axis square; movegui('center'); colorbar
+%         subtitle('zscore STA')
+%     subplot 332
+%         imagesc(jtempz); colormap('gray'); axis square; colorbar
+%         subtitle('local contrast map')
+%     subplot 333
+%         histogram(jtempz(:))
+%     subplot 334
+%         imagesc(abs(xtempz)); colormap('gray'); axis square; movegui('center'); colorbar
+%         subtitle('zscore STA')
+%     subplot 335
+%         imagesc(jtempabs); colormap('gray'); axis square; colorbar
+%         subtitle('local contrast map')
+%     subplot 336
+%         histogram(jtempabs(:))
+% 
+% 
+% % does it choose the correct STA time point?
+% 
+% clear xtempz jtempz
+% for it = 1:5
+%     xtempz(it,:,:) = squeeze(averageImageZscore(133,it,3:27,10:34));
+%     jtempz(it,:,:) = rangefilt(squeeze(xtempz(it,:,:)),ones(5));
+% end
+% 
+% figure;
+% movegui('center')
+% is=1;
+%     for it = 1:5
+%         subplot(5,3,is)
+%             imagesc(squeeze(xtempz(it,:,:))); colormap('gray'); axis square;
+%             subtitle('zscore STA')
+%         subplot(5,3,is+1)
+%             imagesc(squeeze(jtempz(it,:,:))); colormap('gray'); axis square
+%             subtitle('local contrast map')
+%         subplot(5,3,is+2)
+%             j = squeeze(jtempz(it,:,:));
+%             q(it) = quantile(j(:),0.9);
+%             histogram(j); xlim([0 15])
+%             xline(q(it))
+%             subtitle([num2str(q(it))])
+%         is=is+3;
+%     end
+%     [m,i] = max(q);
+%     sgtitle(['best STA, ' num2str(beforeSpike(i)) ' ms'])
