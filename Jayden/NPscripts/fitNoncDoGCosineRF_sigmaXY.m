@@ -1,8 +1,19 @@
-function [params, modelRF, fitInfo] = fitNoncDoGCosineRF_sigmaXY(data, gaussianMode, nStarts)
+function [params, modelRF, fitInfo] = ...
+    fitNoncDoGCosineRF_sigmaXY(data, gaussianMode, nStarts)
+% Weighted DoG x cosine fit with an added continuum parameter alpha.
+%
+% alpha in [0, 1] controls the continuum:
+%   alpha = 0  -> more DoG-like
+%   alpha = 1  -> more Gabor-like
+%
+% Parameter vector:
+%   p = [Ac AsBase sigmaC deltaSigma tau theta x0 y0 ...
+%        fMax phi dx dy alpha]
+%
+% Effective parameters used in model:
+%   As_eff = (1 - alpha) * AsBase
+%   f_eff  = alpha * fMax
 
-%%
- % Important assumption check, center size is smaller than surrounding
-%%
     if nargin < 2 || isempty(gaussianMode)
         gaussianMode = 'unnormalized';
     end
@@ -10,216 +21,290 @@ function [params, modelRF, fitInfo] = fitNoncDoGCosineRF_sigmaXY(data, gaussianM
         nStarts = 20;
     end
 
-    %% Coordinate system
+    %#ok<NASGU>
+    nStarts = nStarts;
+
     [ny, nx] = size(data);
+
+    % ---------------------------------------
+    % Build pixel weights from raw STA
+    % ---------------------------------------
+    Wpix = buildAutoWeightsFromSTA(data);
+
+    % ---------------------------------------
+    % Coordinate system
+    % ---------------------------------------
     x = (1:nx) - mean(1:nx);
     y = (1:ny) - mean(1:ny);
     [X, Y] = meshgrid(x, y);
 
     XYdata = [X(:) Y(:)];
-    datav  = data(:);
+    datav = data(:);
+    wvec = Wpix(:);
 
-    %% Model handle
-    fun = @(p, xy) nonConcentricDoGCosineModel(p, xy, gaussianMode);
-
-    %% Initial guess
+    % ---------------------------------------
+    % Initial guess
+    % ---------------------------------------
     amp = max(abs(datav));
-    % sgn = sign(randn);
-    % PARAMETERS:
-    % [Ac As sigmaC deltaSigma tau theta x0 y0 f phi dx dy]
+    if ~isfinite(amp) || amp == 0
+        amp = 1;
+    end
+
+    % [Ac AsBase sigmaC deltaSigma tau theta x0 y0 fMax phi dx dy alpha]
     p0 = [ ...
-        amp, ...                % Ac
-        amp/2, ...              % As
-        min(nx,ny)/4, ...       % sigmaC
-        min(nx,ny)/4, ...       % deltaSigma (sigmaS - sigmaC)
-        1, ...                  % tau
-        0, ...                  % theta
-        0, 0, ...               % x0, y0
-        0.1, ...                % f
-        0, ...                  % phi
-        0, 0 ];                 % dx, dy
+        amp, ...
+        amp / 2, ...
+        min(nx, ny) / 4, ...
+        min(nx, ny) / 4, ...
+        1, ...
+        0, ...
+        0, 0, ...
+        0.35, ...
+        0, ...
+        0, 0, ...
+        0.5];
 
-    %% Bounds
-    % maxShift = max(nx,ny)/4;
-
+    % ---------------------------------------
+    % Bounds
+    % ---------------------------------------
     lb = [ ...
-        -amp*3, -amp*3, ...
-        eps, eps, ...           % sigmaC, deltaSigma > 0
-        0.99, ...
+        -amp * 3, 0, ...
+        0.5, 0, ...
+        0.5, ...
         -pi, ...
-        min(x), min(y), ...
+        -6, -6, ...
         0, ...
         -pi, ...
-        -max(nx,ny), -max(nx,ny)];
+        -5, -5, ...
+        0];
 
     ub = [ ...
-         amp*3, amp*3, ...
-         max(nx,ny), max(nx,ny), ...
-         5, ...
+         amp * 3, amp * 3, ...
+         10, 10, ...
+         3, ...
          pi, ...
-         max(x), max(y), ...
-         0.5, ...
+         6, 6, ...
+         0.35, ...
          pi, ...
-         max(nx,ny), max(nx,ny)];
+         5, 5, ...
+         1];
 
-    opts = optimoptions('lsqcurvefit', ...
-        'Display','off', ...
-        'MaxFunctionEvaluations',1e4);
+    opts = optimoptions('lsqnonlin', ...
+        'Display', 'off', ...
+        'MaxFunctionEvaluations', 1e4);
 
-    %% ======================================
-    % Hybrid Global Search
-    %% ======================================
-    
+    objfun = @(p) weightedResidualDoGCosAlpha( ...
+        p, XYdata, datav, wvec, gaussianMode);
+
+    % ---------------------------------------
+    % Hybrid search
+    % ---------------------------------------
     bestRSS = Inf;
+    bestParams = p0;
     candidates = [];
-    
+
     thetaGrid = linspace(-pi/2, pi/2, 12);
-    freqGrid  = linspace(0.05, 0.35, 8);
-    
-    % ---------- Stage 1: 2D grid ----------
+    alphaGrid = linspace(0, 1, 7);
+
+    % ---------- Stage 1 ----------
     for th = thetaGrid
-        for f = freqGrid
-            
+        for a = alphaGrid
             p0s = p0;
             p0s(6) = th;
-            p0s(9) = f;
-            p0s(10) = 0;   % phase neutral
-            
+            p0s(13) = a;
+            p0s(10) = 0;
+
             try
-                [pfit,~,res] = lsqcurvefit(fun,p0s,XYdata,datav,lb,ub,opts);
-                RSS = sum(res.^2);
-                
-                candidates = [candidates; RSS pfit];
-                
+                [pfit, ~, res] = lsqnonlin(objfun, p0s, lb, ub, opts);
+                RSS = sum(res .^ 2);
+                candidates = [candidates; RSS pfit]; %#ok<AGROW>
             catch
             end
-            
         end
     end
-    
-    % Sort by RSS
-    candidates = sortrows(candidates,1);
-    
-    % Keep best 6
-    topK = min(6,size(candidates,1));
-    candidates = candidates(1:topK,:);
-    
-    % ---------- Stage 2: refine phase ----------
-    phaseGrid = linspace(-pi, pi, 6);
-    
-    for i = 1:topK
-        
-        baseParams = candidates(i,2:end);
-        
-        for ph = phaseGrid
-            
-            p0s = baseParams;
-            p0s(10) = ph;
-            
-            try
-                [pfit,~,res] = lsqcurvefit(fun,p0s,XYdata,datav,lb,ub,opts);
-                RSS = sum(res.^2);
-                
-                if RSS < bestRSS
-                    bestRSS = RSS;
-                    bestParams = pfit;
+
+    if isempty(candidates)
+        [pfit, ~, res] = lsqnonlin(objfun, p0, lb, ub, opts);
+        bestParams = pfit;
+        bestRSS = sum(res .^ 2);
+    else
+        candidates = sortrows(candidates, 1);
+        topK = min(6, size(candidates, 1));
+        candidates = candidates(1:topK, :);
+
+        % ---------- Stage 2 ----------
+        phaseGrid = linspace(-pi, pi, 6);
+
+        for i = 1:topK
+            baseParams = candidates(i, 2:end);
+
+            for ph = phaseGrid
+                p0s = baseParams;
+                p0s(10) = ph;
+
+                try
+                    [pfit, ~, res] = lsqnonlin(objfun, p0s, lb, ub, opts);
+                    RSS = sum(res .^ 2);
+
+                    if RSS < bestRSS
+                        bestRSS = RSS;
+                        bestParams = pfit;
+                    end
+                catch
                 end
-                
-            catch
             end
-            
         end
+
+        % ---------- Final refinement ----------
+        [pfit, ~, res] = lsqnonlin(objfun, bestParams, lb, ub, opts);
+        bestParams = pfit;
+        bestRSS = sum(res .^ 2);
     end
-    
-    % ---------- Final refinement ----------
-    [pfit,~,res] = lsqcurvefit(fun,bestParams,XYdata,datav,lb,ub,opts);
-    bestParams = pfit;
-    bestRSS = sum(res.^2);
 
-    
-    % bestExit   = exitflag;
-    % bestOut    = output;
-
-
-    %% Canonical sign convention
-    % if bestParams(1) < 0
-    %     bestParams(1) = -bestParams(1);
-    %     bestParams(2) = -bestParams(2);
-    %     bestParams(10) = bestParams(10) + pi;
-    % end
-    % 
-    % bestParams(10) = wrapToPi(bestParams(10));
-    % bestParams(6)  = wrapToPi(bestParams(6));
-
-
-    %% Stability diagnostics
-    % paramSTD = std(params_all,0,1);
-    % RSS_STD  = std(RSS_all);
-    % 
-    % fprintf('\n---- DoGCos Stability ----\n');
-    % fprintf('Best RSS: %.6f\n', bestRSS);
-    % fprintf('RSS STD: %.6f\n', RSS_STD);
-    % fprintf('Param STD:\n');
-    % disp(paramSTD)
-
-    %% Output
-    params  = bestParams;
+    % ---------------------------------------
+    % Output
+    % ---------------------------------------
+    params = bestParams;
     modelRF = reshape( ...
-        nonConcentricDoGCosineModel(params, XYdata, gaussianMode), ...
+        nonConcentricDoGCosineModelAlpha(params, XYdata, gaussianMode), ...
         ny, nx);
 
-    fitInfo.RSS      = bestRSS;
-    fprintf('BestRSS:\n');
-    disp(bestRSS)
+    % save effective values too
+    alpha = params(13);
+    As_eff = (1 - alpha) * params(2);
+    f_eff = alpha * params(9);
 
-    %fitInfo.exitflag = bestExit;
-    %fitInfo.output   = bestOut;
+    fitInfo.RSS = bestRSS;
+    fitInfo.Wpix = Wpix;
+    fitInfo.alpha = alpha;
+    fitInfo.As_eff = As_eff;
+    fitInfo.f_eff = f_eff;
+
+    fprintf('Alpha-continuum weighted BestRSS:\n');
+    disp(bestRSS)
+    fprintf('alpha = %.3f, As_eff = %.3f, f_eff = %.3f\n', ...
+        alpha, As_eff, f_eff)
 end
 
-function y = nonConcentricDoGCosineModel(p, XY, gaussianMode)
-% p = [Ac As sigmaC deltaSigma tau theta x0 y0 f phi dx dy]
 
-    Ac    = p(1);
-    As    = p(2);
-    sc    = p(3);
-    kS = p(4);
-    ss = kS * sc;   % <-- enforced sigmaS > sigmaC
+function Wpix = buildAutoWeightsFromSTA(data)
+% Build soft weights directly from STA amplitude.
 
-    tau   = p(5);
+    A = abs(data);
+
+    % optional light smoothing to reduce one-pixel noise influence
+    A = imgaussfilt(A, 0.75);
+
+    A = A / (max(A(:)) + eps);
+
+    % soft weighting:
+    % weak pixels still matter a little, strong pixels matter more
+    Wpix = 0.1 + 0.9 * (A .^ 2);
+end
+
+
+function r = weightedResidualDoGCosAlpha( ...
+    p, XYdata, datav, wvec, gaussianMode)
+
+    yhat = nonConcentricDoGCosineModelAlpha(p, XYdata, gaussianMode);
+    err = yhat - datav;
+
+    if any(~isfinite(p)) || any(~isfinite(err))
+        r = [zeros(size(datav)); 1e3];
+        return
+    end
+
+    sc = p(3);
+    ss = p(3) + p(4);
+    tau = p(5);
+    alpha = p(13);
+
+    if sc <= 0 || ss <= 0 || tau <= 0 || alpha < 0 || alpha > 1
+        r = [sqrt(wvec) .* err; 1e3];
+        return
+    end
+
+    Ac = p(1);
+    As_base = p(2);
+    dx = p(11);
+    dy = p(12);
+
+    nPix = numel(datav);
+    scaleReg = sqrt(nPix);
+
+    lambda_As = 0.2;
+    lambda_sc = 0.01;
+    lambda_off = 0.02;
+    lambda_alpha_mid = 0.00;  % set >0 if you want to discourage mid-alpha
+
+    r_data = sqrt(wvec) .* err;
+
+    pen_As = scaleReg * lambda_As * abs(As_base) / (abs(Ac) + eps);
+    pen_sc = scaleReg * lambda_sc / (sc + eps);
+    pen_off = scaleReg * lambda_off * sqrt(dx^2 + dy^2);
+    pen_alpha_mid = scaleReg * lambda_alpha_mid * alpha * (1 - alpha);
+
+    r = [r_data;
+         pen_As;
+         pen_sc;
+         pen_off;
+         pen_alpha_mid];
+end
+
+
+function y = nonConcentricDoGCosineModelAlpha(p, XY, gaussianMode)
+% p = [Ac AsBase sigmaC deltaSigma tau theta x0 y0 fMax phi dx dy alpha]
+
+    Ac = p(1);
+    As_base = p(2);
+    sc = p(3);
+    delta = p(4);
+    ss = sc + delta;
+
+    tau = p(5);
     theta = p(6);
-    x0    = p(7);
-    y0    = p(8);
-    f     = p(9);
-    phi   = p(10);
-    dx    = p(11);
-    dy    = p(12);
 
-    Xc = XY(:,1) - x0;
-    Yc = XY(:,2) - y0;
+    x0 = p(7);
+    y0 = p(8);
 
-    Xs = XY(:,1) - (x0 + dx);
-    Ys = XY(:,2) - (y0 + dy);
+    f_max = p(9);
+    phi = p(10);
+    dx = p(11);
+    dy = p(12);
+    alpha = p(13);
 
-    Xcp =  cos(theta)*Xc + sin(theta)*Yc;
-    Ycp = -sin(theta)*Xc + cos(theta)*Yc;
+    % Continuum coupling
+    As = (1 - alpha) * As_base;
+    f = alpha * f_max;
 
-    Xsp =  cos(theta)*Xs + sin(theta)*Ys;
-    Ysp = -sin(theta)*Xs + cos(theta)*Ys;
+    Xc = XY(:, 1) - x0;
+    Yc = XY(:, 2) - y0;
+
+    Xs = XY(:, 1) - (x0 + dx);
+    Ys = XY(:, 2) - (y0 + dy);
+
+    Xcp = cos(theta) * Xc + sin(theta) * Yc;
+    Ycp = -sin(theta) * Xc + cos(theta) * Yc;
+
+    Xsp = cos(theta) * Xs + sin(theta) * Ys;
+    Ysp = -sin(theta) * Xs + cos(theta) * Ys;
 
     switch gaussianMode
         case 'unnormalized'
-            Gc = exp(-(Xcp.^2 + (tau*Ycp).^2) / (2*sc^2));
-            Gs = exp(-(Xsp.^2 + (tau*Ysp).^2) / (2*ss^2));
+            Gc = exp(-(Xcp.^2 + (tau * Ycp).^2) / (2 * sc^2));
+            Gs = exp(-(Xsp.^2 + (tau * Ysp).^2) / (2 * ss^2));
         case 'normalized'
-            Gc = (1/(2*pi*sc^2)) * ...
-                 exp(-(Xcp.^2 + (tau*Ycp).^2) / (2*sc^2));
-            Gs = (1/(2*pi*ss^2)) * ...
-                 exp(-(Xsp.^2 + (tau*Ysp).^2) / (2*ss^2));
+            Gc = (1 / (2 * pi * sc^2)) * ...
+                exp(-(Xcp.^2 + (tau * Ycp).^2) / (2 * sc^2));
+            Gs = (1 / (2 * pi * ss^2)) * ...
+                exp(-(Xsp.^2 + (tau * Ysp).^2) / (2 * ss^2));
+        otherwise
+            error('Unknown gaussianMode: %s', gaussianMode)
     end
 
     DoG = Ac .* Gc - As .* Gs;
-    carrier = cos(2*pi*f*Xcp + phi);
+    carrier = cos(phi) .* cos(2 * pi * f * Xcp) - ...
+        sin(phi) .* sin(2 * pi * f * Xcp);
 
     y = DoG .* carrier;
 end
-

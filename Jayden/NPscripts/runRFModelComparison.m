@@ -143,6 +143,16 @@ results.params = cell(nModels,1);
 results.R2     = cell(nModels,1);
 results.AIC    = cell(nModels,1);
 results.cellIDs = nan(nValid,1);
+results.RSS = cell(nModels,1);
+results.fitInfo = cell(nModels,1);
+results.modelRegistry = modelRegistry;
+results.indLoopUsed = indLoop(:);
+
+for m = 1:nModels
+    results.RSS{m} = nan(nValid,1);
+    results.fitInfo{m} = cell(nValid,1);
+end
+
 
 for m = 1:nModels
     results.models{m} = cell(nValid,1);
@@ -152,6 +162,15 @@ for m = 1:nModels
 end
 
 k = 0;
+
+results.sgRawFit = cell(nModels, 1);
+
+for m = 1:nModels
+    results.sgRawFit{m} = cell(nValid, 1);
+end
+
+globalMaxAbs = max(abs(STA_cropped(:,:,indLoop)), [], 'all');
+globalCLim = [-globalMaxAbs, globalMaxAbs];
 
 for idx = 1:numel(indLoop)
 
@@ -188,17 +207,30 @@ for idx = 1:numel(indLoop)
                 results.params{m}{k} = params;
     
             case 'sg'
-    
+
                 resSG = modelRegistry(m).fitFcn(STA);
-    
+            
                 results.models{m}{k} = resSG.patch;
-                results.params{m}{k} = resSG.fit;   % store struct
+                results.sgRawFit{m}{k} = resSG.fit;
+                sgParams = convertSGGaborToDoGXcosParams(resSG.fit);
+                results.params{m}{k} = sgParams;
+                disp(resSG.fit)
+                disp(fieldnames(resSG.fit))
+                sgParams = convertSGGaborToDoGXcosParams(resSG.fit);
+
+                disp('Converted SG params:')
+                disp(sgParams)
+                
+                fprintf('theta p(6) = %.4f rad, %.2f deg\n', ...
+                    sgParams(6), rad2deg(sgParams(6)));
+                
     
         end
     
         % ---- Compute metrics ----
         RSS = sum((STA(:) - results.models{m}{k}(:)).^2);
-    
+        results.RSS{m}(k) = RSS;
+        results.fitInfo{m}{k} = fitInfo;
         results.R2{m}(k) = computeR2(STA, results.models{m}{k});
         results.AIC{m}(k) = computeAIC(RSS, n, modelRegistry(m).k);
     
@@ -211,11 +243,25 @@ for idx = 1:numel(indLoop)
     if ~strcmp(plotMode,'none')
         visualizeComparison( ...
             STA, results, modelRegistry, ...
-            k, ic, ii, plotMode, pdfFile);
+            k, ic, ii, plotMode, pdfFile, globalCLim);
     end
 
 end
 modelNames = {modelRegistry.name};
+% disp(results.params)
+%% tests
+% disp(resSG.fit)
+% fprintf('a %.3f\n', resSG.fit.a);
+% fprintf('b %.3f\n', resSG.fit.b);
+% fprintf('x0 %.3f | y0 %.3f\n', resSG.fit.x0, resSG.fit.y0);
+% fprintf('sigmax %.3f | sigmay %.3f\n', ...
+%     resSG.fit.sigmax, resSG.fit.sigmay);
+% fprintf('theta %.3f rad | %.1f deg\n', ...
+%     resSG.fit.theta, rad2deg(resSG.fit.theta));
+% fprintf('phi %.3f | phase %.3f\n', ...
+%     resSG.fit.phi, resSG.fit.phase);
+% fprintf('lambda %.3f | frequency %.3f\n', ...
+%     resSG.fit.lambda, 1 / resSG.fit.lambda);
 
 %% ============================================
 % Scan parameter correlations (works for all models)
@@ -517,3 +563,117 @@ if ~isempty(compareAICModels)
     fprintf('Valid cells used: %d\n', sum(validIdx));
 end 
 end
+
+function p = convertSGGaborToDoGXcosParams(sgFit)
+%CONVERTSGGABORTODOGXCOSPARAMS Convert SG Gabor to 12-param format.
+%
+% DoG x cos format:
+% p = [Ac, As, sigmaC, deltaSigma, tau, theta, x0, y0, f, phi, dx, dy]
+%
+% For SG Gabor:
+% sgFit.phi   = carrier / FFT orientation
+% sgFit.theta = envelope rotation relative to carrier
+%
+% For circular/equal Gabor:
+% sgFit.sigma is used for sigmaC
+% tau is set to 1
+
+    p = nan(1, 12);
+
+    % Amplitude
+    p(1) = sgFit.a;
+
+    % No surround for regular Gabor
+    p(2) = 0;
+
+    % Gaussian size and aspect ratio
+    if isfield(sgFit, 'sigmax') && isfield(sgFit, 'sigmay') && ...
+            isfinite(sgFit.sigmax) && isfinite(sgFit.sigmay)
+
+        p(3) = sgFit.sigmax;
+        p(5) = sgFit.sigmay / sgFit.sigmax;
+
+    elseif isfield(sgFit, 'sigma') && isfinite(sgFit.sigma)
+
+        p(3) = sgFit.sigma;
+        p(5) = 1;
+
+    else
+        warning('No valid sigma / sigmax / sigmay found in sgFit.');
+        p(3) = NaN;
+        p(5) = NaN;
+    end
+
+    % No surround width difference for SG Gabor
+    p(4) = 0;
+
+    % Carrier orientation
+    if isfield(sgFit, 'phi') && isfinite(sgFit.phi)
+        p(6) = sgFit.phi;
+    else
+        p(6) = NaN;
+    end
+
+    % RF center
+    p(7) = sgFit.x0;
+    p(8) = sgFit.y0;
+
+    % Spatial frequency
+    if isfield(sgFit, 'lambda') && isfinite(sgFit.lambda) && ...
+            sgFit.lambda > 0
+
+        p(9) = 1 / sgFit.lambda;
+
+    else
+        p(9) = 0;
+    end
+
+    % Carrier phase
+    if isfield(sgFit, 'phase') && isfinite(sgFit.phase)
+        p(10) = sgFit.phase;
+    else
+        p(10) = 0;
+    end
+
+    % No center-surround offset for regular Gabor
+    p(11) = 0;
+    p(12) = 0;
+end
+
+% function p = convertSGGaborToDoGXcosParams(sgFit)
+% %CONVERTSGGABORTODOGXCOSPARAMS Convert SG Gabor to 12-param format.
+% %
+% % DoG x cos format:
+% % p = [Ac, As, sigmaC, deltaSigma, tau, theta, x0, y0, f, phi, dx, dy]
+% %
+% % For SG Gabor:
+% % sgFit.phi   = carrier / FFT orientation
+% % sgFit.theta = envelope rotation relative to carrier
+% 
+%     p = nan(1, 12);
+% 
+%     p(1) = sgFit.a;
+%     p(2) = 0;
+% 
+%     p(3) = sgFit.sigmax;
+%     p(4) = 0;
+%     p(5) = sgFit.sigmay / sgFit.sigmax;
+% 
+%     % IMPORTANT:
+%     % Store carrier / FFT orientation in p(6)
+%     p(6) = sgFit.phi;
+% 
+%     p(7) = sgFit.x0;
+%     p(8) = sgFit.y0;
+% 
+%     if isfield(sgFit, 'lambda') && isfinite(sgFit.lambda) && sgFit.lambda > 0
+%         p(9) = 1 / sgFit.lambda;
+%     else
+%         p(9) = 0;
+%     end
+% 
+%     p(10) = sgFit.phase;
+% 
+%     p(11) = 0;
+%     p(12) = 0;
+% end

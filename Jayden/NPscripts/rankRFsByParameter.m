@@ -30,7 +30,7 @@ assert(numel(RF_cells) == numel(cellIDs), 'RF/cellID mismatch');
 % Extract parameter values
 %% ===============================
 
-param_vals = nan(numel(RF_cells),1);
+param_vals = nan(numel(RF_cells), 1);
 
 for i = 1:numel(RF_cells)
 
@@ -38,24 +38,59 @@ for i = 1:numel(RF_cells)
 
         case 'standard'
             params = paramStruct{i};
-            effectiveSigma = params(3) / sqrt(params(5));
-            cycles = params(9) * effectiveSigma;
-            theta = params(6);
-            elongation = params(5);
-            % if elongation < 1
-            %     elongation = 1 / elongation;
-            %     theta = theta + pi/ 2;
-            % end
-            % 
+
+            if isempty(params) || ~isnumeric(params) || ...
+                    numel(params) < 12 || any(~isfinite(params))
+                continue
+            end
+
             switch paramName
                 case 'orientation'
-                    param_vals(i) = theta;
+                    param_vals(i) = params(6);
+
                 case 'frequency'
-                    param_vals(i) = cycles;
-                case 'elongation'
-                    param_vals(i) = elongation;
+                    freqMetrics = computeVisibleFrequencyMetrics20x20( ...
+                        params, 1.0, 0.10);
+                    param_vals(i) = freqMetrics.f;
+
+                case 'period'
+                    freqMetrics = computeVisibleFrequencyMetrics20x20( ...
+                        params, 1.0, 0.10);
+                    param_vals(i) = freqMetrics.period_pixels;
+
+                case 'cycles_visible'
+                    freqMetrics = computeVisibleFrequencyMetrics20x20( ...
+                        params, 1.0, 0.10);
+                    param_vals(i) = freqMetrics.cycles_visible;
+
+                case 'oscillation'
+                    freqMetrics = computeVisibleFrequencyMetrics20x20( ...
+                        params, 1.0, 0.10);
+                    param_vals(i) = freqMetrics.osc_score;
+
                 case 'size'
-                    param_vals(i) = effectiveSigma;
+                    geomMetrics = computeEffectiveEnvelopeGeometry( ...
+                        params, 1.0, 0.10);
+                    param_vals(i) = geomMetrics.size_eff;
+
+                case 'elongation'
+                    geomMetrics = computeEffectiveEnvelopeGeometry( ...
+                        params, 1.0, 0.10);
+                    param_vals(i) = geomMetrics.elongation_eff;
+
+                case 'sigma_parallel'
+                    geomMetrics = computeEffectiveEnvelopeGeometry( ...
+                        params, 1.0, 0.10);
+                    param_vals(i) = geomMetrics.sigma_parallel;
+
+                case 'sigma_perp'
+                    geomMetrics = computeEffectiveEnvelopeGeometry( ...
+                        params, 1.0, 0.10);
+                    param_vals(i) = geomMetrics.sigma_perp;
+
+                otherwise
+                    error(['Unsupported paramName "%s" for ' ...
+                        'modelType "standard".'], paramName)
             end
 
         case 'sg'
@@ -71,7 +106,6 @@ for i = 1:numel(RF_cells)
                 case 'size'
                     param_vals(i) = fit.sigma_x;
             end
-
     end
 end
 
@@ -91,7 +125,7 @@ save(fullfile(saveDir, 'results', ['RFparams_' paramName '.mat']), 'paramResults
 % Orientation wrapping
 %% ===============================
 
-if strcmp(paramName,'orientation')
+if strcmp(paramName, 'orientation')
     param_vals = mod(param_vals, pi);
 end
 
@@ -99,70 +133,102 @@ end
 % Sort
 %% ===============================
 
-[param_sorted, sortIdx] = sort(param_vals,'ascend');
+[param_sorted, sortIdx] = sort(param_vals, 'ascend');
 
-RF_sorted     = RF_cells(sortIdx);
+RF_sorted = RF_cells(sortIdx);
 cellID_sorted = cellIDs(sortIdx);
+paramStruct_sorted = paramStruct(sortIdx);
 
 %% ===============================
-% Plot layout
+% Multi-page layout
 %% ===============================
 
 nCols = 6;
+nRows = 5;
+nPerPage = 30;
 nShow = numel(RF_sorted);
-nRows = ceil(nShow / nCols);
+nPages = ceil(nShow / nPerPage);
 
-fullPDF = fullfile(saveDir, pdfFile);
-if exist(fullPDF,'file')
-    delete(fullPDF)
+if exist(pdfFile, 'file')
+    delete(pdfFile)
 end
 
-figure('Color','w','Position',[100 100 1400 800]);
+for iPage = 1:nPages
+    idxStart = (iPage - 1) * nPerPage + 1;
+    idxEnd = min(iPage * nPerPage, nShow);
+    plotIdx = idxStart:idxEnd;
 
-for i = 1:nShow
+    hFig = figure('Color', 'w', ...
+        'Position', [100 100 1400 900]);
 
-    subplot(nRows, nCols, i)
+    for j = 1:numel(plotIdx)
+        i = plotIdx(j);
 
-    rf = RF_sorted{i};
-    clim = max(abs(rf(:)));
+        subplot(nRows, nCols, j)
 
-    imagesc(rf,[-clim clim])
-    axis image off
-    colormap gray
-    hold on
+        rf = RF_sorted{i};
 
-    %% Overlay orientation axis
-    if strcmp(paramName,'orientation')
+        if isempty(rf) || any(~isfinite(rf(:)))
+            axis off
+            title(sprintf('%d | invalid RF', cellID_sorted(i)), ...
+                'FontSize', 7)
+            continue
+        end
 
-        theta = param_sorted(i);
+        clim = max(abs(rf(:)));
+        if clim == 0
+            clim = 1;
+        end
 
-        [ny,nx] = size(rf);
-        cx = nx/2;
-        cy = ny/2;
+        imagesc(rf, [-clim clim])
+        axis image off
+        colormap gray
+        hold on
 
-        L = 0.45 * min(nx,ny);
+        if strcmp(modelType, 'standard') && ...
+                (strcmp(paramName, 'size') || ...
+                 strcmp(paramName, 'elongation'))
+            params_this = paramStruct_sorted{i};
+            drawDoGEnvelopes(params_this, size(rf), 2);
+        end
 
-        dx = cos(theta);
-        dy = sin(theta);
+        if strcmp(paramName, 'orientation')
+            theta = param_sorted(i);
 
-        plot([cx-L*dx cx+L*dx], ...
-             [cy-L*dy cy+L*dy], ...
-             'r-','LineWidth',1.5);
+            [ny, nx] = size(rf);
+            cx = nx / 2;
+            cy = ny / 2;
+
+            L = 0.45 * min(nx, ny);
+
+            dx = cos(theta);
+            dy = sin(theta);
+
+            plot([cx - L * dx, cx + L * dx], ...
+                 [cy - L * dy, cy + L * dy], ...
+                 'y-', 'LineWidth', 1.5);
+        end
+
+        hold off
+
+        title(sprintf('%d | %.3f', ...
+            cellID_sorted(i), param_sorted(i)), ...
+            'FontSize', 7)
     end
 
-    hold off
+    sgtitle(sprintf('%s (Page %d of %d)', ...
+        figTitle, iPage, nPages), ...
+        'FontWeight', 'bold')
 
-    title(sprintf('%d | %.3f', ...
-        cellID_sorted(i), param_sorted(i)), ...
-        'FontSize',7)
+    if iPage == 1
+        exportgraphics(hFig, pdfFile, ...
+            'ContentType', 'vector');
+    else
+        exportgraphics(hFig, pdfFile, ...
+            'ContentType', 'vector', 'Append', true);
+    end
 
+    close(hFig)
 end
-
-sgtitle(figTitle,'FontWeight','bold')
-
-disp(['Saving results to: ' saveDir])
-
-exportgraphics(gcf, fullfile(saveDir, pdfFile), 'ContentType','vector');
-close(gcf)
 
 end
