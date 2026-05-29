@@ -210,7 +210,7 @@ end
 
 %% Marmoset expt
 close all; clc; clear all
-expt = 'g06';
+expt = 'g12';
 
 % Get stim struct
     stimStruct = createStimStruct_marm(expt);
