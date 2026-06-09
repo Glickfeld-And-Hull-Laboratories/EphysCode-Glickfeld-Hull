@@ -1,7 +1,11 @@
 
 %% getCSD_marmV1_Wiesel
 close all; clear all;
-iexp=7;
+iexp=2;
+
+chnls       = 2:2:260;  % Only take even channels because NPX probe has two columns of staggered channels
+depth       = -2500;
+
 
 doSpikes = 0;
 %%
@@ -26,7 +30,6 @@ expts = {'g01','g06','g12','g17','tss2','tss6','tss7'};
 % Parameters
     Fs          = 2500; % Sampling frequency in Hz
     dz          = 20;       % 20 um between channels, vertically
-    chnls       = 2:2:380;  % Only take even channels because NPX probe has two columns of staggered channels
     cutofflow   = 150; % Cutoff frequency in Hz
     [b, a] = butter(4, cutofflow/(Fs/2), 'low'); % Design filter (Butterworth, 4th order)
     LFPdataFilt1 = filtfilt(b, a, LFPdata);
@@ -315,7 +318,6 @@ figure;
     end
 
 t = (0:size(CSDraw,2)-1)/Fs;   % time vector in seconds
-depth = -3500;
 yLFP = (0:size(fLFP,1)-1)*20 + depth;
 yCSD = (1:size(CSDraw,1)-1)*20 + depth;
 

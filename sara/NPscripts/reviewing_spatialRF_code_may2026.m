@@ -3,7 +3,7 @@
 
 %% Load data
 
-iexp    = 13;
+iexp    = 26;
 exptloc = 'V1';
 
 % Load data

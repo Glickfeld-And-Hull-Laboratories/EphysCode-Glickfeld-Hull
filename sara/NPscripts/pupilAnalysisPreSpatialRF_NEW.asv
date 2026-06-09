@@ -1,7 +1,7 @@
 %% Use this code for experiments that have a PD signal associated with each frame
 
 
-    iexp = 30;
+    iexp = 26;
     expt = 'V1';
     base = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
 
@@ -376,12 +376,12 @@ load(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, [
 % =======================
 % Plot STAs
 
-
+lo
 if ~exist(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFsPostPupil']), 'dir')
     mkdir(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFsPostPupil']));
 end
 
-nCells  = size(averageImagesAll,1);
+nCells  = length(goodUnitStruct);
 lastTimestamp = frameTimes(end)+10; % Last timestamp plus 10 seconds
 
 figure;

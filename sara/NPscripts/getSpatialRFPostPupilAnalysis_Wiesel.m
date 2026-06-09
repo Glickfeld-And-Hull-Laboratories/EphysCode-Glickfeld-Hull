@@ -1,6 +1,6 @@
 clear all; close all; clc
 base = '/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/';
-iexp = 23; % Choose experiment
+iexp = 30; % Choose experiment
 exptloc = 'V1'; %LG
 
 [exptStruct] = createExptStruct(iexp,exptloc); % Load relevant times and directories for this experiment
