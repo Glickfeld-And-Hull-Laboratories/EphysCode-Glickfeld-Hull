@@ -606,7 +606,7 @@ set(gca, 'FontSize', 12);
 
 
 %%
-figure(2); print(fullfile(pwd, 'modelRsqOriComparison.pdf'), '-dpdf', '-bestfit')
+print(fullfile(pwd, 'modelRsq.pdf'), '-dpdf', '-bestfit')
 
 %% -----------------------------
 % Print summary
