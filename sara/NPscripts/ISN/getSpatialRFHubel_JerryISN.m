@@ -157,6 +157,8 @@ for iCell = 1:nCells
     end 
 end
 
+sigRF_timepoints = cells_sigRFbyTime_On+cells_sigRFbyTime_Off;
+
 ind_sigRF = sum(cells_sigRFbyTime_On,2)+sum(cells_sigRFbyTime_Off,2);
 
 
@@ -255,7 +257,7 @@ for ic = 1:nCells
     % figure;
     % movegui('center')
     is=1;
-        for it = [2 3 4]
+        for it = [1 2 3 4 5]
             xtempz(:,:) = medfilt2(imgaussfilt(squeeze(averageImageZscore(ic,it,:,:)),1)); %3:27,12:36
 
             if isnan(xtempz(1,1))
@@ -264,25 +266,20 @@ for ic = 1:nCells
 
             jtempz(:,:) = rangefilt(xtempz(:,:),ones(5));
 
-            % subplot(5,3,is)
-                imagesc(squeeze(xtempz(:,:))); colormap('gray'); clim([-5 5]) %axis square;
-                subtitle(['zscore STA,' num2str(beforeSpike(it)) ' ms'])
-            % subplot(5,3,is+1)
-                imagesc(squeeze(jtempz(:,:))); colormap('gray'); clim([0 10]) %axis square
-                subtitle('local contrast map')
-            % subplot(5,3,is+2)
-                j = squeeze(jtempz(:,:));
-                q(it) = quantile(j(:),0.9);
-                histogram(j); xlim([0 15])
-                xline(q(it))
-                subtitle([num2str(q(it))])
+            j = squeeze(jtempz(:,:));
+            q(it) = prctile(j(:),95);
+
+            if it ==5
+                q(it) = 1;   % set 5th timepoint (0.01s) to 1 to make sure if there is a peak at 4th timepoint, it can be detected
+            end
 
             localConMap_data(ic,it,:,:) = xtempz;
             localConMap_map(ic,it,:,:) = jtempz;
             is=is+3;        
         end
-
-        [m,i] = max(q);
+        i = pickPeak_rfCI(q);   % Pick peak in 0.95 CI, but if there are two peaks, take the second
+        m = q(i);
+        %[m,i] = max(q);
         bestTimePoint(ic,1) = i; % best time point
         bestTimePoint(ic,2) = m; % max q90 value
 
@@ -301,45 +298,129 @@ for ic = 1:nCells
     clear xtempz jtempz q m i
 end
 
+%% Plot nice version of RFs
 
-%%
+FRs = [goodUnitStruct.FR];
 
-   % get stimulus position
-   stimPosition = exptStruct.stimPos;
-   stimAz = stimPosition(1);
-   stimEl = stimPosition(2);
+% get all smoothed data into one matrix to find actual max/min to normalize
+% intensity of STA across cells for plotting and comparing SNR of timepoints
+for ic = 1:nCells
+    for it = 1:5
+        data_all(ic,it,:,:) = medfilt2(imgaussfilt(squeeze(averageImageZscore(ic,it,:,:)),1));
+    end
+end
+maxSmth = max(max(max(max(abs(data_all)))));
 
+% Print STA time point choices
+pdfFile = fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\ISN_Jerry\spatialRFs\',[mouse '-' date '_timePoint_STAs.pdf']);
+for ic = 1:nCells
 
-   % analyze RF locations per experiment 
-        ind_RF = find(ind_sigRF>0);
+    figure();
 
-        azAvg = mean(els(ind_RF),"omitnan")*2; % switch to get correct az and el
-        azStd = std(els(ind_RF),'omitnan')*2;
-        elAvg = mean(azs(ind_RF),"omitnan")*2;
-        elStd = std(els(ind_RF),'omitnan')*2;
-        
-        elMax = 29*2;
-        elAvg_flip = elMax - elAvg;
-        D  = 7.5;   % stimulus diameter
-        r = D/2;
+    it_Con = bestTimePoint(ic,1);
+    % it_maskCon = bestTimePoint(ic,5);
 
-        figure; movegui('center')
-            d = hypot((azAvg*2) - (stimAz+52), (elAvg_flip) - (stimEl+29));
-            subplot 432
-                h2 = scatter(azAvg,elAvg_flip);
+    for it = 1:5
+        data = squeeze(data_all(ic,it,:,:));
+        [h, w] = size(data);
+
+        subplot(1,5,it)
+            % plot RF
+            imagesc(data); hold on
+            pbaspect([16 9 1])
+            colormap(gray)
+            clim([-ceil(maxSmth) ceil(maxSmth)])
+            set(gca,'xtick',[]); set(gca,'xticklabel',[])
+            set(gca,'ytick',[]); set(gca,'yticklabel',[])
+
+            % add box if passes 2x2 pixel test
+            pixRFtest = sigRF_timepoints(ic,it);
+            if pixRFtest > 0
                 hold on
-                ylim([0 29*2])
-                xlim([0 52*2])
-                errorbar(azAvg,elAvg_flip,azStd,'Color',[.7 .7 .7],"LineStyle","none")
-                errorbar(azAvg,elAvg_flip,elStd,"horizontal",'Color',[.7 .7 .7],"LineStyle","none")
-                set(gca,'TickDir','out'); box off;  grid off
-                sgtitle([mouse ', ' num2str(length(ind_RF)) '/' num2str(nCells) ' cells, ' num2str(round(d,1)) ' deg diff (hypot)'])
-                subtitle('st dev')
-                rectangle('Position',[(stimAz+52)-r, (stimEl+29)-r, D, D],'Curvature',[1 1], 'EdgeColor','k', 'LineWidth',1.5);
-            print( ...
-                fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\ISN_Jerry\spatialRFs'], ...
-                [mouse '-' date '_RFs_stimulusPosition.pdf']), ...
-                '-dpdf','-bestfit')
+                [h, w] = size(data);
+                rectangle('Position',[0.5 0.5 w h], ...
+                          'EdgeColor','r', ... % red
+                          'LineWidth',1);
+                hold off
+            end
+
+            % Add chosen timepoint to the corner
+            % "con" → bottom left
+            if it == it_Con
+                text(1, h, 'con', ...
+                    'Color','w', ...
+                    'FontSize',5, ...
+                    'HorizontalAlignment','left', ...
+                    'VerticalAlignment','bottom');
+                x = els(ic);
+                y = azs(ic);
+            
+                hold on
+                scatter(x, y, 3, 'm', 'filled')
+                hold off
+            end
+            % % "maskCon" → bottom right
+            % if it == it_maskCon
+            %     text(w, h, 'maskCon', ...
+            %         'Color','w', ...
+            %         'FontSize',5, ...
+            %         'HorizontalAlignment','right', ...
+            %         'VerticalAlignment','bottom');
+            % end
+
+            if it == 1
+                subtitle(['cell ' num2str(ic) ', FR = ' num2str(round(FRs(ic),1)) ' Hz'])
+            end
+            if it == 5 
+                subtitle([num2str(totalSpikesUsed(ic)) ' spikes'])
+            end
+            hold off
+    end
+    % Append current figure as a new page in the PDF
+    
+    exportgraphics(gcf, pdfFile,'ContentType', 'vector','Append', true);
+
+    close(gcf)
+end
+
+%% testing -- delete later
+
+% 
+% for ic = 1:nCells
+%     for it = 1:5
+%         data = squeeze(localConMap_map(ic,it,:,:));
+%         q(ic, it) = prctile(data(:),95);
+%         if it == 5
+%             q(ic, it) = 1;
+%         end
+%     end
+% end
+% 
+% figure;
+%     subplot 331
+%         plot(1:5,q(63,:)); hold on     
+%         idx = pickPeak(q(63,:));
+%         subtitle(num2str(idx))
+%     subplot 332
+%         plot(1:5,q(71,:)); hold on    
+%         idx = pickPeak(q(71,:));
+%         subtitle(num2str(idx))
+%     subplot 333
+%         plot(1:5,q(72,:)); hold on    
+%         idx = pickPeak(q(72,:));
+%         subtitle(num2str(idx))
+%     subplot 334
+%         plot(1:5,q(73,:)); hold on     
+%         idx = pickPeak(q(73,:));
+%         subtitle(num2str(idx))
+%     subplot 335
+%         plot(1:5,q(53,:)); hold on     
+%         idx = pickPeak(q(53,:));
+%         subtitle(num2str(idx))
+%     subplot 336
+%         plot(1:5,q(48,:)); hold on     
+%         idx = pickPeak(q(48,:));
+%         subtitle(num2str(idx))
 
 
 

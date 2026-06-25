@@ -86,7 +86,7 @@ bottomOfBrainDepth(15)  = -1500; %31
 
 % V1 -- 11 13 18 19 20 21 22 23 24 25 26 28
 
-% V1 -- 13 18 19 20 21 22 23 25 26 28 29, throwing out 11 for RF position,
+% V1 -- 13 18 19 20 21 22 23 25 26 28 29 30 31, throwing out 11 for RF position,
 % throwing out 24 because eye camera frames collected ~= timestamps of frames
 
 expts = [13 18 19 20 21 22 23 24 25 26 27 28 29 30 31];
@@ -212,23 +212,23 @@ for iexp                = expts
         D  = 30;   % stimulus diameter
         r = D/2;
 
-        figure; movegui('center')
-            d = hypot((azAvg*2) - (stimAz+52), (elAvg_flip) - (stimEl+29));
-            subplot 432
-                h2 = scatter(azAvg,elAvg_flip);
-                hold on
-                ylim([0 29*2])
-                xlim([0 52*2])
-                errorbar(azAvg,elAvg_flip,azStd,'Color',[.7 .7 .7],"LineStyle","none")
-                errorbar(azAvg,elAvg_flip,elStd,"horizontal",'Color',[.7 .7 .7],"LineStyle","none")
-                set(gca,'TickDir','out'); box off;  grid off
-                sgtitle([mouse ', ' num2str(length(ind_RF)) '/' num2str(nCells) ' cells, ' num2str(round(d,1)) ' deg diff (hypot)'])
-                subtitle('st dev')
-                rectangle('Position',[(stimAz+52)-r, (stimEl+29)-r, D, D],'Curvature',[1 1], 'EdgeColor','k', 'LineWidth',1.5);
-    print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\', date, [ '\' date '-' mouse '_RFpopulationCenterAlignment.pdf']]),'-dpdf','-bestfit');
+    %     figure; movegui('center')
+    %         d = hypot((azAvg*2) - (stimAz+52), (elAvg_flip) - (stimEl+29));
+    %         subplot 432
+    %             h2 = scatter(azAvg,elAvg_flip);
+    %             hold on
+    %             ylim([0 29*2])
+    %             xlim([0 52*2])
+    %             errorbar(azAvg,elAvg_flip,azStd,'Color',[.7 .7 .7],"LineStyle","none")
+    %             errorbar(azAvg,elAvg_flip,elStd,"horizontal",'Color',[.7 .7 .7],"LineStyle","none")
+    %             set(gca,'TickDir','out'); box off;  grid off
+    %             sgtitle([mouse ', ' num2str(length(ind_RF)) '/' num2str(nCells) ' cells, ' num2str(round(d,1)) ' deg diff (hypot)'])
+    %             subtitle('st dev')
+    %             rectangle('Position',[(stimAz+52)-r, (stimEl+29)-r, D, D],'Curvature',[1 1], 'EdgeColor','k', 'LineWidth',1.5);
+    % print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\', date, [ '\' date '-' mouse '_RFpopulationCenterAlignment.pdf']]),'-dpdf','-bestfit');
 start=start+1;
 end
-stop
+
 
 totalCells = totCells+nCells;
 ind = intersect(resp_ind_dir_all, find(DSI_all>.5));
