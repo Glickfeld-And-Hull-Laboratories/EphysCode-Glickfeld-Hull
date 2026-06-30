@@ -100,6 +100,9 @@ end
 sideLength = 20;
 nSelected = numel(cellIDs);
 
+rotateSTA = false; % change this
+rotationK = 1;   % 1 = 90 deg CCW, -1 = 90 deg CW
+
 STA_cropped = nan(sideLength, sideLength, nSelected);
 
 for k = 1:nSelected
@@ -116,9 +119,217 @@ for k = 1:nSelected
 
     [el, az] = getRFcenter(data);
 
-    STA_cropped(:, :, k) = cropRFtoCenter(az, el, data, sideLength);
+    STA_crop = cropRFtoCenter(az, el, data, sideLength);
+
+    if rotateSTA
+        STA_crop = rot90(STA_crop, rotationK);
+    end
+
+    STA_cropped(:, :, k) = STA_crop;
 end
+
+%% ============================================================
+% Export RF machine-learning dataset for PyTorch
+% Each row = one selected cell from cellIDs
+% ============================================================
+
+outFile = "RF_ML_dataset.mat";
+
+%% -----------------------------
+% Basic checks
+%% -----------------------------
+
+assert(exist("avgImgZscore_all", "var") == 1, "Missing avgImgZscore_all");
+assert(exist("bestTimePoint_all", "var") == 1, "Missing bestTimePoint_all");
+assert(exist("avg_resp_dir_all", "var") == 1, "Missing avg_resp_dir_all");
+assert(exist("F1F0_all", "var") == 1, "Missing F1F0_all");
+assert(exist("DSI_prefdir", "var") == 1, "Missing DSI_prefdir");
+assert(exist("cellIDs", "var") == 1, "Missing cellIDs");
+
+fittedCellIDs = cellIDs(:);
+nCells = numel(fittedCellIDs);
+
+nStimDir = size(avg_resp_dir_all, 2);
+nOri = nStimDir / 2;
+
+assert(mod(nStimDir, 2) == 0, "nStimDir must be even.");
+
+sideLength = 20;
+
+STA_images = nan(nCells, sideLength, sideLength);
+DSI = nan(nCells, 1);
+OSI = nan(nCells, 1);
+F1F0 = nan(nCells, 1);
+dataOriDeg = nan(nCells, 1);
+dataPrefDirDeg = nan(nCells, 1);
+prefDirInd_all = nan(nCells, 1);
+prefOriInd_all = nan(nCells, 1);
+respDir_all_selected = nan(nCells, nStimDir);
+respOri_all_selected = nan(nCells, nOri);
+bestTP_selected = nan(nCells, 1);
+
+%% -----------------------------
+% Direction/orientation angles
+%% -----------------------------
+
+dirAnglesDeg = linspace(0, 360, nStimDir + 1);
+dirAnglesDeg(end) = [];
+
+oriAnglesDeg = dirAnglesDeg(1:nOri);
+
+%% -----------------------------
+% Preferred-direction F1/F0
+%% -----------------------------
+
+pref_F1F0_all = nan(size(F1F0_all, 1), 1);
+
+for iCell = 1:size(F1F0_all, 1)
+
+    if iCell <= numel(DSI_prefdir) && ...
+            isfinite(DSI_prefdir(iCell)) && ...
+            DSI_prefdir(iCell) >= 1 && ...
+            DSI_prefdir(iCell) <= size(F1F0_all, 2)
+
+        pref_F1F0_all(iCell) = F1F0_all(iCell, DSI_prefdir(iCell));
+
+    end
+end
+
+%% -----------------------------
+% Loop through selected cells
+%% -----------------------------
+
+for ii = 1:nCells
+
+    iCell = fittedCellIDs(ii);
+
+    fprintf("Exporting ii = %d / %d, original cell = %d\n", ...
+        ii, nCells, iCell);
+
+    %% -----------------------------
+    % Extract and crop STA
+    %% -----------------------------
+
+    avgImgZscore = squeeze(avgImgZscore_all(iCell, :, :, :));
+
+    bestTP = bestTimePoint_all(iCell, 1);
+
+    if ~isfinite(bestTP) || bestTP < 1
+        bestTP = bestTimePoint_all(iCell, 3);
+    end
+
+    bestTP = round(bestTP);
+    bestTP = max(1, min(bestTP, size(avgImgZscore, 1)));
+
+    bestTP_selected(ii) = bestTP;
+
+    data = squeeze(avgImgZscore(bestTP, :, :));
+    data = medfilt2(imgaussfilt(data, 1));
+
+    [el, az] = getRFcenter(data);
+
+    STA_crop = cropRFtoCenter(az, el, data, sideLength);
+
+    if exist("rotateSTA", "var") && rotateSTA
+        if ~exist("rotationK", "var")
+            rotationK = 1;
+        end
+        STA_crop = rot90(STA_crop, rotationK);
+    end
+
+    STA_images(ii, :, :) = STA_crop;
+
+    %% -----------------------------
+    % Direction response
+    %% -----------------------------
+
+    resp = squeeze(avg_resp_dir_all(iCell, :, 1, 1, 1));
+    resp = resp(:)';
+
+    resp(resp < 0) = 0;
+
+    respDir_all_selected(ii, :) = resp;
+
+    %% -----------------------------
+    % DSI
+    %% -----------------------------
+
+    [RprefDir, prefDirInd] = max(resp);
+
+    nullInd = prefDirInd + nOri;
+    if nullInd > nStimDir
+        nullInd = nullInd - nStimDir;
+    end
+
+    Rnull = resp(nullInd);
+
+    if RprefDir + Rnull > 0
+        DSI(ii) = (RprefDir - Rnull) / (RprefDir + Rnull);
+    end
+
+    prefDirInd_all(ii) = prefDirInd;
+    dataPrefDirDeg(ii) = dirAnglesDeg(prefDirInd);
+
+    %% -----------------------------
+    % OSI
+    %% -----------------------------
+
+    oriResp = (resp(1:nOri) + resp(nOri + 1:end)) / 2;
+
+    respOri_all_selected(ii, :) = oriResp;
+
+    [RprefOri, prefOriInd] = max(oriResp);
+
+    orthInd = prefOriInd + nStimDir / 4;
+    if orthInd > nOri
+        orthInd = orthInd - nOri;
+    end
+
+    Rorth = oriResp(orthInd);
+
+    if RprefOri + Rorth > 0
+        OSI(ii) = (RprefOri - Rorth) / (RprefOri + Rorth);
+    end
+
+    prefOriInd_all(ii) = prefOriInd;
+    dataOriDeg(ii) = oriAnglesDeg(prefOriInd);
+
+    %% -----------------------------
+    % Preferred-direction F1/F0
+    %% -----------------------------
+
+    F1F0(ii) = pref_F1F0_all(iCell);
+
+end
+
+%% -----------------------------
+% Save ML dataset
+%% -----------------------------
+
+save(outFile, ...
+    "STA_images", ...            % [N x H x W]
+    "fittedCellIDs", ...         % original cell indices
+    "dataOriDeg", ...            % preferred orientation, 0–180
+    "dataPrefDirDeg", ...        % preferred direction, 0–360
+    "DSI", ...
+    "OSI", ...
+    "F1F0", ...
+    "respDir_all_selected", ...
+    "respOri_all_selected", ...
+    "prefDirInd_all", ...
+    "prefOriInd_all", ...
+    "bestTP_selected", ...
+    "dirAnglesDeg", ...
+    "oriAnglesDeg", ...
+    "sideLength", ...
+    "-v7.3");
+
+fprintf("\nSaved PyTorch RF dataset to %s\n", outFile);
+fprintf("STA_images size: [%d x %d x %d]\n", ...
+    size(STA_images,1), size(STA_images,2), size(STA_images,3));
+fprintf("Number of cells exported: %d\n", nCells);
 %%
+
 %% ============================================================
 % Export best-time-point STAs
 % 30 cells per page
@@ -128,85 +339,85 @@ end
 % One page per cell: all STA time points
 %% ============================================================
 
-cellsToPlot = cellsSelected(:);   % original cell IDs
-timePointsToShow = 1:size(avgImgZscore_all, 2);
-
-outPdf = fullfile(outDir, 'STA_all_timepoints_one_cell_per_page.pdf');
-
-if exist(outPdf, 'file')
-    delete(outPdf);
-end
-
-for iCell = 1:numel(cellsToPlot)
-
-    ic = cellsToPlot(iCell);
-    nTP = numel(timePointsToShow);
-
-    allSTA = squeeze(avgImgZscore_all(ic, timePointsToShow, :, :));
-    clim = max(abs(allSTA(:)), [], 'omitnan');
-
-    if ~isfinite(clim) || clim == 0
-        clim = 1;
-    end
-
-    fig = figure('Color', 'w', ...
-        'Position', [100 100 220*nTP 300]);
-
-    tiledlayout(1, nTP, ...
-        'TileSpacing', 'compact', ...
-        'Padding', 'compact');
-
-    for j = 1:nTP
-
-        it = timePointsToShow(j);
-
-        STA = squeeze(avgImgZscore_all(ic, it, :, :));
-        STA = medfilt2(imgaussfilt(STA, 1));
-
-        nexttile;
-        imagesc(STA, [-clim clim]);
-        axis image off;
-        colormap gray;
-
-        if it == bestTimePoint_all(ic, 1)
-            title(sprintf('t%d best', it), ...
-                'FontSize', 10, ...
-                'FontWeight', 'bold');
-        else
-            title(sprintf('t%d', it), ...
-                'FontSize', 10);
-        end
-    end
-
-    sgtitle(sprintf('Cell %d STA across time points', ic), ...
-        'FontWeight', 'bold');
-
-    exportgraphics(fig, outPdf, ...
-        'Append', true, ...
-        'ContentType', 'image');
-
-    close(fig);
-
-    fprintf('Saved cell %d / %d: cellID %d\n', ...
-        iCell, numel(cellsToPlot), ic);
-end
-
-fprintf('\nSaved PDF: %s\n', outPdf);
+% cellsToPlot = cellsSelected(:);   % original cell IDs
+% timePointsToShow = 1:size(avgImgZscore_all, 2);
+% 
+% outPdf = fullfile(outDir, 'STA_all_timepoints_one_cell_per_page.pdf');
+% 
+% if exist(outPdf, 'file')
+%     delete(outPdf);
+% end
+% 
+% for iCell = 1:numel(cellsToPlot)
+% 
+%     ic = cellsToPlot(iCell);
+%     nTP = numel(timePointsToShow);
+% 
+%     allSTA = squeeze(avgImgZscore_all(ic, timePointsToShow, :, :));
+%     clim = max(abs(allSTA(:)), [], 'omitnan');
+% 
+%     if ~isfinite(clim) || clim == 0
+%         clim = 1;
+%     end
+% 
+%     fig = figure('Color', 'w', ...
+%         'Position', [100 100 220*nTP 300]);
+% 
+%     tiledlayout(1, nTP, ...
+%         'TileSpacing', 'compact', ...
+%         'Padding', 'compact');
+% 
+%     for j = 1:nTP
+% 
+%         it = timePointsToShow(j);
+% 
+%         STA = squeeze(avgImgZscore_all(ic, it, :, :));
+%         STA = medfilt2(imgaussfilt(STA, 1));
+% 
+%         nexttile;
+%         imagesc(STA, [-clim clim]);
+%         axis image off;
+%         colormap gray;
+% 
+%         if it == bestTimePoint_all(ic, 1)
+%             title(sprintf('t%d best', it), ...
+%                 'FontSize', 10, ...
+%                 'FontWeight', 'bold');
+%         else
+%             title(sprintf('t%d', it), ...
+%                 'FontSize', 10);
+%         end
+%     end
+% 
+%     sgtitle(sprintf('Cell %d STA across time points', ic), ...
+%         'FontWeight', 'bold');
+% 
+%     exportgraphics(fig, outPdf, ...
+%         'Append', true, ...
+%         'ContentType', 'image');
+% 
+%     close(fig);
+% 
+%     fprintf('Saved cell %d / %d: cellID %d\n', ...
+%         iCell, numel(cellsToPlot), ic);
+% end
+% 
+% fprintf('\nSaved PDF: %s\n', outPdf);
 %% Run Gabor fit
 options.visualize = 0;
 options.parallel  = 1;
-options.shape     = 'equal';
+options.shape     = 'elliptical';
 options.runs      = 48;
 % options.getAllFits = false;
 
 % copy format from the first example
 modelRegistry = [
     % 
-    struct( ...
-        'name','Circular DoG', ...
-        'type','standard', ...
-        'fitFcn', @(STA) fitDoG2D(STA), ...
-        'k',6)
+    % struct( ...
+    %     'name','Circular DoG', ...
+    %     'type','standard', ...
+    %     'fitFcn', @(STA) fitDoG2D(STA), ...
+    %     'k',6)
     % 
     % struct( ...
     %     'name','Elliptical DoG', ...
@@ -214,11 +425,11 @@ modelRegistry = [
     %     'fitFcn', @(STA) fitEllipticalDoG2D(STA,[],'unnormalized',20), ...
     %     'k',8)
     % 
-    % struct( ...
-    %     'name','Noncon DoG', ...
-    %     'type','standard', ...
-    %     'fitFcn', @(STA) fitNonConcentricEllipticalDoG(STA,'unnormalized',20), ...
-    %     'k',10)
+    struct( ...
+        'name','Noncon DoG', ...
+        'type','standard', ...
+        'fitFcn', @(STA) fitNonConcentricEllipticalDoG(STA,'unnormalized',20), ...
+        'k',10)
     % 
     % struct( ...
     %     'name','Custom Gabor', ...
@@ -242,11 +453,16 @@ modelRegistry = [
     %     'type','standard', ...
     %     'fitFcn', @(STA) fitNoncDoGCosineRF_tau(STA), ...
     %      'k',11)
-     struct( ...
-        'name','DoG x cos', ...
-        'type','standard', ...
-        'fitFcn', @(STA) fitNoncDoGCosineRF_tau(STA), ...
-        'k',11)
+     % struct( ...
+     %    'name','DoG x cos', ...
+     %    'type','standard', ...
+     %    'fitFcn', @(STA) fitNoncDoGCosineRF_tau(STA), ...
+     %    'k',11)
+
+    % struct('name','GGabor', ...
+    %        'type','standard', ...
+    %        'fitFcn', @(STA) fitConcentricDifferenceOfGaborsRF(STA,'unnormalized',50), ...
+    %        'k',13)
 ];
 
 omitCells = [114, 634];   % cell(s) with NaN
@@ -308,243 +524,6 @@ disp(R2table)
 % Model R2 comparison: DoG, Gabor, Hybrid
 %% ============================================================
 
-disp(modelNames')
-
-dogIdx = find(contains(modelNames, 'Circular DoG', 'IgnoreCase', true) & ...
-              ~contains(modelNames, 'cos', 'IgnoreCase', true), 1);
-
-gaborIdx = find(contains(modelNames, 'Gabor', 'IgnoreCase', true), 1);
-
-hybridIdx = find(contains(modelNames, 'DoG x cos', 'IgnoreCase', true), 1);
-
-R2_DoG = R2mat(:, dogIdx);
-R2_Gabor = R2mat(:, gaborIdx);
-R2_Hybrid = R2mat(:, hybridIdx);
-
-valid = isfinite(R2_DoG) & isfinite(R2_Gabor) & isfinite(R2_Hybrid);
-
-R2_DoG = R2_DoG(valid);
-R2_Gabor = R2_Gabor(valid);
-R2_Hybrid = R2_Hybrid(valid);
-
-bestSimple = max(R2_DoG, R2_Gabor);
-deltaHybrid = R2_Hybrid - bestSimple;
-
-nCells = numel(R2_Hybrid);
-
-fprintf('\n===== Hybrid improvement summary =====\n');
-fprintf('N cells = %d\n', nCells);
-fprintf('Hybrid > best simple: %.1f%%\n', ...
-    100 * mean(deltaHybrid > 0));
-fprintf('Hybrid > best simple by >0.02 R2: %.1f%%\n', ...
-    100 * mean(deltaHybrid > 0.02));
-fprintf('Hybrid > best simple by >0.05 R2: %.1f%%\n', ...
-    100 * mean(deltaHybrid > 0.05));
-
-fprintf('pass');
-%% C. DoG vs Gabor, color-coded by hybrid improvement
-
-%% ============================================================
-% Suggested 3-panel model comparison figure
-% 1. DoG vs Gabor, colored by hybrid improvement
-% 2. Hybrid vs best simple model
-% 3. Hybrid improvement histogram
-%% ============================================================
-
-figure('Color', 'w', 'Position', [100 100 1350 390]);
-
-tiledlayout(1, 3, ...
-    'TileSpacing', 'compact', ...
-    'Padding', 'compact');
-
-%% Panel 1: DoG vs Gabor, color-coded by hybrid improvement
-nexttile;
-
-scatter(R2_DoG, R2_Gabor, 45, deltaHybrid, 'filled', ...
-    'MarkerFaceAlpha', 0.75);
-
-hold on;
-plot([0 1], [0 1], 'k--', 'LineWidth', 1.2);
-
-axis square;
-xlim([0 1]);
-ylim([0 1]);
-
-xlabel('Circular DoG R^2');
-ylabel('Gabor R^2');
-title('DoG vs Gabor fit quality');
-
-cb = colorbar;
-ylabel(cb, '\DeltaR^2 hybrid - best simple');
-
-grid on;
-box off;
-set(gca, 'FontSize', 11);
-
-%% Panel 2: Hybrid vs best simple model
-nexttile;
-
-scatter(bestSimple, R2_Hybrid, 45, 'filled', ...
-    'MarkerFaceAlpha', 0.65);
-
-hold on;
-plot([0 1], [0 1], 'k--', 'LineWidth', 1.2);
-
-axis square;
-xlim([0 1]);
-ylim([0 1]);
-
-xlabel('Best simple model R^2');
-ylabel('DoG x cos R^2');
-title('Hybrid vs best simple model');
-
-grid on;
-box off;
-set(gca, 'FontSize', 11);
-
-%% Panel 3: Hybrid improvement histogram
-nexttile;
-
-histogram(deltaHybrid, 20, ...
-    'FaceColor', [0.4 0.7 0.9], ...
-    'EdgeColor', 'k');
-
-hold on;
-xline(0, 'k--', 'LineWidth', 1.3);
-xline(median(deltaHybrid, 'omitnan'), 'r-', 'LineWidth', 1.3);
-
-xlabel('\DeltaR^2 = hybrid - best simple');
-ylabel('Number of cells');
-title('Hybrid improvement');
-
-grid on;
-box off;
-set(gca, 'FontSize', 11);
-
-sgtitle('DoG x cosine model captures RF structure beyond simple DoG or Gabor models', ...
-    'FontSize', 15, ...
-    'FontWeight', 'bold');
-
-%% Optional print summary
-fprintf('\n===== Hybrid improvement summary =====\n');
-fprintf('N cells = %d\n', nCells);
-fprintf('Hybrid > best simple: %.1f%%\n', ...
-    100 * mean(deltaHybrid > 0));
-fprintf('Hybrid > best simple by >0.02 R2: %.1f%%\n', ...
-    100 * mean(deltaHybrid > 0.02));
-fprintf('Hybrid > best simple by >0.05 R2: %.1f%%\n', ...
-    100 * mean(deltaHybrid > 0.05));
-fprintf('Median delta R2 = %.4f\n', ...
-    median(deltaHybrid, 'omitnan'));
-%% ============================================================
-% Overlay histogram:
-% 1. Circular hybrid improvement over best simple
-% 2. Elliptical model improvement over circular hybrid
-%% ============================================================
-
-% Assumes:
-% R2_DoG
-% R2_Gabor
-% R2_Hybrid  = circular DoG x cos model R2
-%
-% Also assumes you have loaded elliptical model summary separately:
-% Elliptical summary = A
-% Circular summary   = B or current results
-
-%% -----------------------------
-% Hybrid circular vs best simple
-%% -----------------------------
-bestSimple = max(R2_DoG, R2_Gabor);
-deltaHybrid = R2_Hybrid - bestSimple;
-
-%% -----------------------------
-% Load elliptical model summary
-%% -----------------------------
-ellipticalFile = "DoGXCosWeightedfull_summary.mat";
-
-SE = load(ellipticalFile);
-E = SE.exportSummary;
-
-% Current circular model cell IDs from results
-circularCellIDs = results.cellIDs(:);
-
-% Align elliptical and circular cells
-commonIDs = intersect(E.cellIDs(:), circularCellIDs);
-
-[~, iE] = ismember(commonIDs, E.cellIDs);
-[~, iC] = ismember(commonIDs, circularCellIDs);
-
-R2_Elliptical = E.R2(iE);
-R2_Circular = R2_Hybrid(iC);
-
-validEllipse = isfinite(R2_Elliptical) & isfinite(R2_Circular);
-
-R2_Elliptical = R2_Elliptical(validEllipse);
-R2_Circular = R2_Circular(validEllipse);
-
-deltaEllipse = R2_Circular - R2_Elliptical;
-
-%% -----------------------------
-% Overlay histogram
-%% -----------------------------
-figure('Color', 'w', 'Position', [100 100 540 430]);
-
-edges = -0.15:0.02:0.40;
-
-h1 = histogram(deltaHybrid, edges, ...
-    'Normalization', 'count', ...
-    'FaceColor', [0.1 0.45 0.8], ...
-    'FaceAlpha', 0.65, ...
-    'EdgeColor', 'none');
-
-hold on;
-
-h2 = histogram(deltaEllipse, edges, ...
-    'Normalization', 'count', ...
-    'FaceColor', [0.7 0.7 0.7], ...
-    'FaceAlpha', 0.30, ...
-    'EdgeColor', 'none');
-
-xline(0, 'k--', 'LineWidth', 1.2);
-
-xline(median(deltaHybrid, 'omitnan'), ...
-    '-', ...
-    'Color', [0.1 0.45 0.8], ...
-    'LineWidth', 1.5);
-
-xline(median(deltaEllipse, 'omitnan'), ...
-    '-', ...
-    'Color', [0.4 0.4 0.4], ...
-    'LineWidth', 1.5);
-
-xlabel('\DeltaR^2');
-ylabel('Number of cells');
-title('Model improvement comparison');
-
-legend([h1 h2], ...
-    {'Circular hybrid - best simple', ...
-     'Circular hybrid - elliptical hybrid'}, ...
-    'Location', 'northeast', ...
-    'Box', 'off');
-
-grid on;
-box off;
-set(gca, 'FontSize', 12);
-
-%% -----------------------------
-% Print summary
-%% -----------------------------
-fprintf('\n===== Overlay histogram summaries =====\n');
-
-fprintf('Circular hybrid - best simple:\n');
-fprintf('N = %d\n', numel(deltaHybrid));
-fprintf('Median delta R2 = %.4f\n', median(deltaHybrid, 'omitnan'));
-fprintf('Fraction > 0 = %.1f%%\n', 100 * mean(deltaHybrid > 0));
-
-fprintf('\nElliptical hybrid - circular hybrid:\n');
-fprintf('N = %d\n', numel(deltaEllipse));
-fprintf('Median delta R2 = %.4f\n', median(deltaEllipse, 'omitnan'));
-fprintf('Fraction > 0 = %.1f%%\n', 100 * mean(deltaEllipse > 0));
 %% Modular RF Group Analysis Workflow
 % This script replaces repeated group-specific plotting/export blocks.
 %
@@ -561,10 +540,10 @@ fprintf('Fraction > 0 = %.1f%%\n', 100 * mean(deltaEllipse > 0));
 
 %% Settings
 
-modelName = 'DoG x cos';
+modelName = 'GGabor';
 
 useVonMisesOri = false;  % true = smooth von Mises, false = raw no fit
-outDir = 'group_analysis_cir';
+outDir = 'group_analysis_GGabor';
 if useVonMisesOri
     outDir = [outDir '_vonmises'];
 else
@@ -587,7 +566,7 @@ paramCell = results.params{modelIdx};
 
 %% Compute metrics once for all fitted cells
 sgRawFit = results.sgRawFit{modelIdx}; % change this
-sgRawFit = {};
+% sgRawFit = {};
 metrics = computeFittedCellMetrics( ...
     avg_resp_dir_all, fitIdx, cellIDs, paramCell, sgRawFit);
 fprintf('pass\n')
@@ -687,9 +666,9 @@ groupDefs(end + 1).name = 'group2_top20_F1F0';
 groupDefs(end).label = 'Group 2: Top 20% F1/F0';
 groupDefs(end).mask = metrics.F1F0 >= prctile(metrics.F1F0, 80);
 % 
-% groupDefs(end + 1).name = 'all_fitted';
-% groupDefs(end).label = 'All fitted cells';
-% groupDefs(end).mask = true(metrics.nFitted, 1);
+groupDefs(end + 1).name = 'all_fitted';
+groupDefs(end).label = 'All fitted cells';
+groupDefs(end).mask = true(metrics.nFitted, 1);
 
 % groupDefs(end + 1).name = 'group3_lowDSI_highOSI_top20_F1F0';
 % groupDefs(end).label = ...
@@ -728,6 +707,8 @@ if isempty(rowIdx)
 end
 %% -----------------------------
 % User inputs to check/change
+%% 
+%% 
 %% -----------------------------
 STA = STA_cropped(:, :, rowIdx);
 modelRF = results.models{modelIdx}{rowIdx};
@@ -1301,7 +1282,7 @@ exportSummary.groupLabel = groupLabel;
 % Save
 % -----------------------------
 saveFile = fullfile(outDir, ...
-    matlab.lang.makeValidName(modelNameToExport) + "_tau_summary.mat");
+    matlab.lang.makeValidName(modelNameToExport) + "_gabor_summary.mat");
 
 save(saveFile, 'exportSummary');
 
@@ -1372,7 +1353,12 @@ D1 = doginf.exportSummary;
 R2_Gabor = G1.R2;
 R2_DoG = D1.R2;
 
-subgroupMode = "gaborBetterThanDoG";
+resp = squeeze(avg_resp_dir_all(commonIDs, :, 1, 1, 1));
+resp(resp < 0) = 0;
+
+peakFR = max(resp, [], 2, 'omitnan');
+
+subgroupMode = "highOSI";
 
 oriWindow = 30;   % degrees around target orientation
 
@@ -1387,11 +1373,10 @@ switch subgroupMode
                        abs(angleDiff180(dataOri, 180)) <= oriWindow;
 
     case "highOSI"
-        OSI = M1.OSI(i1);
-        osiValid = isfinite(OSI);
-        osiThresh = prctile(OSI(osiValid), 80);
 
-        subgroupMask = osiValid & OSI >= osiThresh;
+        OSI = M1.OSI(i1);
+    
+        subgroupMask = OSI >= 0.5 & peakFR > 0.8;
 
     case "gaborBetterThanDoG"
         % Requires R2_DoG and R2_Gabor aligned to commonIDs.
@@ -1509,7 +1494,7 @@ for k = 1:nShow
     imagesc(fit1, [-clim clim]);
     axis image off;
     colormap gray;
-    title(sprintf('%s\nR^2=%.2f, err=%.1f°', ...
+    title(sprintf('%s\nR^2=%.2f, err=%.1f�', ...
         label1, M1.R2(exI1(k)), abs(M1.fftMinusData(exI1(k)))), ...
         'FontSize', 9);
 
@@ -1517,7 +1502,7 @@ for k = 1:nShow
     imagesc(fit2, [-clim clim]);
     axis image off;
     colormap gray;
-    title(sprintf('%s\nR^2=%.2f, err=%.1f°', ...
+    title(sprintf('%s\nR^2=%.2f, err=%.1f�', ...
         label2, M2.R2(exI2(k)), abs(M2.fftMinusData(exI2(k)))), ...
         'FontSize', 9);
 end
@@ -1644,46 +1629,46 @@ set(gca, 'FontSize', 12);
 
 %% Print all raw STAs on a separate PDF page
 
-rawStaPdf = fullfile(outDir, ...
-    "Raw_STA_" + subgroupMode + ".pdf");
-
-nCellsPlot = numel(commonIDs);
-
-nCol = 8;
-nRow = ceil(nCellsPlot / nCol);
-
-fig = figure('Color', 'w', 'Position', [100 100 1400 180*nRow]);
-
-tiledlayout(nRow, nCol, ...
-    'TileSpacing', 'compact', ...
-    'Padding', 'compact');
-
-for k = 1:nCellsPlot
-    cellID = commonIDs(k);
-
-    staIdx = find(M1.cellIDs(:) == cellID, 1);
-    STA = STA_cropped(:, :, staIdx);
-
-    clim = max(abs(STA(:)), [], 'omitnan');
-    if ~isfinite(clim) || clim == 0
-        clim = 1;
-    end
-
-    nexttile;
-    imagesc(STA, [-clim clim]);
-    axis image off;
-    colormap gray;
-    title(sprintf('%d', cellID), 'FontSize', 7);
-end
-
-sgtitle("Raw STAs: " + subgroupMode, ...
-    'Interpreter', 'none', ...
-    'FontWeight', 'bold');
-
-exportgraphics(fig, rawStaPdf, ...
-    'ContentType', 'image');
-
-fprintf('Saved raw STA page: %s\n', rawStaPdf);
+% rawStaPdf = fullfile(outDir, ...
+%     "Raw_STA_" + subgroupMode + ".pdf");
+% 
+% nCellsPlot = numel(commonIDs);
+% 
+% nCol = 8;
+% nRow = ceil(nCellsPlot / nCol);
+% 
+% fig = figure('Color', 'w', 'Position', [100 100 1400 180*nRow]);
+% 
+% tiledlayout(nRow, nCol, ...
+%     'TileSpacing', 'compact', ...
+%     'Padding', 'compact');
+% 
+% for k = 1:nCellsPlot
+%     cellID = commonIDs(k);
+% 
+%     staIdx = find(M1.cellIDs(:) == cellID, 1);
+%     STA = STA_cropped(:, :, staIdx);
+% 
+%     clim = max(abs(STA(:)), [], 'omitnan');
+%     if ~isfinite(clim) || clim == 0
+%         clim = 1;
+%     end
+% 
+%     nexttile;
+%     imagesc(STA, [-clim clim]);
+%     axis image off;
+%     colormap gray;
+%     title(sprintf('%d', cellID), 'FontSize', 7);
+% end
+% 
+% sgtitle("Raw STAs: " + subgroupMode, ...
+%     'Interpreter', 'none', ...
+%     'FontWeight', 'bold');
+% 
+% exportgraphics(fig, rawStaPdf, ...
+%     'ContentType', 'image');
+% 
+% fprintf('Saved raw STA page: %s\n', rawStaPdf);
 
 %% Save figure
 
@@ -2867,7 +2852,7 @@ end
 %% -----------------------------
 function plotOrientationStatsForPoster(metrics, mask, groupLabel, saveName)
 
-    methods = {'Carrier/FFT', 'Envelope + 90�', 'Offset axis'};
+    methods = {'Carrier/FFT', 'Envelope + 90', 'Offset axis'};
 
     errCarrier = abs(metrics.fftMinusData(mask));
     errEnv90 = abs(metrics.env90MinusData(mask));
