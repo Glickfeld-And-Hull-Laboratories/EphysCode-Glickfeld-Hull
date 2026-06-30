@@ -1,7 +1,7 @@
 close all; clearvars; clc;
 
 %% debug mode one cell test
-debugMode = true;
+debugMode = false;
 debugCell = 375;   % check indRFint
 %rng(0,'twister');   % randomness fully reproducible
 
@@ -16,7 +16,6 @@ resultsDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sar
 analysisDir=('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase');
 load([analysisDir '\CrossOri_randDirFourPhase_summary.mat'])
 
-totalCells = totCells;   % cell number
 
 if debugMode
     cellsToRun = debugCell; % test one cell here instead of total cell
@@ -109,6 +108,7 @@ for ic = 1:size(STA_cropped,3)
         hold on
     is=is+1;
 end
+
 <<<<<<< HEAD
 % Generate a perfect 20x20 Gabor STA
 print('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase\mouse_RFs\results\STAs_cropped.pdf', '-dpdf','-bestfit')
@@ -156,6 +156,51 @@ axis image;
 colormap gray;
 colorbar;
 title('Synthetic 20x20 Gabor STA');
+
+%% Print timePoint_indDS
+
+% get all smoothed data into one matrix to find actual max/min to normalize
+% intensity of STA across cells for plotting and comparing SNR of timepoints
+for ic = 1:length(ind_DS)
+    iCell = ind_DS(ic);
+    for it = 1:5
+        data_all(ic,it,:,:) = medfilt2(imgaussfilt(squeeze(avgImgZscore_all(iCell,it,:,:)),1));
+    end
+end
+maxSmth = max(max(max(max(abs(data_all)))));
+
+% Print STA time point choices
+pdfFile = fullfile(pwd, 'timePoint_indDS.pdf');
+for ic = 1:length(ind_DS)
+    iCell = ind_DS(ic);
+
+    figure();
+
+    it_Con = bestTimePoint_all(iCell,1);
+    it_maskCon = bestTimePoint_all(iCell,5);
+
+    for it = 1:5
+        data = squeeze(data_all(ic,it,:,:));
+        subplot(1,5,it)
+            imagesc(data)
+            pbaspect([16 9 1])
+            colormap(gray)
+            clim([-ceil(maxSmth) ceil(maxSmth)])
+
+            if it == 1
+                subtitle(['cell ' num2str(iCell) ', ic=' num2str(ic)])
+            end
+            if it == 3
+                title(['con=' num2str(it_Con) ', maskCon=' num2str(it_maskCon)])
+            end
+    end
+    % Append current figure as a new page in the PDF
+    exportgraphics(gcf, pdfFile,'ContentType', 'vector','Append', true);
+
+    close(gcf)
+end
+
+
 
 %% ---------- helpers ----------
 computeR2  = @(data, model) ...

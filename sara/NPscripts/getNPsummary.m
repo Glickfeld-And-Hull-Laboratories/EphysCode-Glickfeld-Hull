@@ -65,6 +65,8 @@ localConMap_data_all = [];
 localConMap_map_all = [];
 bestTimePoint_all = [];
 
+azs_all = [];
+els_all = [];
 layer_all = [];
 
 bottomOfBrainDepth = [];
@@ -197,6 +199,9 @@ for iexp                = expts
     dir_rsq                     = [dir_rsq; dir_R_square_all];
     k1_all                      = [k1_all; k1_hat_all];
 
+    azs_all                     = [azs_all; azs'];
+    els_all                     = [els_all; els'];
+
     resp_ind_dir_all            = [resp_ind_dir_all; totCells+resp_ind_dir];
     avg_resp_dir_all            = [avg_resp_dir_all; avg_resp_dir];
 
@@ -237,6 +242,8 @@ outDir=('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Ana
 analysisDir=('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase');
 save(...
     fullfile([analysisDir '\CrossOri_randDirFourPhase_summary.mat']), ...
+        'azs_all', ...
+        'els_all', ...
         'layer_all',...
         'ind_sigRF_all', ...
         'cells_sigRFbyTime_On_all', ...

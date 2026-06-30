@@ -46,6 +46,6 @@ function [azs, els] = getRFcenter(data)
     %         subplot 321; imagesc(dataCell); colormap('gray');
     %         subplot 322; imagesc(dataAbs); 
     %         subplot 323; imagesc(dataMask) 
-            % subplot 324; imagesc(dataMaskSmooth)
-            % subplot 325; imagesc(rfCenter); hold on; plot(elWM, azWM, 'c.', 'MarkerSize', 10) 
+    %         subplot 324; imagesc(dataMaskSmooth)
+    %         subplot 325; imagesc(rfCenter); hold on; plot(elWM, azWM, 'c.', 'MarkerSize', 10) 
 end
