@@ -145,12 +145,16 @@ results.AIC    = cell(nModels,1);
 results.cellIDs = nan(nValid,1);
 results.RSS = cell(nModels,1);
 results.fitInfo = cell(nModels,1);
+results.predOriDeg = cell(nModels,1);
+results.predOriMethod = cell(nModels,1);
 results.modelRegistry = modelRegistry;
 results.indLoopUsed = indLoop(:);
 
 for m = 1:nModels
     results.RSS{m} = nan(nValid,1);
     results.fitInfo{m} = cell(nValid,1);
+    results.predOriDeg{m} = nan(nValid,1);
+    results.predOriMethod{m} = cell(nValid,1);
 end
 
 
@@ -197,35 +201,56 @@ for idx = 1:numel(indLoop)
     for m = 1:nModels
     
         switch modelRegistry(m).type
-    
+
             case 'standard'
-    
+
                 [params, RF, fitInfo] = ...
                     modelRegistry(m).fitFcn(STA);
-    
+
                 results.models{m}{k} = RF;
                 results.params{m}{k} = params;
-    
+
+            case 'dogabor'
+
+                % Concentric Difference-of-Gabors model.
+                % Expected output:
+                %   [params, RF, fitInfo]
+                % where fitInfo contains winnerOriDeg and weightedOriDeg.
+                [params, RF, fitInfo] = ...
+                    modelRegistry(m).fitFcn(STA);
+
+                results.models{m}{k} = RF;
+                results.params{m}{k} = params;
+
             case 'sg'
 
                 resSG = modelRegistry(m).fitFcn(STA);
-            
+
                 results.models{m}{k} = resSG.patch;
                 results.sgRawFit{m}{k} = resSG.fit;
-                sgParams = convertSGGaborToDoGXcosParams(resSG.fit);
-                results.params{m}{k} = sgParams;
-                disp(resSG.fit)
-                disp(fieldnames(resSG.fit))
-                sgParams = convertSGGaborToDoGXcosParams(resSG.fit);
 
-                disp('Converted SG params:')
-                disp(sgParams)
-                
-                fprintf('theta p(6) = %.4f rad, %.2f deg\n', ...
-                    sgParams(6), rad2deg(sgParams(6)));
-                
-    
+                params = convertSGGaborToDoGXcosParams(resSG.fit);
+                fitInfo = struct;
+                if isfield(resSG, 'r2')
+                    fitInfo.sgR2 = resSG.r2;
+                end
+
+                results.params{m}{k} = params;
+
+                fprintf('SG theta p(6) = %.4f rad, %.2f deg\n', ...
+                    params(6), rad2deg(params(6)));
+
+            otherwise
+
+                error('Unknown model type: %s', modelRegistry(m).type)
+
         end
+
+        [predOriDeg, predOriMethod] = getModelOrientationPrediction( ...
+            modelRegistry(m), params, fitInfo);
+
+        results.predOriDeg{m}(k) = predOriDeg;
+        results.predOriMethod{m}{k} = predOriMethod;
     
         % ---- Compute metrics ----
         RSS = sum((STA(:) - results.models{m}{k}(:)).^2);
@@ -250,229 +275,7 @@ end
 modelNames = {modelRegistry.name};
 % disp(results.params)
 %% tests
-% disp(resSG.fit)
-% fprintf('a %.3f\n', resSG.fit.a);
-% fprintf('b %.3f\n', resSG.fit.b);
-% fprintf('x0 %.3f | y0 %.3f\n', resSG.fit.x0, resSG.fit.y0);
-% fprintf('sigmax %.3f | sigmay %.3f\n', ...
-%     resSG.fit.sigmax, resSG.fit.sigmay);
-% fprintf('theta %.3f rad | %.1f deg\n', ...
-%     resSG.fit.theta, rad2deg(resSG.fit.theta));
-% fprintf('phi %.3f | phase %.3f\n', ...
-%     resSG.fit.phi, resSG.fit.phase);
-% fprintf('lambda %.3f | frequency %.3f\n', ...
-%     resSG.fit.lambda, 1 / resSG.fit.lambda);
 
-%% ============================================
-% Scan parameter correlations (works for all models)
-%% ============================================
-
-% corrThreshold = 0.1;
-% 
-% for m = 1:nModels
-% 
-%     P = [];
-% 
-%     modelName = modelRegistry(m).name;
-% 
-%     for k = 1:nValid
-% 
-%         p = results.params{m}{k};
-% 
-%         if isempty(p)
-%             continue
-%         end
-% 
-%         row = p(:)';
-% 
-%         theta = mod(row(6),pi);
-%         phi   = mod(row(10),2*pi);
-% 
-%         % ============================
-%         % Handle model differences
-%         % ============================
-% 
-%         if contains(lower(modelName),'sigmaxyratio')
-% 
-%             % NEW RATIO MODEL
-%             % p = [Ac As sigmaX sigmaY kS theta x0 y0 f phi dx dy]
-% 
-%             sigmaX = row(3);
-%             sigmaY = row(4);
-% 
-%             kS = row(5);
-% 
-%             sigmaSx = kS * sigmaX;
-%             sigmaSy = kS * sigmaY;
-% 
-%             tau = sigmaY / sigmaX;
-% 
-%             row_corr = [
-%                 row(1)
-%                 row(2)
-%                 sigmaX
-%                 sigmaY
-%                 sigmaSx
-%                 sigmaSy
-%                 kS
-%                 tau
-%                 cos(2*theta)
-%                 sin(2*theta)
-%                 row(9)
-%                 cos(phi)
-%                 sin(phi)
-%                 row(11)
-%                 row(12)
-%             ];
-% 
-%             paramNames = {
-%                 'Ac'
-%                 'As'
-%                 'sigmaX'
-%                 'sigmaY'
-%                 'sigmaSx'
-%                 'sigmaSy'
-%                 'kS'
-%                 'tau'
-%                 'cos2theta'
-%                 'sin2theta'
-%                 'freq'
-%                 'cosphi'
-%                 'sinphi'
-%                 'dx'
-%                 'dy'
-%             };
-% 
-%         elseif contains(lower(modelName),'sigmaxy')
-% 
-%             % NEW sigmaC-kS model
-%             % p = [Ac As sigmaC kS tau theta x0 y0 f phi dx dy]
-% 
-%             sc = row(3);
-%             kS = row(4);
-%             ss = kS * sc;
-%             tau = row(5);
-% 
-%             row_corr = [
-%                 row(1)
-%                 row(2)
-%                 sc
-%                 ss
-%                 kS
-%                 tau
-%                 cos(2*theta)
-%                 sin(2*theta)
-%                 row(9)
-%                 cos(phi)
-%                 sin(phi)
-%                 row(11)
-%                 row(12)
-%             ];
-% 
-%             paramNames = {
-%                 'Ac'
-%                 'As'
-%                 'sigmaC'
-%                 'sigmaS'
-%                 'kS'
-%                 'tau'
-%                 'cos2theta'
-%                 'sin2theta'
-%                 'freq'
-%                 'cosphi'
-%                 'sinphi'
-%                 'dx'
-%                 'dy'
-%             };
-%         end
-%         % else
-%         % 
-%         %     % ORIGINAL MODEL
-%         % 
-%         %     sc = row(3);
-%         %     delta = row(4);
-%         % 
-%         %     ss = sc + delta;
-%         % 
-%         %     tau = row(5);
-%         % 
-%         %     row_corr = [
-%         %         row(1)
-%         %         row(2)
-%         %         sc
-%         %         ss
-%         %         tau
-%         %         cos(2*theta)
-%         %         sin(2*theta)
-%         %         row(9)
-%         %         cos(phi)
-%         %         sin(phi)
-%         %         row(11)
-%         %         row(12)
-%         %     ];
-%         % 
-%         %     paramNames = {
-%         %         'Ac'
-%         %         'As'
-%         %         'sigmaC'
-%         %         'sigmaS'
-%         %         'tau'
-%         %         'cos2theta'
-%         %         'sin2theta'
-%         %         'freq'
-%         %         'cosphi'
-%         %         'sinphi'
-%         %         'dx'
-%         %         'dy'
-%         %     };
-%         % 
-%         % end
-%         % 
-%         % P(end+1,:) = row_corr; %#ok<AGROW>
-% 
-%     end
-% 
-%     if size(P,1) < 3
-%         continue
-%     end
-% 
-%     valid = all(isfinite(P),2);
-%     P = P(valid,:);
-% 
-%     [R,pval] = corr(P,'Rows','complete');
-% 
-%     fprintf('\n====================================\n');
-%     fprintf('Parameter correlations: %s\n', modelRegistry(m).name);
-%     fprintf('====================================\n');
-% 
-%     nParam = size(P,2);
-% 
-%     for i = 1:nParam
-%         for j = i+1:nParam
-% 
-%             if abs(R(i,j)) > corrThreshold && pval(i,j) < 0.05
-% 
-%                 fprintf('%s  vs  %s   r = %.3f   p = %.3g\n', ...
-%                     paramNames{i}, paramNames{j}, R(i,j), pval(i,j));
-% 
-%             end
-% 
-%         end
-%     end
-% 
-%     figure('Color','w');
-%     imagesc(R)
-%     axis square
-%     colorbar
-% 
-%     set(gca,'XTick',1:nParam,'XTickLabel',paramNames,...
-%         'YTick',1:nParam,'YTickLabel',paramNames)
-% 
-%     xtickangle(45)
-% 
-%     title(['Parameter Correlation Matrix: ' modelRegistry(m).name])
-% 
-% end
 %% ============================================
 % R Comparison (Display Only)
 %% ============================================
@@ -564,6 +367,72 @@ if ~isempty(compareAICModels)
 end 
 end
 
+
+function [predOriDeg, method] = getModelOrientationPrediction( ...
+    modelSpec, params, fitInfo)
+%GETMODELORIENTATIONPREDICTION Pick RF-derived orientation for comparison.
+%
+% Standard DoG x cos format uses params(6) as theta.
+% Concentric Difference-of-Gabors can use either:
+%   orientationRule = 'winner'   -> fitInfo.winnerOriDeg
+%   orientationRule = 'weighted' -> fitInfo.weightedOriDeg
+%
+% Add the field to modelRegistry, for example:
+%   struct('name','Concentric DoGabor', ...
+%          'type','dogabor', ...
+%          'fitFcn', @(STA) fitConcentricDifferenceOfGaborsRF(...), ...
+%          'k',15, ...
+%          'orientationRule','winner')
+
+    predOriDeg = NaN;
+    method = 'none';
+
+    if isfield(modelSpec, 'orientationRule') && ...
+            ~isempty(modelSpec.orientationRule)
+        rule = lower(modelSpec.orientationRule);
+    else
+        rule = 'default';
+    end
+
+    switch lower(modelSpec.type)
+        case 'dogabor'
+            switch rule
+                case {'winner', 'winnergabor', 'maxelongation'}
+                    if isfield(fitInfo, 'winnerOriDeg')
+                        predOriDeg = fitInfo.winnerOriDeg;
+                        method = 'winnerOriDeg';
+                    end
+
+                case {'weighted', 'weightedaverage', 'vector'}
+                    if isfield(fitInfo, 'weightedOriDeg')
+                        predOriDeg = fitInfo.weightedOriDeg;
+                        method = 'weightedOriDeg';
+                    end
+
+                otherwise
+                    % Default for this model: compare tuning to the
+                    % orientation of the more elongated/amplitude-weighted
+                    % Gabor. This matches the hypothesis that the stronger
+                    % elongated component determines global orientation.
+                    if isfield(fitInfo, 'winnerOriDeg')
+                        predOriDeg = fitInfo.winnerOriDeg;
+                        method = 'winnerOriDeg';
+                    elseif isfield(fitInfo, 'weightedOriDeg')
+                        predOriDeg = fitInfo.weightedOriDeg;
+                        method = 'weightedOriDeg';
+                    end
+            end
+
+        case {'standard', 'sg'}
+            % Existing 12-parameter DoG x cos convention:
+            % p(6) = theta.
+            if numel(params) >= 6 && isfinite(params(6))
+                predOriDeg = mod(rad2deg(params(6)), 180);
+                method = 'params(6)';
+            end
+    end
+end
+
 function p = convertSGGaborToDoGXcosParams(sgFit)
 %CONVERTSGGABORTODOGXCOSPARAMS Convert SG Gabor to 12-param format.
 %
@@ -639,41 +508,3 @@ function p = convertSGGaborToDoGXcosParams(sgFit)
     p(11) = 0;
     p(12) = 0;
 end
-
-% function p = convertSGGaborToDoGXcosParams(sgFit)
-% %CONVERTSGGABORTODOGXCOSPARAMS Convert SG Gabor to 12-param format.
-% %
-% % DoG x cos format:
-% % p = [Ac, As, sigmaC, deltaSigma, tau, theta, x0, y0, f, phi, dx, dy]
-% %
-% % For SG Gabor:
-% % sgFit.phi   = carrier / FFT orientation
-% % sgFit.theta = envelope rotation relative to carrier
-% 
-%     p = nan(1, 12);
-% 
-%     p(1) = sgFit.a;
-%     p(2) = 0;
-% 
-%     p(3) = sgFit.sigmax;
-%     p(4) = 0;
-%     p(5) = sgFit.sigmay / sgFit.sigmax;
-% 
-%     % IMPORTANT:
-%     % Store carrier / FFT orientation in p(6)
-%     p(6) = sgFit.phi;
-% 
-%     p(7) = sgFit.x0;
-%     p(8) = sgFit.y0;
-% 
-%     if isfield(sgFit, 'lambda') && isfinite(sgFit.lambda) && sgFit.lambda > 0
-%         p(9) = 1 / sgFit.lambda;
-%     else
-%         p(9) = 0;
-%     end
-% 
-%     p(10) = sgFit.phase;
-% 
-%     p(11) = 0;
-%     p(12) = 0;
-% end
