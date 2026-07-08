@@ -25,7 +25,8 @@ end
 
 %% Decide what index of cells you're going to use
 
-indCortex   = find(depth_all>-1300);
+%indCortex   = find(depth_all>-1300);
+indCortex   = find(~isnan(layer_all));
 ind_sigRF   = sum(cells_sigRFbyTime_On_all,2)+sum(cells_sigRFbyTime_Off_all,2);
 listnc      = 1:size(cells_sigRFbyTime_On_all,1);
 indRF_pix   = listnc(ind_sigRF>0)';
@@ -42,6 +43,7 @@ idxCon      = setdiff(indRF_con,indRF_pix); % contrast method only
 ind         = intersect(resp_ind_dir_all, find(DSI_all>.5));
 ind_DS      = intersect(idxInt,ind); % visually responsive and direction-selective
 % Use visually responsive cells with reliable RFs.
+
 cellsSelected = intersect(idxInt, resp_ind_dir_all);
 
 if debugMode
@@ -162,7 +164,7 @@ globalClim = prctile(allPeak, 95);
 %%
 %% Run model fit
 
-omitCells = [114, 634, 879, 1413];
+omitCells = [114, 634, 879, 1413, 1441, 1508, 1535, 1558, 1849];
 
 fitIdx = 1:nSelected;
 
@@ -248,6 +250,10 @@ for ii = 1:numel(results.cellIDs)
 
     dog_longer_pick(dogCounter,:) = ...
         [cellID, geom.chosen_major, geom.chosen_minor];
+
+    dog_fit(ii,:,:)  = results.models{dogModelIdx}{ii};
+    dog_params(ii,:) = p;
+    dog_paramsCellID(ii) = cellID;
 end
 
 %% Gabor-better cells: AR from sigmax/sigmay
@@ -282,11 +288,25 @@ for ii = 1:numel(results.cellIDs)
             max(min(abs(sigmax), abs(sigmay)), eps);
 
     gabor_tau_AR(gaborCounter,:) = [cellID, tauAR];
+
+    gab_fit(ii,:,:)  = results.models{gaborModelIdx}{ii};
+    gab_params(ii,:) = gfit;
+    gab_paramsCellID(ii) = cellID;
+
 end
 
 %% Save
 
 save(outMat, ...
+    'cellIDs', ...
+    'R2_dog', ...
+    'R2_gabor', ...
+    'dog_fit', ...
+    'gab_fit', ...
+    'dog_params', ...
+    'dog_paramsCellID', ...
+    'gab_params', ...
+    'gab_paramsCellID', ...
     'cellsDoGBetter', ...
     'cellsGaborBetter', ...
     'dog_envelope_axis', ...
