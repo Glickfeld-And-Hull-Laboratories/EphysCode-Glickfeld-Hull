@@ -11,7 +11,7 @@ debugCell = 1080;   % check indRFint
 analysisDir=('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase');
 load([analysisDir '\CrossOri_randDirFourPhase_summary.mat'])
 
-totalCells = totCells;   % cell number
+% totalCells = totCells;   % cell number
 
 fprintf('Loaded %d cells.\n', totalCells);
 
@@ -97,7 +97,7 @@ end
 %% Find center of RF and crop
 %% Crop STA around RF center
 
-sideLength = 20;
+sideLength = 29;
 nSelected = numel(cellIDs);
 
 rotateSTA = false; % change this
@@ -154,8 +154,6 @@ nOri = nStimDir / 2;
 
 assert(mod(nStimDir, 2) == 0, "nStimDir must be even.");
 
-sideLength = 20;
-
 STA_images = nan(nCells, sideLength, sideLength);
 DSI = nan(nCells, 1);
 OSI = nan(nCells, 1);
@@ -167,6 +165,7 @@ prefOriInd_all = nan(nCells, 1);
 respDir_all_selected = nan(nCells, nStimDir);
 respOri_all_selected = nan(nCells, nOri);
 bestTP_selected = nan(nCells, 1);
+prefFR = nan(nCells,1);
 
 %% -----------------------------
 % Direction/orientation angles
@@ -299,6 +298,7 @@ for ii = 1:nCells
     %% -----------------------------
 
     F1F0(ii) = pref_F1F0_all(iCell);
+    prefFR(ii) = max(oriResp);
 
 end
 
@@ -309,11 +309,12 @@ end
 save(outFile, ...
     "STA_images", ...            % [N x H x W]
     "fittedCellIDs", ...         % original cell indices
-    "dataOriDeg", ...            % preferred orientation, 0–180
-    "dataPrefDirDeg", ...        % preferred direction, 0–360
+    "dataOriDeg", ...            % preferred orientation, 0�180
+    "dataPrefDirDeg", ...        % preferred direction, 0�360
     "DSI", ...
     "OSI", ...
     "F1F0", ...
+    "prefFR",...
     "respDir_all_selected", ...
     "respOri_all_selected", ...
     "prefDirInd_all", ...
@@ -1494,7 +1495,7 @@ for k = 1:nShow
     imagesc(fit1, [-clim clim]);
     axis image off;
     colormap gray;
-    title(sprintf('%s\nR^2=%.2f, err=%.1f�', ...
+    title(sprintf('%s\nR^2=%.2f, err=%.1f', ...
         label1, M1.R2(exI1(k)), abs(M1.fftMinusData(exI1(k)))), ...
         'FontSize', 9);
 
@@ -1502,7 +1503,7 @@ for k = 1:nShow
     imagesc(fit2, [-clim clim]);
     axis image off;
     colormap gray;
-    title(sprintf('%s\nR^2=%.2f, err=%.1f�', ...
+    title(sprintf('%s\nR^2=%.2f, err=%.1f', ...
         label2, M2.R2(exI2(k)), abs(M2.fftMinusData(exI2(k)))), ...
         'FontSize', 9);
 end

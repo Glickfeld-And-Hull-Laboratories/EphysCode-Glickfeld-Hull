@@ -147,6 +147,12 @@ modelRegistry = [
         'type','sg', ...
         'fitFcn', @(STA) fit2dGabor_JM(STA,options), ...
         'k',10)
+
+    struct( ...
+        'name','Gaussian', ...
+        'type','standard', ...
+        'fitFcn', @(STA) fitEllipticalGaussian(STA,options), ...
+        'k',7)
 ];
 
 %% Global STA contrast scale
@@ -162,7 +168,7 @@ globalClim = prctile(allPeak, 95);
 %%
 %% Run model fit
 
-omitCells = [114, 634, 879, 1413];
+omitCells = [114, 634, 879, 1413, 1441, 1508, 1535, 1558, 1849];
 
 fitIdx = 1:nSelected;
 
