@@ -2,7 +2,7 @@
 
 
 
-function [data_cropped] = cropRFtoCenter(az, el, data, sideLength)
+function [data_cropped, xStart] = cropRFtoCenter(az, el, data, sideLength)
 
     if isnan(az) || isnan(el)
         data_cropped = NaN(sideLength,sideLength);

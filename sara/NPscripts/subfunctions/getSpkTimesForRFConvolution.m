@@ -8,20 +8,27 @@
 %
 %
 
-function [spikeCounts] = getSpkTimesForRFConvolution(cells,times,binsize,iexp)
-    
-    base = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
+function [spikeCounts] = getSpkTimesForRFConvolution(cells,times,binsize,iexp,runloc)
+
+    if runloc == 1    % Hubel
+        dirBase = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home';
+    elseif runloc == 2    % Wiesel
+        dirBase = 'home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home';
+    else
+        error('Location not valid. 1 == Hubel, 2 == Wiesel.')
+    end
+
     [exptStruct] = createExptStruct(iexp,'V1'); % Load relevant times and directories for this experiment
     
     % Extract units from KS output
-        load(fullfile(base, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStruct.date '_' exptStruct.mouse '_unitStructs.mat']), 'allUnitStruct', 'goodUnitStruct');
+        load(fullfile(dirBase, 'sara','Analysis','Neuropixel', exptStruct.date, [exptStruct.date '_' exptStruct.mouse '_unitStructs.mat']), 'goodUnitStruct');
     
     % Load timestamps and downsampled white noise stimulus
         mouse = exptStruct.mouse;
         date = exptStruct.date;
 
     % Load stim on information (both MWorks signal and photodiode)
-        cd (fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date))        % Move from KS_Output folder to ...\Analysis\neuropixel\date folder, where TPrime output is saved
+        cd (fullfile(dirBase, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date))        % Move from KS_Output folder to ...\Analysis\neuropixel\date folder, where TPrime output is saved
         stimOnTimestampsMW  = table2array(readtable([date '_mworksStimOnSync.txt']));
         stimOnTimestampsPD  = table2array(readtable([date '_photodiodeSync.txt']));
 
@@ -29,7 +36,7 @@ function [spikeCounts] = getSpkTimesForRFConvolution(cells,times,binsize,iexp)
         lonelyThreshold = 0.1; % 100 ms
         timeDiffs       = abs(diff(stimOnTimestampsPD));  % Compute pairwise differences efficiently
         hasNeighbor = [false; timeDiffs < lonelyThreshold] | [timeDiffs < lonelyThreshold; false]; % Identify indices where a close neighbor exists
-        filteredPD = stimOnTimestampsPD(hasNeighbor);   % Keep only timestamps that have a neighbor within 100 ms
+        %filteredPD = stimOnTimestampsPD(hasNeighbor);   % Keep only timestamps that have a neighbor within 100 ms
         filteredPD = stimOnTimestampsPD;
 
     % Account for report of the monitor's refresh rate in the photodiode signal
@@ -60,7 +67,7 @@ function [spikeCounts] = getSpkTimesForRFConvolution(cells,times,binsize,iexp)
     % Make sure all PD are stim-associated
     ibRF = 0;
     for ib = 1:length(stimBlocks)
-        if size(stimBlocks{ib},1) > 10  % If stimulus block has at least 10 trials...
+        if size(stimBlocks{ib},1) > 2500  % If stimulus block has at least 10 trials...
             ibRF = ibRF + 1;
             RFstimBlocks{ibRF} = stimBlocks{ib}(1:end-1); % Get rid of abherrant lonely PD signal at end of trial block
         end
@@ -68,19 +75,12 @@ function [spikeCounts] = getSpkTimesForRFConvolution(cells,times,binsize,iexp)
 
     % Load downsampled noise stimuli
     if iexp == 11
-        load(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', 'noiseStimuli/', '5min_2deg_3rep_imageMatrix.mat'))
+        load(fullfile(dirBase,exptStruct.loc,'Analysis','Neuropixel','noiseStimuli','5min_2deg_3rep_imageMatrix.mat'))
     else
-        load(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', 'noiseStimuli/', '5min_2deg_4rep_imageMatrix.mat'))
+        load(fullfile(dirBase,exptStruct.loc,'Analysis','Neuropixel','noiseStimuli','5min_2deg_4rep_imageMatrix.mat'))
     end
-
-    xDim = size(imageMatrix,3);
-    yDim = size(imageMatrix,4);
-
-    % Find an example unit I like
-    depths = [goodUnitStruct.depth];
     
     % Get frame timestamps
-
     timestamps = [];
     for it = 1:size(imageMatrix,1)
         timestamps(it,:) = RFstimBlocks{it}(:);
@@ -89,14 +89,13 @@ function [spikeCounts] = getSpkTimesForRFConvolution(cells,times,binsize,iexp)
     lastTimestamp = timestamps(end)+10; % Last timestamp plus 10 seconds
 
 
-
     % Initialize
     nCells = length(cells);
     timestamps_flat = timestamps(:);   % 9000×1
     spikeCounts = zeros(length(timestamps_flat), nCells);  % 9000×nCells
     
     for ic = 1:nCells
-        edges = [timestamps(:)+times(ic)-binsize*0.5, timestamps(:)++times(ic)+binsize*0.5];   % (9000 x 2)
+        edges = [timestamps(:)+times(ic)-binsize*0.5, timestamps(:)+times(ic)+binsize*0.5];   % (9000 x 2)
 
         % Get spike times for this cell
         celln = cells(ic);

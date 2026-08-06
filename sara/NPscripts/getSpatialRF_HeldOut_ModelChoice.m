@@ -1,8 +1,8 @@
 clear all; close all; clc
-base = '/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/';
-iexp = 13; % Choose experiment
+iexp = 13;   % Choose experiment
 exptloc = 'V1';
-nboots = 100; %100
+
+runloc = 1;   % Where is this script being run? 1 == Hubel, 2 == Wiesel
 
 [exptStruct] = createExptStruct(iexp,exptloc); % Load relevant times and directories for this experiment
 
@@ -12,8 +12,18 @@ cellsIdx = [68 71 81 93 94 95 107 115 121 123 124 127 130 131 132 133 135 137 13
 
 %% Load unit info
 
-load(fullfile(['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/', exptStruct.date, '/' exptStruct.date '_' exptStruct.mouse '_unitStructs.mat']))
-load(fullfile(['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/' exptStruct.date '/', exptStruct.mouse '-' exptStruct.date '_spatialRFs.mat']),'bestTimePoint')
+if runloc == 1    % Hubel
+    dirBase = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home';
+    nThreads = 20;
+elseif runloc == 2    % Wiesel
+    dirBase = 'home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home';
+    nThreads = 40;
+else
+    error('Location not valid. 1 == Hubel, 2 == Wiesel.')
+end
+
+load(fullfile(dirBase,'sara','Analysis','Neuropixel', exptStruct.date, [exptStruct.date '_' exptStruct.mouse '_unitStructs.mat']))
+load(fullfile(dirBase,'sara','Analysis','Neuropixel', exptStruct.date, [exptStruct.mouse '-' exptStruct.date '_spatialRFs.mat']),'bestTimePoint')
 
 
 %% Load timestamps and downsampled white noise stimulus
@@ -22,7 +32,7 @@ load(fullfile(['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/A
     date = exptStruct.date;
  
     % Load stim on information (both MWorks signal and photodiode)
-        cd (fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date))        % Move from KS_Output folder to ...\Analysis\neuropixel\date folder, where TPrime output is saved
+        cd (fullfile(dirBase, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date))        % Move from KS_Output folder to ...\Analysis\neuropixel\date folder, where TPrime output is saved
         stimOnTimestampsMW  = table2array(readtable([date '_mworksStimOnSync.txt']));
         stimOnTimestampsPD  = table2array(readtable([date '_photodiodeSync.txt']));
 
@@ -69,7 +79,7 @@ load(fullfile(['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/A
     end
 
     % Load downsampled noise stimuli
-    load(fullfile(base, exptStruct.loc, 'Analysis', 'Neuropixel', 'noiseStimuli/', '5min_2deg_4rep_imageMatrix.mat'))
+    load(fullfile(dirBase, exptStruct.loc, 'Analysis', 'Neuropixel', 'noiseStimuli/', '5min_2deg_4rep_imageMatrix.mat'))
 
     xDim = size(imageMatrix,3);
     yDim = size(imageMatrix,4);
@@ -94,7 +104,7 @@ lastTimestamp = timestamps(end)+10; % Last timestamp plus 10 seconds
 totalSpikesUsed = [];
 averageImagesAll = [];
 
-parpool("Threads", 40)   % Start parallel pool processing
+parpool("Threads", nThreads)   % Start parallel pool processing
 tic
 for ic = 1:length(cellsIdx)
     iCell = cellsIdx(ic);
@@ -164,11 +174,10 @@ end
 
 %% Compute STAs with held out data
 
-
 totalSpikesUsed_HO = [];
 averageImagesAll_HO = [];
 
-parpool("Threads", 40)   % Start parallel pool processing
+parpool("Threads", nThreads)   % Start parallel pool processing
 tic
 for ih = 1:nChunks
     fprintf(['heldOut chunk ' num2str(ih) '/' num2str(nChunks) '\n'])
@@ -205,295 +214,375 @@ delete(gcp("nocreate"));
 
 
 
-
-
-
-
 %% Bootstrap to get null distribution of pixel values
 
-averageImagesAll_shuffled   = NaN(nboots, length(cellsIdx), xDim, yDim);
-imageMatrix_list            = reshape(imageMatrix, [], size(imageMatrix,3), size(imageMatrix,4));   % Reshape from nTrials x nFrames to one dimension of all trials (nTrials*nFrames)
-frameStarts                 = timestamps;
-frameEnds                   = [timestamps(:,2:end), timestamps(:,end)+0.1];
-[nTrials, nFrames]          = size(timestamps);
-timeOffsets                 = 1:numel(beforeSpike);
+load(fullfile(dirBase,'sara','Analysis','Neuropixel',exptStruct.date,[exptStruct.mouse '-' exptStruct.date '_spatialRFs_Wiesel.mat']),'averageImagesAll_shuffled');
+allCells_bootstrap = averageImagesAll_shuffled;   % loads all cells for the experiment
+clear averageImagesAll_shuffled
 
-parpool("Threads", 40)   % Start parallel pool processing
-tic
-for ib = 1:nboots
-    fprintf(['boot ' num2str(ib) '/' num2str(nboots) '\n'])
-    trialOrder          = randperm(size(imageMatrix,1));     % Random permutation of the integers from 1 to number of total trials without repeating elements
-    frameOrder          = randperm(size(imageMatrix,2)); 
-    imageMatrix_shuf    = imageMatrix(trialOrder, frameOrder, :, :);   % Resample with the random permutation and then reshape into expected matrix size
-    parfor ic = 1:length(cellsIdx)
-        iCell = cellsIdx(ic);
-        exCellSpikeTimes = goodUnitStruct(iCell).timestamps(goodUnitStruct(iCell).timestamps < lastTimestamp);
-            it = bestTimePoint(iCell,1);
-            timeBeforeSpike = beforeSpike(it);
-            shiftedSpikes   = exCellSpikeTimes - timeBeforeSpike;
-            nSpikes         = length(shiftedSpikes);
-            trialIdx = NaN(1, nSpikes);                                 
-            frameIdx = NaN(1, nSpikes);
-    
-            % Expand dims
-            frameStartsExp      = reshape(frameStarts, [nTrials, nFrames, 1]);
-            frameEndsExp        = reshape(frameEnds,   [nTrials, nFrames, 1]);
-            shiftedSpikesExp    = reshape(shiftedSpikes, [1, 1, nSpikes]);
-
-            % Get frame for each spike
-            isInFrame = (shiftedSpikesExp >= frameStartsExp) & (shiftedSpikesExp < frameEndsExp);
-    
-            % Collapse trials & frames
-            isInFrame2D             = reshape(isInFrame, nTrials * nFrames, nSpikes);
-            [linearIdx, spikeIdx]   = find(isInFrame2D);
-    
-            if ~isempty(linearIdx)
-                [trialInds, frameInds]      = ind2sub([nTrials, nFrames], linearIdx);
-                [uniqueSpikes, firstIdx]    = unique(spikeIdx, 'first');   % Keep only the first match if multiple
-                trialIdx(uniqueSpikes)      = trialInds(firstIdx);
-                frameIdx(uniqueSpikes)      = frameInds(firstIdx);
-            end
-    
-            valid = ~isnan(trialIdx);    % Find valid spikes
-            imagesAtSpikes = NaN(nSpikes, xDim, yDim);    % Preallocate
-                
-            % Convert valid indices to linear indices
-            if any(valid)
-                ind                         = sub2ind([size(imageMatrix_shuf,1), size(imageMatrix_shuf,2)], trialIdx(valid), frameIdx(valid));    % Compute linear indices into imageMatrix_shuf
-                frames                      = reshape(imageMatrix_shuf, [], xDim, yDim);    % Extract all frames at once
-                imagesAtSpikes(valid,:,:)   = frames(ind, :, :);
-            end
-
-            averageImageAtSpike                   = squeeze(nanmean(imagesAtSpikes, 1));
-            averageImagesAll_shuffled(ib,ic,:,:)  = averageImageAtSpike;
-
-    end
+for ic = 1:length(cellsIdx)
+    iCell = cellsIdx(ic);
+    averageImagesAll_shuffled(:,ic,:,:) = allCells_bootstrap(:,iCell,bestTimePoint(ic,1),:,:);
 end
-toc
-delete(gcp("nocreate"));
 
+%% pixelwise de-noising of STA
+
+%     averageImagesAll_reshaped   = reshape(averageImagesAll, [1, size(averageImagesAll)]);
+%     STAs_all                    = cat(1, averageImagesAll_reshaped, averageImagesAll_HO);
+%     
+    wnMean          = mean(mean(imageMatrix,1),2);
+    wnMeanAvg       = mean(wnMean(:));
+    wnMeanDiffMat   = wnMean-wnMeanAvg;
+
+    averageImagesAll_shuffledMinusMean  = averageImagesAll_shuffled - reshape(reshape(wnMeanDiffMat,[],xDim,yDim),[],1,xDim,yDim);
+    shuffledMean                        = squeeze(mean(averageImagesAll_shuffledMinusMean,1));
+    shuffledStd                         = squeeze(std(averageImagesAll_shuffledMinusMean,0,1));
+
+   % for normal STA
+    averageImagesAll_MinusMean  = averageImagesAll - reshape(wnMeanDiffMat,[],xDim,yDim);
+    averageImageZscore          = (averageImagesAll_MinusMean-shuffledMean)./shuffledStd;   % z-score: subtract mean from the raw value and then divide all by standard deviation
+    zscoreSTAs_all(1,:,:,:)     = averageImageZscore;
+
+   % for held out data STAs
+   for ih = 1:nChunks
+        data = squeeze(averageImagesAll_HO(ih,:,:,:)); 
+        averageImagesAll_MinusMean_HO           = data - reshape(wnMeanDiffMat,[],xDim,yDim);
+        averageImageZscore_HO                   = (averageImagesAll_MinusMean_HO-shuffledMean)./shuffledStd;   % z-score: subtract mean from the raw value and then divide all by standard deviation
+        zscoreSTAs_all(ih+1,:,:,:)              = averageImageZscore_HO;
+   end
 
 
 %% get spike counts per stimulus
 
 binsize = 0.06;   % 60ms bin, will be centered on the timepoint input to the function
-spkCounts = getSpkTimesForRFConvolution_Wiesel(cellsIdx,bestTimePoint(cellsIdx),binsize,iexp);
+
+its = beforeSpike(bestTimePoint(cellsIdx,1));   % this function expects a timestamp input for each cell to center the window on; do NOT give it the index value list
+
+spkCounts = getSpkTimesForRFConvolution(cellsIdx,its,binsize,iexp,runloc);
 
 
 %% Fitting
 
-
-% Crop STAs
-sideLength = 29;
-nSelected = numel(cellsIdx);
-
-STA_cropped = nan(sideLength, sideLength, nSelected);
-
-for k = 1:nSelected
-    ic = cellsIdx(k);
-    avgImgZscore = squeeze(averageImagesAll(k, :, :, :));
-    bestTP = bestTimePoint(ic, 1);
-    data = squeeze(avgImgZscore(bestTP, :, :));
-    data = medfilt2(imgaussfilt(data, 1));
-    [el, az] = getRFcenter(data);
-    STA_cropped(:, :, k) = cropRFtoCenter(az, el, data, sideLength);
+for ih = 1:(nChunks+1)
+    % Crop STAs
+    sideLength = 29;
+    nSelected = numel(cellsIdx);
+    
+    STA_cropped = nan(sideLength, sideLength, nSelected);
+    
+    for k = 1:nSelected
+        data = squeeze(zscoreSTAs_all(ih, k, :, :));
+        [el, az] = getRFcenter(data);
+        data_smth = medfilt2(imgaussfilt(data, 1));
+        [STA_cropped(:, :, k), xStart(k)] = cropRFtoCenter(az, el, data_smth, sideLength);
+    end
+    
+    
+    options.visualize = 0;
+    options.parallel  = 1;
+    options.shape     = 'equal';
+    options.runs      = 48;
+    
+    modelRegistry = [
+        struct( ...
+            'name','Noncon DoG', ...
+            'type','standard', ...
+            'fitFcn', @(STA) fitNonConcentricEllipticalDoG(STA,'unnormalized',20), ...
+            'k',10)
+        struct( ...
+            'name','Gabor', ...
+            'type','sg', ...
+            'fitFcn', @(STA) fit2dGabor_JM(STA,options), ...
+            'k',10)
+        struct( ...
+            'name','Gaussian', ...
+            'type','standard', ...
+            'fitFcn', @(STA) fitEllipticalGaussian(STA,'unnormalized',20), ...
+            'k',7)
+    ];
+    
+    omitCells = [114];
+    fitIdx = 1:nSelected;
+    
+    results = runRFModelComparison( ...
+        fitIdx, ...
+        cellsIdx, ...
+        STA_cropped, ...
+        modelRegistry, ...
+        omitCells, ...
+        'pdf', ...
+        'test_all_fit.pdf');
+    
+    if options.parallel == 1
+        delete(gcp("nocreate"));
+    end
+    
+    modelNames  = {results.modelRegistry.name};
+    
+    dog_fits    = cat(3,results.models{1}{:});
+    gabor_fits  = cat(3,results.models{2}{:});
+    gaus_fits   = cat(3,results.models{3}{:});
+    
+    
+    dog_fits_all(:,:,:,ih)    = cat(3,results.models{1}{:});
+    gabor_fits_all(:,:,:,ih)  = cat(3,results.models{2}{:});
+    gaus_fits_all(:,:,:,ih)   = cat(3,results.models{3}{:});
 end
 
 
-options.visualize = 0;
-options.parallel  = 1;
-options.shape     = 'equal';
-options.runs      = 48;
+%% Plot STA
 
-modelRegistry = [
-%     struct( ...
-%         'name','Circular DoG', ...
-%         'type','standard', ...
-%         'fitFcn', @(STA) fitNonConcentricCircularDoG(STA), ...
-%         'k',6)
-    struct( ...
-        'name','Gabor', ...
-        'type','sg', ...
-        'fitFcn', @(STA) fit2dGabor_JM(STA,options), ...
-        'k',10)
-     struct( ...
-        'name','DoG x cos', ...
-        'type','standard', ...
-        'fitFcn', @(STA) fitNoncDoGCosineRF_tau(STA), ...
-        'k',11)
-];
-
-omitCells = [114];
-fitIdx = 1:nSelected;
-
-results = runRFModelComparison( ...
-    fitIdx, ...
-    cellsIdx, ...
-    STA_cropped, ...
-    modelRegistry, ...
-    omitCells, ...
-    'pdf', ...
-    'test_all_fit.pdf');
-
-modelNames = {results.modelRegistry.name};
-
-
-
-
-%% Plot STAs
-
-averageImagesAll_reshaped   = reshape(averageImagesAll, [1, size(averageImagesAll)]);
-STAs_all                    = cat(1, averageImagesAll_reshaped, averageImagesAll_HO);
-
-wnMean          = mean(mean(imageMatrix,1),2);
-wnMeanAvg       = mean(wnMean(:));
-wnMeanDiffMat   = wnMean-wnMeanAvg;
-
-averageImagesAll_MinusMean          = STAs_all - reshape(reshape(wnMeanDiffMat,[],xDim,yDim),[],1,xDim,yDim);
-
-
-data_all                    =  averageImagesAll_MinusMean;
-
-
+data_all                    =  zscoreSTAs_all;
 maxSmth = max(max(max(max(abs(data_all)))));
-minSmth = min(min(min(min(abs(data_all)))));
-
 
 % Print STA time point choices
-pdfFile = fullfile(fullfile(['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/' exptStruct.date '/spatialRFs_heldOut/', 'spatialRFs_heldOut.pdf']));
-
+pdfFile = fullfile(fullfile(['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/' exptStruct.date '/spatialRFs_heldOut/', 'spatialRFs_zscored_heldOut.pdf']));
 for ic = 1:length(cellsIdx)
     iCell = cellsIdx(ic);
-
     figure();
     sgtitle(['cell ' num2str(iCell)])
-
         data = medfilt2(imgaussfilt(squeeze(data_all(1,ic,:,:)),1));
-
         subplot(3,5,1)
             imagesc(data); hold on
             pbaspect([16 9 1])
             colormap(gray)
-            clim([floor(minSmth) ceil(maxSmth)])
+            clim([-5 5])
             set(gca,'xtick',[]); set(gca,'xticklabel',[])
             set(gca,'ytick',[]); set(gca,'yticklabel',[])
             subtitle('STA')
-
     for ih = 1:nChunks
-
         data = medfilt2(imgaussfilt(squeeze(data_all(ih+1,ic,:,:)),1));
-
         subplot(3,5,ih+5)
             imagesc(data); hold on
             pbaspect([16 9 1])
             colormap(gray)
-            clim([floor(minSmth) ceil(maxSmth)])
+            clim([-5 5])
             set(gca,'xtick',[]); set(gca,'xticklabel',[])
             set(gca,'ytick',[]); set(gca,'yticklabel',[])
-
     end
-
     % Append current figure as a new page in the PDF
     exportgraphics(gcf, pdfFile,'ContentType', 'vector','Append', true);
-
     close(gcf)
 end
 
 
+%% Uncrop fits to full stimulus size
 
+for ic = 1:nSelected
+    xs = xStart(ic);              % starting column (1–52)
+    xe = xs + sideLength - 1;    % ending column (should be xs+28)
+    for ih = 1:(nChunks+1)
+        data = dog_fits_all(:,:,ic,ih);   % 29 x 29
 
+        dog_corner = data(end,end);
+        fullImg = dog_corner * ones(29, 52);   % Initialize full image with corner value
+        fullImg(:, xs:xe) = data;   % Insert cropped data into correct location
+Nop        dog_fits_Uncropped(:,:,ic,ih) = fullImg; 
 
+        data = gabor_fits_all(:,:,ic,ih);   % 29 x 29
+        gabor_corner = data(end,end);
+        fullImg = gabor_corner * ones(29, 52);   % Initialize full image with corner value
+        fullImg(:, xs:xe) = data;   % Insert cropped data into correct location
+        gabor_fits_Uncropped(:,:,ic,ih) = fullImg; 
 
-
-
-
-%% Compute bootstrap for held out data
-
-% === NOT working ====
-
-averageImagesAll_shuffled   = NaN(nChunks, nboots, length(cellsIdx), xDim, yDim);
-frameStarts                 = timestamps;
-frameEnds                   = [timestamps(:,2:end), timestamps(:,end)+0.1];
-[nTrials, nFrames]          = size(timestamps);
-timeOffsets                 = 1:numel(beforeSpike);
-
-parpool("Threads", 40)   % Start parallel pool processing
-tic
-for ih = 1:nChunks
-    
-    mask = squeeze(heldOutMask(ih,:,:));   % nTrials x framesPerTrial
-    
-    trainingIdx = find(mask(:)==1);        % 10800 frames
-    
-    imageMatrix_trainList = reshape(imageMatrix, [], size(imageMatrix,3), size(imageMatrix,4));  % Reshape from nTrials x nFrames to one dimension of all trials (nTrials*nFrames)
-    imageMatrix_train = imageMatrix_trainList(trainingIdx,:,:);
-
-    for ib = 1:nboots
-        fprintf(['boot ' num2str(ib) '/' num2str(nboots) '\n'])
-
-        bootIdx = randi(size(imageMatrix_train,1), size(imageMatrix_train,1), 1);
-        imageMatrix_shuf = imageMatrix_train(bootIdx,:,:);
-
-        parfor ic = 1:length(cellsIdx)
-            iCell = cellsIdx(ic);
-            exCellSpikeTimes = goodUnitStruct(iCell).timestamps(goodUnitStruct(iCell).timestamps < lastTimestamp);
-                it = bestTimePoint(iCell,1);
-                timeBeforeSpike = beforeSpike(it);
-                shiftedSpikes   = exCellSpikeTimes - timeBeforeSpike;
-                nSpikes         = length(shiftedSpikes);
-                trialIdx = NaN(1, nSpikes);                                 
-                frameIdx = NaN(1, nSpikes);
-        
-                % Expand dims
-                frameStartsExp      = reshape(frameStarts, [nTrials, nFrames, 1]);
-                frameEndsExp        = reshape(frameEnds,   [nTrials, nFrames, 1]);
-                shiftedSpikesExp    = reshape(shiftedSpikes, [1, 1, nSpikes]);
-    
-                % Get frame for each spike
-                isInFrame = (shiftedSpikesExp >= frameStartsExp) & (shiftedSpikesExp < frameEndsExp);
-        
-                % Collapse trials & frames
-                isInFrame2D             = reshape(isInFrame, nTrials * nFrames, nSpikes);
-                [linearIdx, spikeIdx]   = find(isInFrame2D);
-        
-                if ~isempty(linearIdx)
-                    [trialInds, frameInds]      = ind2sub([nTrials, nFrames], linearIdx);
-                    [uniqueSpikes, firstIdx]    = unique(spikeIdx, 'first');   % Keep only the first match if multiple
-                    trialIdx(uniqueSpikes)      = trialInds(firstIdx);
-                    frameIdx(uniqueSpikes)      = frameInds(firstIdx);
-                end
-        
-                valid = ~isnan(trialIdx);    % Find valid spikes
-                imagesAtSpikes = NaN(nSpikes, xDim, yDim);    % Preallocate
-                    
-                % Convert valid indices to linear indices
-                if any(valid)
-                    ind                         = sub2ind([size(imageMatrix_shuf,1), size(imageMatrix_shuf,2)], trialIdx(valid), frameIdx(valid));    % Compute linear indices into imageMatrix_shuf
-                    frames                      = reshape(imageMatrix_shuf, [], xDim, yDim);    % Extract all frames at once
-                    imagesAtSpikes(valid,:,:)   = frames(ind, :, :);
-                end
-    
-                averageImageAtSpike                   = squeeze(nanmean(imagesAtSpikes, 1));
-                averageImagesAll_shuffled(ih,ib,ic,:,:)  = averageImageAtSpike;
-    
-        end
+        data = gaus_fits_all(:,:,ic,ih);   % 29 x 29
+        gaus_corner = data(end,end);
+        fullImg = gaus_corner * ones(29, 52);   % Initialize full image with corner value
+        fullImg(:, xs:xe) = data;   % Insert cropped data into correct location
+        gaus_fits_Uncropped(:,:,ic,ih) = fullImg; 
     end
 end
-toc
-delete(gcp("nocreate"));
+
+
+%% testing old convolution function
+
+
+
+filt = permute(dog_fits_Uncropped(:,:,:,1), [3 1 2]);  
+resp = convolveRFwithStim(filt,4);
+
+filt_STA = squeeze(zscoreSTAs_all(1,:,:,:));  
+resp_STA = convolveRFwithStim(filt_STA,4);
+
+corr_all = nan(3,nSelected);
+for ic = 1:nSelected
+    corr_all(1,ic) = corr(resp(:,ic), spkCounts(:,ic), 'Rows','complete');
+end
+
+for ic = 1:nSelected
+    figure;
+    subplot(2,2,1)
+        imagesc(squeeze(zscoreSTAs_all(1,ic,:,:))); colormap('gray')
+    subplot(2,2,2)
+        imagesc(squeeze(filt(ic,:,:))); colormap('gray')
+    subplot(2,2,3)
+        plot(spkCounts(:,ic))
+    subplot(2,2,4)
+        plot(resp(:,ic)); 
+    sgtitle(num2str(corr_all(ic)))
+end
+
+
+
+filt = permute(gabor_fits_Uncropped(:,:,:,1), [3 1 2]);  
+resp = convolveRFwithStim(filt,4);
+
+filt_STA = squeeze(zscoreSTAs_all(1,:,:,:));  
+resp_STA = convolveRFwithStim(filt_STA,4);
+
+for ic = 1:nSelected
+    corr_all(2,ic) = corr(resp(:,ic), spkCounts(:,ic), 'Rows','complete');
+end
+
+
+
+filt = permute(gaus_fits_Uncropped(:,:,:,1), [3 1 2]);  
+resp = convolveRFwithStim(filt,4);
+
+filt_STA = squeeze(zscoreSTAs_all(1,:,:,:));  
+resp_STA = convolveRFwithStim(filt_STA,4);
+
+for ic = 1:nSelected
+    corr_all(3,ic) = corr(resp(:,ic), spkCounts(:,ic), 'Rows','complete');
+end
+
+
+
+
+
+%% convolve fit w held out white noise
+
+
+nHeldOut = size(heldOutMask, 1);
+
+for ig = 1:2
+    % Get filters for this split
+    filt = permute(dog_fits_Uncropped(:,:,:,ig), [3 1 2]);  
+    % now: (nCells × X × Y)
+    if ig == 1
+        % Full dataset (no mask)
+        resp_all = convolveRFwithStim_HeldOutImageMatrix(filt,runloc);
+    else
+        % Held-out splits (shift index by 1)
+        thisMask = heldOutMask;  % (trials × frames)
+        resp_all_HO = convolveRFwithStim_HeldOutImageMatrix(filt, runloc, thisMask);
+    end
+end
+
+
+corr_all = nan(nSelected,1);
+for ic = 1:nSelected
+    corr_all(ic) = corr(resp_all(:,ic), spkCounts(:,ic), 'Rows','complete');
+end
+
+
+corr_HO = nan(nSelected,nHeldOut);
+for ih = 1:nHeldOut
+    % Get this split's mask
+    mask = squeeze(heldOutMask(ih,:,:));   % 4 x 3000
+
+    % Flatten trial/frame dimensions
+    mask_flat = mask(:);                   % 12000 x 1
+    test_idx = find(mask_flat == 0);       % value 0 or 1, whatever is the test condition in the heldOutMask
+
+    spk_test = spkCounts(test_idx,:);      % Pull matching spike counts, 1200 x 20
+    pred_test = resp_all_HO(:,:,ih);       % Predicted responses for this split. 1200 x 20
+
+    for ic = 1:nSelected
+        corr_HO(ic,ih) = corr(pred_test(:,ic), spk_test(:,ic), 'Rows','complete');
+    end
+end
+
+
 
 
 %%
-save( ...
-    fullfile( ...
-        base, ...
-        exptStruct.loc, ...
-        'Analysis', ...
-        'Neuropixel', ...
-        exptStruct.date, ...
-        [mouse '-' date '_spatialRFs_Wiesel.mat']), ...
-    'totalSpikesUsed', ...
-    'averageImagesAll', ...
-    'averageImagesAll_shuffled', ...
-    'nboots', ...
-    'beforeSpike');
+
+%% Model fits to test
+mNames = {'dog','gabor','gaus'};
+
+fitNames = {'dog_fits_Uncropped',...
+            'gabor_fits_Uncropped',...
+            'gaus_fits_Uncropped'};
+
+nHeldOut = size(heldOutMask,1);
+
+
+% Store correlations
+corr_full = struct();
+corr_HO = struct();
+
+% Loop through models
+for im = 1:length(mNames)
+
+    model = mNames{im};
+    fitData = eval(fitNames{im});
+    fprintf('Running %s model...\n', model)
+
+    % Get filters
+    % ig=1 corresponds to full dataset fit
+    filt = permute(fitData(:,:,:,1), [3 1 2]);
+    % dimensions: cells x X x Y
+    
+    % Full convolution
+    resp_all = convolveRFwithStim_HeldOutImageMatrix(filt, runloc);
+
+    % Correlation for each cell
+    corr_full.(model) = nan(nSelected,1);
+
+    for ic = 1:nSelected
+        corr_full.(model)(ic) = corr(resp_all(:,ic), spkCounts(:,ic), 'Rows','complete');
+    end
+
+    % Held-out convolution
+    resp_all_HO = convolveRFwithStim_HeldOutImageMatrix(filt, runloc, heldOutMask);
+
+    % Correlation on held-out frames
+    corr_HO.(model) = nan(nSelected,nHeldOut);
+
+    for ih = 1:nHeldOut
+        mask = squeeze(heldOutMask(ih,:,:));
+        mask_flat = mask(:);
+        % Frames used in convolution function
+        test_idx = find(mask_flat == 0);
+        spk_test = spkCounts(test_idx,:);
+        pred_test = resp_all_HO(:,:,ih);
+        for ic = 1:nSelected
+            corr_HO.(model)(ic,ih) = corr(pred_test(:,ic),spk_test(:,ic),'Rows','complete');
+        end
+    end
+end
+
+figure;
+hold on
+models = {'dog','gabor','gaus'};
+
+for im = 1:length(models)
+    % average held-out corr per cell
+    y = mean(corr_HO.(models{im}),2,'omitnan');
+    plot(1:nSelected,y,'o-')
+end
+
+xlabel('Cell')
+ylabel('Held-out correlation')
+legend(models)
+title('Model prediction accuracy by cell')
+
+
+
+%%
+stop
+
+% save( ...
+%     fullfile( ...
+%         dirBase, ...
+%         exptStruct.loc, ...
+%         'Analysis', ...
+%         'Neuropixel', ...
+%         exptStruct.date, ...
+%         [mouse '-' date '_spatialRFs_Wiesel.mat']), ...
+%     'totalSpikesUsed', ...
+%     'averageImagesAll', ...
+%     'averageImagesAll_shuffled', ...
+%     'nboots', ...
+%     'beforeSpike');

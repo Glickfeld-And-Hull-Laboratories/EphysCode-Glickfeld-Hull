@@ -22,7 +22,7 @@ function [azs, els] = getRFcenter(data)
         
         dataAbs = abs(dataCell);
         dataMask = dataAbs;
-        dataMask(dataAbs < 1)     = 0;
+        dataMask(dataAbs < 0.75)     = 0;
 
     % Calculate weighted mean
         xVec = 1:size(dataCell,1);
