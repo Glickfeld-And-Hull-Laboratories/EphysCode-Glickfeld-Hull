@@ -11,6 +11,7 @@ function [resp] = convolveRFwithStim_HeldOutImageMatrix(filt, runloc, thisMask)
 
     % Load stimulus
     load(fullfile(dirBase, 'sara', 'Analysis', 'Neuropixel', 'noiseStimuli', '5min_2deg_4rep_imageMatrix.mat'))
+
     
     [nTrials, nFrames, X, Y] = size(imageMatrix);
     [C, x, y] = size(filt);
