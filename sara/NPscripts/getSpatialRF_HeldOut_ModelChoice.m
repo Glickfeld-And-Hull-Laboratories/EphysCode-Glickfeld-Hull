@@ -217,3 +217,297 @@ for ic = 1:length(cellsSelected)
     close(gcf)
 end
 
+
+
+%% Measuring RF characteristics
+
+% DoG params
+    % 1, 2      - Ac, As
+    % 3, 4      - sigmaC, deltaSigma
+    % 5         - tau
+    % 6         - theta
+    % 7, 8      - x0, y0
+    % 9, 10     - dx, dy
+
+dogFits_params = model_params{1};
+
+% offset
+    offsetMag   = nan(nSelected,1);
+    offsetAngle = nan(nSelected,1);
+    for i = 1:nSelected
+        p = dogFits_params{i};
+        if isempty(p)
+            continue
+        end
+        dx = p(9);
+        dy = p(10);
+        offsetMag(i)   = sqrt(dx.^2 + dy.^2);
+        offsetAngle(i) = atan2(dy, dx);  % radians, use rad2deg() if you want degrees
+    end
+
+ % aspect ratio   
+    dog_AR = nan(nSelected,1);
+    for i = 1:nSelected
+        p = dogFits_params{i};
+        if isempty(p)
+            continue
+        end
+        dog_AR(i) = p(5);   % tau
+    end
+
+% ---------------------
+
+% Gabor params
+    % 1, 2      - a, b (empty)
+    % 3, 4      - x0, y0 (empyy)
+    % 5, 6      - sigmax, sigmay
+    % 7         - theta (unwrapped, radians)
+    % 8         - phi (unwrapped)
+    % 9         - lambda
+    % 10        - phase
+    % 11, 12    - empty
+
+
+gabFits_params = model_params{2};
+
+% aspect ratio
+    gabor_AR = nan(nSelected,1);
+    for i = 1:nSelected
+        p = gabFits_params{i};
+        if isempty(p)
+            continue
+        end
+        sigmax = p(5);
+        sigmay = p(6);
+        gabor_AR(i) = sigmax / sigmay;
+    end
+
+
+
+% ---------------------
+
+% 2D Gaussian
+    % 1, 2      - Ac, As
+    % 3, 4      - sigmaC, sigmaS
+    % 5, 6      - x0, y0
+
+gausFits_params = model_params{3};
+
+% aspect ratio
+gaus_AR = nan(nSelected,1);
+    for i = 1:nSelected
+        p = gausFits_params{i};
+        if isempty(p)
+            continue
+        end
+        sigmaC = p(3);
+        sigmaS = p(4);
+        gaus_AR(i) = sigmaC / sigmaS;
+    end
+
+% ---------------------
+
+
+% Size (area-equivalent radius), comparable across all three model types
+% size = sqrt(sigma_axis1 * sigma_axis2)
+% For elliptical models this is the geometric mean of the two semi-axes.
+% For circular models (no second axis) it reduces to the single sigma.
+
+% --- DoG: sigma_x' = sigmaC, sigma_y' = sigmaC/tau ---
+dog_sizeC = nan(nSelected,1);
+dog_sizeS = nan(nSelected,1);
+for i = 1:nSelected
+    p = dogFits_params{i};
+    if isempty(p), continue; end
+    sigmaC      = p(3);
+    deltaSigma  = p(4);
+    sigmaS      = sigmaC + deltaSigma;
+    tau         = p(5);
+    sigma_x     = sigmaC;
+    sigma_y     = sigmaC / tau;
+
+    dog_sizeC(i) = sqrt(sigma_x * sigma_y); % center size
+    dog_sizeS(i) = sigmaS / sqrt(tau); % surround size
+end
+
+% --- Gabor: sigma_x' = sigmax, sigma_y' = sigmay (both explicit) ---
+gabor_size = nan(nSelected,1);
+for i = 1:nSelected
+    p = gabFits_params{i};
+    if isempty(p), continue; end
+    sigmax = p(5);
+    sigmay = p(6);
+    gabor_size(i) = sqrt(sigmax * sigmay);
+end
+
+% --- Gaussian: circular, single sigma (sigmaC = center width) ---
+gaus_size = nan(nSelected,1);
+for i = 1:nSelected
+    p = gausFits_params{i};
+    if isempty(p), continue; end
+    gaus_size(i) = p(3);   % sigmaC; sqrt(sigmaC*sigmaC) = sigmaC anyway
+end
+
+%% Load Zp Zc data
+
+analysisDir=('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase');
+load([analysisDir '\CrossOri_randDirFourPhase_summary.mat'])
+
+Zc_avg = mean(Zc_all(:, cellsSelected),1);
+Zp_avg = mean(Zp_all(:, cellsSelected),1);
+
+indDoG = find(winningModel==1);
+indGab = find(winningModel==2);
+indGau = find(winningModel==3);
+
+figure;
+    subplot(4,4,1)
+        scatter(offsetMag(indDoG),Zc_avg(indDoG),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zc'); ylim([-1 4])
+        xlabel('offset')
+        subtitle('DoG winners')
+    subplot(4,4,2)
+        scatter(offsetMag(indDoG),Zp_avg(indDoG),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zp'); ylim([-1 4])
+        xlabel('offset')
+        subtitle('DoG winners')
+
+figure;
+    subplot(4,4,1)
+        scatter(dog_AR(indDoG),Zc_avg(indDoG),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zc'); ylim([-1 4])
+        xlabel('aspect ratio (tau')
+        subtitle('DoG winners')
+    subplot(4,4,2)
+        scatter(dog_AR(indDoG),Zp_avg(indDoG),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zp'); ylim([-1 4])
+        xlabel('aspect ratio (tau)')
+        subtitle('DoG winners')
+    subplot(4,4,3)
+        scatter(gaus_AR(indGau),Zc_avg(indGau),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zc'); ylim([-1 4])
+        xlabel('aspect ratio (tau)'); xlim([0 2.5])
+        subtitle('Gaus winners')
+    subplot(4,4,4)
+        scatter(gaus_AR(indGau),Zp_avg(indGau),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zp'); ylim([-1 4])
+        xlabel('aspect ratio (tau)'); xlim([0 2.5])
+        subtitle('Gaus winners')
+    subplot(4,4,5)
+        scatter(gabor_AR(indGab),Zc_avg(indGab),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zc'); ylim([-1 4])
+        xlabel('aspect ratio'); xlim([0 2.5])
+        subtitle('Gabor winners')
+    subplot(4,4,6)
+        scatter(gabor_AR(indGab),Zp_avg(indGab),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zp'); ylim([-1 4]); xlim([0 2.5])
+        xlabel('aspect ratio')
+        subtitle('Gabor winners')
+
+
+
+figure;
+    subplot(4,4,1)
+        scatter(dog_sizeC(indDoG),Zc_avg(indDoG),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zc'); ylim([-1 4])
+        xlabel('size center')
+        subtitle('DoG winners')
+    subplot(4,4,2)
+        scatter(dog_sizeC(indDoG),Zp_avg(indDoG),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zp'); ylim([-1 4])
+        xlabel('size center')
+        subtitle('DoG winners')
+    subplot(4,4,3)
+        scatter(dog_sizeS(indDoG),Zc_avg(indDoG),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zc'); ylim([-1 4])
+        xlabel('size surround')
+        subtitle('DoG winners')
+    subplot(4,4,4)
+        scatter(dog_sizeS(indDoG),Zp_avg(indDoG),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zp'); ylim([-1 4])
+        xlabel('size surround')
+        subtitle('DoG winners')
+    subplot(4,4,5)
+        scatter(gaus_size(indGau),Zc_avg(indGau),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zc'); ylim([-1 4])
+        xlabel('size'); 
+        subtitle('Gaus winners')
+    subplot(4,4,6)
+        scatter(gaus_size(indGau),Zp_avg(indGau),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zp'); ylim([-1 4])
+        xlabel('size'); 
+        subtitle('Gaus winners')
+    % subplot(4,4,5)
+    %     scatter(gabor_size(indGab),Zc_avg(indGab),12,'filled')
+    %     set(gca,'TickDir','out'); box off
+    %     ylabel('mean Zc'); ylim([-1 4])
+    %     xlabel('size'); 
+    %     subtitle('Gabor winners')
+    % subplot(4,4,6)
+    %     scatter(gabor_size(indGab),Zp_avg(indGab),12,'filled')
+    %     set(gca,'TickDir','out'); box off
+    %     ylabel('mean Zp'); ylim([-1 4])
+    %     xlabel('size')
+    %     subtitle('Gabor winners')
+
+ 
+baseline = b_all(cellsSelected);
+amplitude = amp_all(cellsSelected);
+
+    figure;
+        subplot(4,4,1)
+            scatter(dog_sizeC(indDoG),b_all(indDoG),12,'filled')
+            set(gca,'TickDir','out'); box off
+            ylabel('baseline'); %ylim([-1 4])
+            xlabel('size center')
+            subtitle('DoG winners')
+        subplot(4,4,2)
+            scatter(dog_sizeC(indDoG),amp_all(indDoG),12,'filled')
+            set(gca,'TickDir','out'); box off
+            ylabel('amp'); %ylim([-1 4])
+            xlabel('size center')
+            subtitle('DoG winners')
+        subplot(4,4,3)
+            scatter(dog_sizeS(indDoG),b_all(indDoG),12,'filled')
+            set(gca,'TickDir','out'); box off
+            ylabel('baseline'); %ylim([-1 4])
+            xlabel('size surr')
+            subtitle('DoG winners')
+        subplot(4,4,4)
+            scatter(dog_sizeS(indDoG),amp_all(indDoG),12,'filled')
+            set(gca,'TickDir','out'); box off
+            ylabel('amp'); %ylim([-1 4])
+            xlabel('size surr')
+            subtitle('DoG winners')
+
+
+
+
+
+    figure;
+        subplot(4,4,1)
+            scatter(offsetMag(indDoG),b_all(indDoG),12,'filled')
+            set(gca,'TickDir','out'); box off
+            ylabel('baseline'); %ylim([-1 4])
+            xlabel('offset')
+            subtitle('DoG winners')
+        subplot(4,4,2)
+            scatter(offsetMag(indDoG),amp_all(indDoG),12,'filled')
+            set(gca,'TickDir','out'); box off
+            ylabel('amp'); %ylim([-1 4])
+            xlabel('offset')
+            subtitle('DoG winners')
