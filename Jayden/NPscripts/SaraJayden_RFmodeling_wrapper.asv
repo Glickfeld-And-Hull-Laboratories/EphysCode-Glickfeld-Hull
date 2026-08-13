@@ -42,7 +42,7 @@ idxCon      = setdiff(indRF_con,indRF_pix); % contrast method only
 ind         = intersect(resp_ind_dir_all, find(DSI_all>.5));
 ind_DS      = intersect(idxInt,ind); % visually responsive and direction-selective
 % Use visually responsive cells with reliable RFs.
-cellsSelected = intersect(idxInt, ind);
+cellsSelected = intersect(idxInt, resp_ind_dir_all);
 
 if debugMode
     assert(ismember(debugCell, cellsSelected), ...
