@@ -1,74 +1,66 @@
 %%
-% This takes ~7h to run for all 15 experiments (100 cells)
-
+% This takes ~7h to run for all 15 experiments (100 cells) for 5 chunks
 clear all; close all; clc
 
-for exptN = [1:15]   % Choose experiment (1 through 15)
-    exptloc = 'V1';
-    runloc = 1;   % Where is this script being run? 1 == Hubel, 2 == Wiesel
-    nChunks = 5; % number of held-out segments, nChunks=10 is 10% held out
-    
-    
-    %Find cells to run for this experiment
-    
+exptsToRun = [1:15];
+exptloc = 'V1';
+runloc = 1;   % Where is this script being run? 1 == Hubel, 2 == Wiesel
+nChunks = 10; % number of held-out segments, nChunks=10 is 10% held out
+
+
+tic
+for exptN = exptsToRun   % Choose experiment (1 through 15)
+
     analysisDir=('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase');
     load([analysisDir '\CrossOri_randDirFourPhase_summary.mat'])
-    
     iexp = expts(exptN);
     nCells = nCells_list(exptN);
+
+    % make cellMap to find local index of the global index of all cells for each experiment
+        allCells = [0 cumsum(nCells_list)];
+        cellMap = cell(length(expts),1);
+        for i = 1:length(expts)
+            globalIdx = (allCells(i)+1):allCells(i+1);
+            localIdx  = 1:nCells_list(i);
+            cellMap{i} = [globalIdx(:), localIdx(:)];
+        end
     
-    %Make cellMap to find local index of the global index of all cells for each experiment
+    % get index of vis resp, DS cells with RFs
+        indCortex   = find(~isnan(layer_all));
+        ind_sigRF   = sum(cells_sigRFbyTime_On_all,2)+sum(cells_sigRFbyTime_Off_all,2);
+        listnc      = 1:size(cells_sigRFbyTime_On_all,1);
+        indRF_pix   = listnc(ind_sigRF>0)';
+        indRF_con   = find(bestTimePoint_all(:,2)>1);
+        
+        indRF_pix   = intersect(indRF_pix,indCortex);
+        indRF_con   = intersect(indRF_con,indCortex);
+        indRFint    = unique([indRF_pix; indRF_con]);
+        idxInt      = intersect(indRF_pix, indRF_con);  % both mask and contrast method
+        
+        idxMask     = setdiff(indRF_pix, indRF_con); % mask method only
+        idxCon      = setdiff(indRF_con,indRF_pix); % contrast method only
+        
+        ind         = intersect(resp_ind_dir_all, find(DSI_all>.5));
+        ind_DS      = intersect(idxInt,ind); % visually responsive and direction-selective
     
-    allCells = [0 cumsum(nCells_list)];
-    
-    cellMap = cell(length(expts),1);
-    for i = 1:length(expts)
-        globalIdx = (allCells(i)+1):allCells(i+1);
-        localIdx  = 1:nCells_list(i);
-        cellMap{i} = [globalIdx(:), localIdx(:)];
-    end
-    
-    %Get index of vis resp, DS cells with RFs
-    indCortex   = find(~isnan(layer_all));
-    ind_sigRF   = sum(cells_sigRFbyTime_On_all,2)+sum(cells_sigRFbyTime_Off_all,2);
-    listnc      = 1:size(cells_sigRFbyTime_On_all,1);
-    indRF_pix   = listnc(ind_sigRF>0)';
-    indRF_con   = find(bestTimePoint_all(:,2)>1);
-    
-    indRF_pix   = intersect(indRF_pix,indCortex);
-    indRF_con   = intersect(indRF_con,indCortex);
-    indRFint    = unique([indRF_pix; indRF_con]);
-    idxInt      = intersect(indRF_pix, indRF_con);  % both mask and contrast method
-    
-    idxMask     = setdiff(indRF_pix, indRF_con); % mask method only
-    idxCon      = setdiff(indRF_con,indRF_pix); % contrast method only
-    
-    ind         = intersect(resp_ind_dir_all, find(DSI_all>.5));
-    ind_DS      = intersect(idxInt,ind); % visually responsive and direction-selective
-    
-    % Use visually responsive cells with DS > .5 and reliable RFs.
-    cellsSelected = intersect(idxInt, ind_DS);
-    
+    % use visually responsive cells with DS > .5 and reliable RFs.
+        cellsSelected = intersect(idxInt, ind_DS);
     
     % get cell lists for the current experiment
-    expt_cellsIdx           = cellMap{exptN};
-    expt_cellsIdx_global    = expt_cellsIdx(:,1);
-    expt_cellsIdx_local     = expt_cellsIdx(:,2);
-    
+        expt_cellsIdx           = cellMap{exptN};
+        expt_cellsIdx_global    = expt_cellsIdx(:,1);
+        expt_cellsIdx_local     = expt_cellsIdx(:,2);
+        
     % which of the cells for this experiment are in the variable cellsSelected?
-    global_cellsIdx_bin = ismember(expt_cellsIdx_global,cellsSelected);
-    cellsIdx            = expt_cellsIdx_local(global_cellsIdx_bin);
-    
-    
-    %Get held out data correlations
-    
-    tic
-    getSpatialRF_HeldOut_Correlations(iexp, exptloc, runloc, cellsIdx, nChunks)
-    toc
-    
-    fprintf(['exptN ' num2str(exptN) ', done.\n\n'])
-end
+        global_cellsIdx_bin = ismember(expt_cellsIdx_global,cellsSelected);
+        cellsIdx            = expt_cellsIdx_local(global_cellsIdx_bin);
 
+
+    % get held out data correlations
+        getSpatialRF_HeldOut_Correlations(iexp, exptloc, runloc, cellsIdx, nChunks)
+    fprintf(['Completed expt ' num2str(exptN) '/' num2str(length(exptsToRun)) ' '])
+end
+toc
 
 
 %% concatenate across experiments
@@ -81,7 +73,7 @@ corr_HO_all   = struct('dog', [], 'gabor', [], 'gaus', []);
 corr_full_all = struct('dog', [], 'gabor', [], 'gaus', []);
 model_params = repmat({cell(0,1)}, 3, 1);   % one growing cell array per model
 
-for exptN = 1:15   % Choose experiment (1 through 15)
+for exptN = 1:15 %:15   % Choose experiment (1 through 15)
 
     exptloc='V1';
      
@@ -167,6 +159,43 @@ for ic = 1:size(winFractions,1)
         winningModel(ic) = tiedIdx(minLocal);
     end
 end
+
+
+%% Determine winning model from one-standard-error (1-SE) rule, from the cross-validation model-selection literature (Hastie/Tibshirani/Friedman)
+% choose the simplest model whose performance is not statistically distinguishable from the best model, 
+% using the actual variability across your folds/chunks rather than an arbitrary % cutoff
+%
+% Steps per unit (ic):
+% 1.  Fisher z-transform the correlations before averaging (raw correlations aren't additive/normally 
+%     distributed -- averaging r directly is a common but technically incorrect shortcut).
+% 2.  Compute mean and SEM of z-transformed correlation across chunks, for each model.
+% 3.  Find the model with the max mean.
+% 4.  Among models whose mean is within 1 SEM of that max, pick the one with fewest parameters.
+
+mNames   = {'dog','gabor','gaus'};
+nParams  = struct('dog',10,'gabor',8,'gaus',7);
+paramVec = [10 8 7];  % dog, gabor, gaus - matches column order below
+
+nSelected = size(corr_HO_all.dog, 1);
+
+winningModel = zeros(nSelected,1);
+for ic = 1:nSelected
+    vals = [corr_HO_all.dog(ic,:); corr_HO_all.gabor(ic,:); corr_HO_all.gaus(ic,:)]'; % nChunks x 3
+
+    % Fisher z-transform (clip to avoid atanh(+/-1) = Inf)
+    z = atanh(max(min(vals, 0.999999), -0.999999));
+
+    zMean = mean(z, 1);
+    zSEM  = std(z, 0, 1) / sqrt(nChunks);
+
+    [bestMean, bestIdx] = max(zMean);
+    thresh = bestMean - zSEM(bestIdx);
+
+    withinSE = find(zMean >= thresh);
+    [~, minLocal] = min(paramVec(withinSE));
+    winningModel(ic) = withinSE(minLocal);
+end
+
 
 
 %%
@@ -255,18 +284,36 @@ dogFits_params = model_params{1};
         dog_AR(i) = p(5);   % tau
     end
 
-% ---------------------
+% size
+    dog_sizeC = nan(nSelected,1);
+    dog_sizeS = nan(nSelected,1);
+    for i = 1:nSelected
+        p = dogFits_params{i};
+        if isempty(p), continue; end
+        sigmaC      = p(3);
+        deltaSigma  = p(4);
+        sigmaS      = sigmaC + deltaSigma;
+        tau         = p(5);
+        sigma_x     = sigmaC;
+        sigma_y     = sigmaC / tau;
+    
+        dog_sizeC(i) = sqrt(sigma_x * sigma_y); % center size
+        dog_sizeS(i) = sigmaS / sqrt(tau); % surround size
+    end
 
+
+% ---------------------
 % Gabor params
-    % 1, 2      - a, b (empty)
-    % 3, 4      - x0, y0 (empyy)
+    % 1         - a
+    % 2         - b (empty)
+    % 3         - x0
+    % 4         - y0 (empty)
     % 5, 6      - sigmax, sigmay
     % 7         - theta (unwrapped, radians)
     % 8         - phi (unwrapped)
     % 9         - lambda
     % 10        - phase
     % 11, 12    - empty
-
 
 gabFits_params = model_params{2};
 
@@ -279,74 +326,57 @@ gabFits_params = model_params{2};
         end
         sigmax = p(5);
         sigmay = p(6);
-        gabor_AR(i) = sigmax / sigmay;
+        gabor_AR(i) = sigmax / abs(sigmay);
+        %gabor_AR(i) = max(sigmax,sigmay) / min(sigmax,sigmay);   % always >= 1
+    end
+
+% size
+    gabor_size = nan(nSelected,1);
+    for i = 1:nSelected
+        p = gabFits_params{i};
+        if isempty(p), continue; end
+        sigmax = p(5);
+        sigmay = p(6);
+        gabor_size(i) = sqrt(sigmax * abs(sigmay));
     end
 
 
 
 % ---------------------
-
 % 2D Gaussian
-    % 1, 2      - Ac, As
-    % 3, 4      - sigmaC, sigmaS
+    % 1,        - ampltideu
+    % 2         - sigma
+    % 3         - tau 
+    % 4         - theta
     % 5, 6      - x0, y0
 
 gausFits_params = model_params{3};
 
 % aspect ratio
-gaus_AR = nan(nSelected,1);
+    gaus_AR = nan(nSelected,1);
     for i = 1:nSelected
         p = gausFits_params{i};
         if isempty(p)
             continue
         end
-        sigmaC = p(3);
-        sigmaS = p(4);
-        gaus_AR(i) = sigmaC / sigmaS;
+        gaus_AR(i) = p(3);   % tau
+    end
+
+% size
+    gaus_size = nan(nSelected,1);
+    for i = 1:nSelected
+        p = gausFits_params{i};
+        if isempty(p), continue; end
+        sigma = p(2);
+        tau   = p(3);
+        gaus_size(i) = sqrt(sigma * (sigma/tau));   % = sigma/sqrt(tau)
     end
 
 % ---------------------
 
 
-% Size (area-equivalent radius), comparable across all three model types
-% size = sqrt(sigma_axis1 * sigma_axis2)
-% For elliptical models this is the geometric mean of the two semi-axes.
-% For circular models (no second axis) it reduces to the single sigma.
 
-% --- DoG: sigma_x' = sigmaC, sigma_y' = sigmaC/tau ---
-dog_sizeC = nan(nSelected,1);
-dog_sizeS = nan(nSelected,1);
-for i = 1:nSelected
-    p = dogFits_params{i};
-    if isempty(p), continue; end
-    sigmaC      = p(3);
-    deltaSigma  = p(4);
-    sigmaS      = sigmaC + deltaSigma;
-    tau         = p(5);
-    sigma_x     = sigmaC;
-    sigma_y     = sigmaC / tau;
 
-    dog_sizeC(i) = sqrt(sigma_x * sigma_y); % center size
-    dog_sizeS(i) = sigmaS / sqrt(tau); % surround size
-end
-
-% --- Gabor: sigma_x' = sigmax, sigma_y' = sigmay (both explicit) ---
-gabor_size = nan(nSelected,1);
-for i = 1:nSelected
-    p = gabFits_params{i};
-    if isempty(p), continue; end
-    sigmax = p(5);
-    sigmay = p(6);
-    gabor_size(i) = sqrt(sigmax * sigmay);
-end
-
-% --- Gaussian: circular, single sigma (sigmaC = center width) ---
-gaus_size = nan(nSelected,1);
-for i = 1:nSelected
-    p = gausFits_params{i};
-    if isempty(p), continue; end
-    gaus_size(i) = p(3);   % sigmaC; sqrt(sigmaC*sigmaC) = sigmaC anyway
-end
 
 %% Load Zp Zc data
 
@@ -361,110 +391,174 @@ indGab = find(winningModel==2);
 indGau = find(winningModel==3);
 
 figure;
-    subplot(4,4,1)
+    sgtitle('DoG winners')
+    subplot(4,2,1)
         scatter(offsetMag(indDoG),Zc_avg(indDoG),12,'filled')
         set(gca,'TickDir','out'); box off
         ylabel('mean Zc'); ylim([-1 4])
         xlabel('offset')
-        subtitle('DoG winners')
-    subplot(4,4,2)
+    subplot(4,2,2)
         scatter(offsetMag(indDoG),Zp_avg(indDoG),12,'filled')
         set(gca,'TickDir','out'); box off
         ylabel('mean Zp'); ylim([-1 4])
         xlabel('offset')
-        subtitle('DoG winners')
-
-figure;
-    subplot(4,4,1)
+    subplot(4,2,3)
         scatter(dog_AR(indDoG),Zc_avg(indDoG),12,'filled')
         set(gca,'TickDir','out'); box off
         ylabel('mean Zc'); ylim([-1 4])
         xlabel('aspect ratio (tau')
-        subtitle('DoG winners')
-    subplot(4,4,2)
+    subplot(4,2,4)
         scatter(dog_AR(indDoG),Zp_avg(indDoG),12,'filled')
         set(gca,'TickDir','out'); box off
         ylabel('mean Zp'); ylim([-1 4])
         xlabel('aspect ratio (tau)')
-        subtitle('DoG winners')
-    subplot(4,4,3)
-        scatter(gaus_AR(indGau),Zc_avg(indGau),12,'filled')
-        set(gca,'TickDir','out'); box off
-        ylabel('mean Zc'); ylim([-1 4])
-        xlabel('aspect ratio (tau)'); xlim([0 2.5])
-        subtitle('Gaus winners')
-    subplot(4,4,4)
-        scatter(gaus_AR(indGau),Zp_avg(indGau),12,'filled')
-        set(gca,'TickDir','out'); box off
-        ylabel('mean Zp'); ylim([-1 4])
-        xlabel('aspect ratio (tau)'); xlim([0 2.5])
-        subtitle('Gaus winners')
-    subplot(4,4,5)
-        scatter(gabor_AR(indGab),Zc_avg(indGab),12,'filled')
-        set(gca,'TickDir','out'); box off
-        ylabel('mean Zc'); ylim([-1 4])
-        xlabel('aspect ratio'); xlim([0 2.5])
-        subtitle('Gabor winners')
-    subplot(4,4,6)
-        scatter(gabor_AR(indGab),Zp_avg(indGab),12,'filled')
-        set(gca,'TickDir','out'); box off
-        ylabel('mean Zp'); ylim([-1 4]); xlim([0 2.5])
-        xlabel('aspect ratio')
-        subtitle('Gabor winners')
-
-
-
-figure;
-    subplot(4,4,1)
+    subplot(4,2,5)
         scatter(dog_sizeC(indDoG),Zc_avg(indDoG),12,'filled')
         set(gca,'TickDir','out'); box off
         ylabel('mean Zc'); ylim([-1 4])
         xlabel('size center')
-        subtitle('DoG winners')
-    subplot(4,4,2)
+    subplot(4,2,6)
         scatter(dog_sizeC(indDoG),Zp_avg(indDoG),12,'filled')
         set(gca,'TickDir','out'); box off
         ylabel('mean Zp'); ylim([-1 4])
         xlabel('size center')
-        subtitle('DoG winners')
-    subplot(4,4,3)
+    subplot(4,2,7)
         scatter(dog_sizeS(indDoG),Zc_avg(indDoG),12,'filled')
         set(gca,'TickDir','out'); box off
         ylabel('mean Zc'); ylim([-1 4])
         xlabel('size surround')
         subtitle('DoG winners')
-    subplot(4,4,4)
+    subplot(4,2,8)
         scatter(dog_sizeS(indDoG),Zp_avg(indDoG),12,'filled')
         set(gca,'TickDir','out'); box off
         ylabel('mean Zp'); ylim([-1 4])
         xlabel('size surround')
-        subtitle('DoG winners')
-    subplot(4,4,5)
+
+
+
+figure;
+    sgtitle('2D gaussian winners')
+    subplot(3,2,1)
+        scatter(gaus_AR(indGau),Zc_avg(indGau),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zc'); ylim([-1 4])
+        xlabel('aspect ratio (tau)'); %xlim([0 2.5])
+    subplot(3,2,2)
+        scatter(gaus_AR(indGau),Zp_avg(indGau),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zp'); ylim([-1 4])
+        xlabel('aspect ratio (tau)'); %xlim([0 2.5])
+    subplot(3,2,3)
         scatter(gaus_size(indGau),Zc_avg(indGau),12,'filled')
         set(gca,'TickDir','out'); box off
         ylabel('mean Zc'); ylim([-1 4])
         xlabel('size'); 
-        subtitle('Gaus winners')
-    subplot(4,4,6)
+    subplot(3,2,4)
         scatter(gaus_size(indGau),Zp_avg(indGau),12,'filled')
         set(gca,'TickDir','out'); box off
         ylabel('mean Zp'); ylim([-1 4])
         xlabel('size'); 
-        subtitle('Gaus winners')
-    % subplot(4,4,5)
-    %     scatter(gabor_size(indGab),Zc_avg(indGab),12,'filled')
-    %     set(gca,'TickDir','out'); box off
-    %     ylabel('mean Zc'); ylim([-1 4])
-    %     xlabel('size'); 
-    %     subtitle('Gabor winners')
-    % subplot(4,4,6)
-    %     scatter(gabor_size(indGab),Zp_avg(indGab),12,'filled')
-    %     set(gca,'TickDir','out'); box off
-    %     ylabel('mean Zp'); ylim([-1 4])
-    %     xlabel('size')
-    %     subtitle('Gabor winners')
 
+
+
+figure;
+    sgtitle('Gabor winners')
+    subplot(3,2,1)
+        scatter(gabor_AR(indGab),Zc_avg(indGab),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zc'); ylim([-1 4])
+        xlabel('aspect ratio'); % xlim([0 2.5])
+    subplot(3,2,2)
+        scatter(gabor_AR(indGab),Zp_avg(indGab),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zp'); ylim([-1 4]); % xlim([0 2.5])
+        xlabel('aspect ratio')
+    subplot(3,2,3)
+        scatter(gabor_size(indGab),Zc_avg(indGab),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zc'); ylim([-1 4])
+        xlabel('size'); 
+    subplot(3,2,4)
+        scatter(gabor_size(indGab),Zp_avg(indGab),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zp'); ylim([-1 4])
+        xlabel('size')
+
+
+%% plot across models
  
+
+figure;
+    subplot(4,4,1)
+        scatter(gaus_size(indGau),Zc_avg(indGau),12,'filled'); hold on
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('mean Zc'); ylim([-1 4])
+        xlabel('Size'); 
+    subplot(4,4,2)
+        scatter(gaus_size(indGau),Zp_avg(indGau),12,'filled'); hold on
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('mean Zp'); ylim([-1 4])
+        xlabel('Size'); 
+    subplot(4,4,1)
+        scatter(dog_sizeC(indDoG),Zc_avg(indDoG),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zc'); ylim([-1 4])
+        %xlabel('Size center')
+    subplot(4,4,2)
+        scatter(dog_sizeC(indDoG),Zp_avg(indDoG),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zp'); ylim([-1 4])
+        %xlabel('Size center')
+% print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', 'modelFits_size.pdf'), '-dpdf', '-bestfit')
+
+figure;
+    subplot(4,4,1)
+        scatter(gaus_AR(indGau),Zc_avg(indGau),12,'filled'); hold on
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('mean Zc'); ylim([-1 4])
+    subplot(4,4,2)
+        scatter(gaus_AR(indGau),Zp_avg(indGau),12,'filled'); hold on
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('mean Zp'); ylim([-1 4])
+    subplot(4,4,1)
+        scatter(dog_AR(indDoG),Zc_avg(indDoG),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zc'); ylim([-1 4])
+        xlabel('Aspect ratio')
+    subplot(4,4,2)
+        scatter(dog_AR(indDoG),Zp_avg(indDoG),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zp'); ylim([-1 4])
+        xlabel('Aspect ratio')
+% print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', 'modelFits_aspectratio.pdf'), '-dpdf', '-bestfit')
+
+
+figure;
+    subplot(4,4,1)
+        scatter(offsetMag(indDoG),Zc_avg(indDoG),12,'filled')
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('mean Zc'); ylim([-1 4])
+        xlabel('Subunit offset')
+    subplot(4,4,2)
+        scatter(offsetMag(indDoG),Zp_avg(indDoG),12,'filled')
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('mean Zp'); ylim([-1 4])
+        xlabel('Subunit offset')
+% print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', 'modelFits_offset.pdf'), '-dpdf', '-bestfit')
+
+
+figure;
+    subplot(1,3,1)
+        histogram(winningModel)
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('# of cells')
+% print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', 'modelFits_winners.pdf'), '-dpdf', '-bestfit')
+
+
+% save('workspace_5chunks_260818.mat')
+
+%% Zp-Zc baseline and amplitude
+
 baseline = b_all(cellsSelected);
 amplitude = amp_all(cellsSelected);
 
@@ -495,9 +589,6 @@ amplitude = amp_all(cellsSelected);
             subtitle('DoG winners')
 
 
-
-
-
     figure;
         subplot(4,4,1)
             scatter(offsetMag(indDoG),b_all(indDoG),12,'filled')
@@ -511,3 +602,10 @@ amplitude = amp_all(cellsSelected);
             ylabel('amp'); %ylim([-1 4])
             xlabel('offset')
             subtitle('DoG winners')
+
+
+
+
+
+
+

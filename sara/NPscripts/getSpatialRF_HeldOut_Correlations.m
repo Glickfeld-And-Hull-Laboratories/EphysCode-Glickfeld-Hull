@@ -30,7 +30,7 @@ fprintf('Loading timestamps and downsampled white noise stimulus... \n')
     date = exptStruct.date;
  
     % Load stim on information (both MWorks signal and photodiode)
-        cd (fullfile(dirBase, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date))        % Move from KS_Output folder to ...\Analysis\neuropixel\date folder, where TPrime output is saved
+        cd(fullfile(dirBase, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date))        % Move from KS_Output folder to ...\Analysis\neuropixel\date folder, where TPrime output is saved
         stimOnTimestampsMW  = table2array(readtable([date '_mworksStimOnSync.txt']));
         stimOnTimestampsPD  = table2array(readtable([date '_photodiodeSync.txt']));
 
@@ -96,6 +96,7 @@ fprintf('Loading timestamps and downsampled white noise stimulus... \n')
 
 %% Compute STA
 fprintf('Computing STA... \n')
+cd('C:\')
 
 nCells  = length(goodUnitStruct);
 lastTimestamp = timestamps(end)+10; % Last timestamp plus 10 seconds
@@ -276,6 +277,11 @@ for ih = 1:(nChunks+1)
     sideLength = 29;
     nSelected = numel(cellsIdx);
     
+    if ih == 1
+        STA_cropped_all = nan(sideLength, sideLength, nSelected, nChunks+1); 
+        xStart_all = nan(nSelected, nChunks+1);                               
+    end
+
     STA_cropped = nan(sideLength, sideLength, nSelected);
     
     for k = 1:nSelected
@@ -285,7 +291,11 @@ for ih = 1:(nChunks+1)
         [STA_cropped(:, :, k), xStart(k)] = cropRFtoCenter(az, el, data_smth, sideLength);
     end
     
-    
+    STA_cropped_all(:,:,:,ih) = STA_cropped;   
+    xStart_all(:,ih) = xStart(:);             
+
+
+
     options.visualize = 0;
     options.parallel  = 1;
     options.shape     = 'equal';
@@ -395,7 +405,7 @@ for ic = 1:length(cellsIdx)
     subplot(figPlotN,figPlotN,ic)
         iCell = cellsIdx(ic);
         sgtitle('cropped STA')
-            data = squeeze(STA_cropped(:,:,ic)); hold on
+            data = squeeze(STA_cropped_all(:,:,ic,1)); hold on
             imagesc(data); hold on
             axis square; box off; axis off
             colormap(gray)
@@ -413,12 +423,12 @@ print(fullfile(dirBase, 'sara','Analysis','Neuropixel', exptStruct.date, 'spatia
 fprintf('Uncropping fits... \n')
 
 for ic = 1:nSelected
-    xs = xStart(ic);              % starting column (152)
+    xs = xStart_all(ic, ih);
     xe = xs + sideLength - 1;    % ending column (should be xs+28)
     for ih = 1:(nChunks+1)
         data = dog_fits_all(:,:,ic,ih);   % 29 x 29
 
-        dog_corner = data(end,end);
+        dog_corner = data(end,1);
         fullImg = dog_corner * ones(29, 52);   % Initialize full image with corner value
         fullImg(:, xs:xe) = data;   % Insert cropped data into correct location
         dog_fits_Uncropped(:,:,ic,ih) = fullImg; 
