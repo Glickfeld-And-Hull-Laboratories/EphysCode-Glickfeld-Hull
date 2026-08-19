@@ -2,27 +2,28 @@
 % This takes ~7h to run for all 15 experiments (100 cells) for 5 chunks
 clear all; close all; clc
 
-exptsToRun = [1:15];
-exptloc = 'V1';
-runloc = 1;   % Where is this script being run? 1 == Hubel, 2 == Wiesel
-nChunks = 10; % number of held-out segments, nChunks=10 is 10% held out
+exptsToRun  = [1:15];
+exptloc     = 'V1';
+runloc      = 1;   % Where is this script being run? 1 == Hubel, 2 == Wiesel
+nChunks     = 5; % number of held-out segments, nChunks=10 is 10% held out
+doCrop      = 0;
 
 
 tic
 for exptN = exptsToRun   % Choose experiment (1 through 15)
-
-    analysisDir=('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase');
+    analysisDir     = ('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase');
     load([analysisDir '\CrossOri_randDirFourPhase_summary.mat'])
-    iexp = expts(exptN);
-    nCells = nCells_list(exptN);
+
+    iexp            = expts(exptN);
+    nCells          = nCells_list(exptN);
 
     % make cellMap to find local index of the global index of all cells for each experiment
-        allCells = [0 cumsum(nCells_list)];
-        cellMap = cell(length(expts),1);
+        allCells    = [0 cumsum(nCells_list)];
+        cellMap     = cell(length(expts),1);
         for i = 1:length(expts)
-            globalIdx = (allCells(i)+1):allCells(i+1);
-            localIdx  = 1:nCells_list(i);
-            cellMap{i} = [globalIdx(:), localIdx(:)];
+            globalIdx   = (allCells(i)+1):allCells(i+1);
+            localIdx    = 1:nCells_list(i);
+            cellMap{i}  = [globalIdx(:), localIdx(:)];
         end
     
     % get index of vis resp, DS cells with RFs
@@ -42,23 +43,20 @@ for exptN = exptsToRun   % Choose experiment (1 through 15)
         
         ind         = intersect(resp_ind_dir_all, find(DSI_all>.5));
         ind_DS      = intersect(idxInt,ind); % visually responsive and direction-selective
-    
+
     % use visually responsive cells with DS > .5 and reliable RFs.
         cellsSelected = intersect(idxInt, ind_DS);
-    
+
     % get cell lists for the current experiment
         expt_cellsIdx           = cellMap{exptN};
         expt_cellsIdx_global    = expt_cellsIdx(:,1);
         expt_cellsIdx_local     = expt_cellsIdx(:,2);
-        
     % which of the cells for this experiment are in the variable cellsSelected?
         global_cellsIdx_bin = ismember(expt_cellsIdx_global,cellsSelected);
         cellsIdx            = expt_cellsIdx_local(global_cellsIdx_bin);
-
-
     % get held out data correlations
-        getSpatialRF_HeldOut_Correlations(iexp, exptloc, runloc, cellsIdx, nChunks)
-    fprintf(['Completed expt ' num2str(exptN) '/' num2str(length(exptsToRun)) ' '])
+        getSpatialRF_HeldOut_Correlations(iexp, exptloc, runloc, cellsIdx, nChunks, doCrop)
+        fprintf(['Completed expt ' num2str(exptN) '/' num2str(length(exptsToRun)) ' '])
 end
 toc
 
@@ -75,31 +73,29 @@ model_params = repmat({cell(0,1)}, 3, 1);   % one growing cell array per model
 
 for exptN = 1:15 %:15   % Choose experiment (1 through 15)
 
-    exptloc='V1';
-     
-    analysisDir=('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase');
+    exptloc     = 'V1';
+    analysisDir = ('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase');
     load([analysisDir '\CrossOri_randDirFourPhase_summary.mat'])
     
-    iexp = expts(exptN);
-    nCells = nCells_list(exptN);
+    iexp        = expts(exptN);
+    nCells      = nCells_list(exptN);
     
     [exptStruct] = createExptStruct(iexp,exptloc); % Load relevant times and directories for this experiment
 
-    allCells = [0 cumsum(nCells_list)];
-    cellMap = cell(length(expts),1);
+    allCells    = [0 cumsum(nCells_list)];
+    cellMap     = cell(length(expts),1);
     for i = 1:length(expts)
-        globalIdx = (allCells(i)+1):allCells(i+1);
-        localIdx  = 1:nCells_list(i);
-        cellMap{i} = [globalIdx(:), localIdx(:)];
+        globalIdx   = (allCells(i)+1):allCells(i+1);
+        localIdx    = 1:nCells_list(i);
+        cellMap{i}  = [globalIdx(:), localIdx(:)];
     end
     
     load(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\spatialRFs_heldOut\' exptStruct.mouse '-' exptStruct.date '_heldOut_correlations.mat'])
-
     zscoreSTAs_allExpts = [zscoreSTAs_allExpts, zscoreSTAs_all];
 
-    dog_fits_all = cat(3, dog_fits_all, dog_fits_Uncropped);
-    gabor_fits_all = cat(3, gabor_fits_all, gabor_fits_Uncropped);
-    gaus_fits_all = cat(3, gaus_fits_all, gaus_fits_Uncropped);
+    dog_fits_all    = cat(3, dog_fits_all, dog_fits_Uncropped);
+    gabor_fits_all  = cat(3, gabor_fits_all, gabor_fits_Uncropped);
+    gaus_fits_all   = cat(3, gaus_fits_all, gaus_fits_Uncropped);
 
     flds = fieldnames(corr_HO);
     for k = 1:numel(flds)
@@ -304,16 +300,17 @@ dogFits_params = model_params{1};
 
 % ---------------------
 % Gabor params
-    % 1         - a
-    % 2         - b (empty)
-    % 3         - x0
-    % 4         - y0 (empty)
-    % 5, 6      - sigmax, sigmay
-    % 7         - theta (unwrapped, radians)
-    % 8         - phi (unwrapped)
+    % 1         - Ac
+    % 2         - (empty)
+    % 3         - sigmax
+    % 4         - (empty)
+    % 5         - tau (sigmay/sigmax)
+    % 6         - phi (unwrapped)
+    % 7         - x0
+    % 8         - y0
     % 9         - lambda
     % 10        - phase
-    % 11, 12    - empty
+    % 11, 12    - (empty)
 
 gabFits_params = model_params{2};
 
@@ -406,7 +403,7 @@ figure;
         scatter(dog_AR(indDoG),Zc_avg(indDoG),12,'filled')
         set(gca,'TickDir','out'); box off
         ylabel('mean Zc'); ylim([-1 4])
-        xlabel('aspect ratio (tau')
+        xlabel('aspect ratio (tau)')
     subplot(4,2,4)
         scatter(dog_AR(indDoG),Zp_avg(indDoG),12,'filled')
         set(gca,'TickDir','out'); box off

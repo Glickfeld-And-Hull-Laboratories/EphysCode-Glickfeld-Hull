@@ -1,9 +1,8 @@
 
-function getSpatialRF_HeldOut_Correlations(iexp, exptloc, runloc, cellsIdx, nChunks)
+function getSpatialRF_HeldOut_Correlations(iexp, exptloc, runloc, cellsIdx, nChunks, doCrop)
 
 %% Load expt info
 fprintf('Loading expt info... \n')
-
 [exptStruct] = createExptStruct(iexp,exptloc); % Load relevant times and directories for this experiment
 
 %% Load unit info
@@ -273,32 +272,43 @@ fprintf('Fitting models to data... \n')
 for ih = 1:(nChunks+1)
     fprintf(['Held out data chunk: ' num2str(ih) '/' num2str(nChunks) '\n'])
 
-    % Crop STAs
-    sideLength = 29;
-    nSelected = numel(cellsIdx);
+    nSelected   = numel(cellsIdx);
     
     if ih == 1
-        STA_cropped_all = nan(sideLength, sideLength, nSelected, nChunks+1); 
-        xStart_all = nan(nSelected, nChunks+1);                               
+        if doCrop
+            sideLength      = 29;
+            STA_for_fitting_all = nan(sideLength, sideLength, nSelected, nChunks+1); 
+            xStart_all          = nan(nSelected, nChunks+1);        
+        else
+            STA_for_fitting_all = nan(xDim, yDim, nSelected, nChunks+1); 
+        end
     end
 
-    STA_cropped = nan(sideLength, sideLength, nSelected);
     
-    for k = 1:nSelected
-        data = squeeze(zscoreSTAs_all(ih, k, :, :));
-        [el, az] = getRFcenter(data);
-        data_smth = medfilt2(imgaussfilt(data, 1));
-        [STA_cropped(:, :, k), xStart(k)] = cropRFtoCenter(az, el, data_smth, sideLength);
+    if doCrop
+        
+        STA_cropped     = nan(sideLength, sideLength, nSelected);
+        for k = 1:nSelected
+            data        = squeeze(zscoreSTAs_all(ih, k, :, :));
+            [el, az]    = getRFcenter(data);
+            data_smth   = medfilt2(imgaussfilt(data, 1));
+            [STA_cropped(:, :, k), xStart(k)] = cropRFtoCenter(az, el, data_smth, sideLength);
+        end
+        STA_for_fitting     = STA_cropped;
+        xStart_all(:,ih)    = xStart(:);
+    else
+        % zscoreSTAs_all is (nChunks+1, nCells, xDim, yDim); reorder to
+        % (xDim, yDim, nSelected) to match STA_for_fitting_all's shape
+        STA_for_fitting = permute(squeeze(zscoreSTAs_all(ih,:,:,:)), [2 3 1]);
     end
-    
-    STA_cropped_all(:,:,:,ih) = STA_cropped;   
-    xStart_all(:,ih) = xStart(:);             
 
 
+    STA_for_fitting_all(:,:,:,ih) = STA_for_fitting;   
+              
 
     options.visualize = 0;
     options.parallel  = 1;
-    options.shape     = 'equal';
+    options.shape     = 'elliptical';
     options.runs      = 48;
     
     modelRegistry = [
@@ -326,7 +336,7 @@ for ih = 1:(nChunks+1)
     results = runRFModelComparison( ...
         fitIdx, ...
         cellsIdx, ...
-        STA_cropped, ...
+        STA_for_fitting, ...
         modelRegistry, ...
         omitCells, ...
         'pdf', ...
@@ -372,7 +382,7 @@ for ic = 1:length(cellsIdx)
     figure();
     sgtitle(['cell ' num2str(iCell) ', ic = ' num2str(ic)])
         data = medfilt2(imgaussfilt(squeeze(data_all(1,ic,:,:)),1));
-        subplot(3,5,1)
+        subplot(4,5,1)
             imagesc(data); hold on
             pbaspect([16 9 1])
             colormap(gray)
@@ -382,7 +392,7 @@ for ic = 1:length(cellsIdx)
             subtitle('STA')
     for ih = 1:nChunks
         data = medfilt2(imgaussfilt(squeeze(data_all(ih+1,ic,:,:)),1));
-        subplot(3,5,ih+5)
+        subplot(4,5,ih+5)
             imagesc(data); hold on
             pbaspect([16 9 1])
             colormap(gray)
@@ -405,7 +415,7 @@ for ic = 1:length(cellsIdx)
     subplot(figPlotN,figPlotN,ic)
         iCell = cellsIdx(ic);
         sgtitle('cropped STA')
-            data = squeeze(STA_cropped_all(:,:,ic,1)); hold on
+            data = squeeze(STA_for_fitting_all(1,:,:,ic)); hold on
             imagesc(data); hold on
             axis square; box off; axis off
             colormap(gray)
@@ -422,30 +432,37 @@ print(fullfile(dirBase, 'sara','Analysis','Neuropixel', exptStruct.date, 'spatia
 %% Uncrop fits to full stimulus size
 fprintf('Uncropping fits... \n')
 
-for ic = 1:nSelected
-    xs = xStart_all(ic, ih);
-    xe = xs + sideLength - 1;    % ending column (should be xs+28)
-    for ih = 1:(nChunks+1)
-        data = dog_fits_all(:,:,ic,ih);   % 29 x 29
-
-        dog_corner = data(end,1);
-        fullImg = dog_corner * ones(29, 52);   % Initialize full image with corner value
-        fullImg(:, xs:xe) = data;   % Insert cropped data into correct location
-        dog_fits_Uncropped(:,:,ic,ih) = fullImg; 
-
-        data = gabor_fits_all(:,:,ic,ih);   % 29 x 29
-        gabor_corner = data(end,end);
-        fullImg = gabor_corner * ones(29, 52);   % Initialize full image with corner value
-        fullImg(:, xs:xe) = data;   % Insert cropped data into correct location
-        gabor_fits_Uncropped(:,:,ic,ih) = fullImg; 
-
-        data = gaus_fits_all(:,:,ic,ih);   % 29 x 29
-        gaus_corner = data(end,end);
-        fullImg = gaus_corner * ones(29, 52);   % Initialize full image with corner value
-        fullImg(:, xs:xe) = data;   % Insert cropped data into correct location
-        gaus_fits_Uncropped(:,:,ic,ih) = fullImg; 
+if doCrop
+    for ic = 1:nSelected
+        xs = xStart_all(ic, ih);
+        xe = xs + sideLength - 1;    % ending column (should be xs+28)
+        for ih = 1:(nChunks+1)
+            data = dog_fits_all(:,:,ic,ih);   % 29 x 29
+            dog_corner = data(end,1);
+            fullImg = dog_corner * ones(29, 52);   % Initialize full image with corner value
+            fullImg(:, xs:xe) = data;   % Insert cropped data into correct location
+            dog_fits_Uncropped(:,:,ic,ih) = fullImg; 
+    
+            data = gabor_fits_all(:,:,ic,ih);   % 29 x 29
+            gabor_corner = data(end,end);
+            fullImg = gabor_corner * ones(29, 52);   % Initialize full image with corner value
+            fullImg(:, xs:xe) = data;   % Insert cropped data into correct location
+            gabor_fits_Uncropped(:,:,ic,ih) = fullImg; 
+    
+            data = gaus_fits_all(:,:,ic,ih);   % 29 x 29
+            gaus_corner = data(end,end);
+            fullImg = gaus_corner * ones(29, 52);   % Initialize full image with corner value
+            fullImg(:, xs:xe) = data;   % Insert cropped data into correct location
+            gaus_fits_Uncropped(:,:,ic,ih) = fullImg; 
+        end
     end
+else
+    % fits are already full-size
+    dog_fits_Uncropped  = dog_fits_all;
+    gabor_fits_Uncropped = gabor_fits_all;
+    gaus_fits_Uncropped  = gaus_fits_all;
 end
+
 
 
 %% Model fits to test
@@ -619,7 +636,7 @@ save( ...
     'its', ...
     'spkCounts', ...
     'heldOutMask', ...
-    'STA_cropped', ...
+    'STA_for_fitting_all', ...
     'results_full', ...
     'dog_fits_Uncropped', ...
     'gabor_fits_Uncropped', ...
