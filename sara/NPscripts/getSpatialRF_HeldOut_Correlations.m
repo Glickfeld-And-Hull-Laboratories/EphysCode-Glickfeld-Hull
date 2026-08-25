@@ -12,8 +12,11 @@ if runloc == 1    % Hubel
     dirBase = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home';
     nThreads = 20;
 elseif runloc == 2    % Wiesel
-    dirBase = 'home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home';
+    dirBase = '/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home';
     nThreads = 40;
+elseif runloc == 3   % Nuke
+    dirBase = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home';
+    nThreads = 10;
 else
     error('Location not valid. 1 == Hubel, 2 == Wiesel.')
 end
@@ -95,7 +98,6 @@ fprintf('Loading timestamps and downsampled white noise stimulus... \n')
 
 %% Compute STA
 fprintf('Computing STA... \n')
-cd('C:\')
 
 nCells  = length(goodUnitStruct);
 lastTimestamp = timestamps(end)+10; % Last timestamp plus 10 seconds
@@ -307,7 +309,7 @@ for ih = 1:(nChunks+1)
               
 
     options.visualize = 0;
-    options.parallel  = 1;
+    options.parallel  = 0;
     options.shape     = 'elliptical';
     options.runs      = 48;
     
@@ -410,21 +412,22 @@ end
 numCells = length(cellsIdx);
 figPlotN = ceil(sqrt(numCells));
 
-figure();
-for ic = 1:length(cellsIdx)
-    subplot(figPlotN,figPlotN,ic)
-        iCell = cellsIdx(ic);
-        sgtitle('cropped STA')
-            data = squeeze(STA_for_fitting_all(1,:,:,ic)); hold on
-            imagesc(data); hold on
-            axis square; box off; axis off
-            colormap(gray)
-            clim([-5 5])
-            set(gca,'xtick',[]); set(gca,'xticklabel',[])
-            set(gca,'ytick',[]); set(gca,'yticklabel',[])
-            subtitle(num2str(ic))
-end
-print(fullfile(dirBase, 'sara','Analysis','Neuropixel', exptStruct.date, 'spatialRFs_heldOut', 'spatialRFs_zscored_1page.pdf'),'-dpdf','-bestfit');
+% 
+% figure();
+% for ic = 1:length(cellsIdx)
+%     subplot(figPlotN,figPlotN,ic)
+%         iCell = cellsIdx(ic);
+%         sgtitle('cropped STA')
+%             data = squeeze(STA_for_fitting_all(1,:,:,ic)); hold on
+%             imagesc(data); hold on
+%             axis square; box off; axis off
+%             colormap(gray)
+%             clim([-5 5])
+%             set(gca,'xtick',[]); set(gca,'xticklabel',[])
+%             set(gca,'ytick',[]); set(gca,'yticklabel',[])
+%             subtitle(num2str(ic))
+% end
+% print(fullfile(dirBase, 'sara','Analysis','Neuropixel', exptStruct.date, 'spatialRFs_heldOut', 'spatialRFs_zscored_1page.pdf'),'-dpdf','-bestfit');
 
 
 

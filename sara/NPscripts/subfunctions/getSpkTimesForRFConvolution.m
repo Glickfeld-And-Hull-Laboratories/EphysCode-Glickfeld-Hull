@@ -10,10 +10,10 @@
 
 function [spikeCounts] = getSpkTimesForRFConvolution(cells,times,binsize,iexp,runloc)
 
-    if runloc == 1    % Hubel
+    if runloc == 1 || runloc == 3   % Hubel, Nuke
         dirBase = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home';
     elseif runloc == 2    % Wiesel
-        dirBase = 'home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home';
+        dirBase = '/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home';
     else
         error('Location not valid. 1 == Hubel, 2 == Wiesel.')
     end
@@ -91,8 +91,8 @@ function [spikeCounts] = getSpkTimesForRFConvolution(cells,times,binsize,iexp,ru
 
     % Initialize
     nCells = length(cells);
-    timestamps_flat = timestamps(:);   % 9000×1
-    spikeCounts = zeros(length(timestamps_flat), nCells);  % 9000×nCells
+    timestamps_flat = timestamps(:);   % 9000�1
+    spikeCounts = zeros(length(timestamps_flat), nCells);  % 9000�nCells
     
     for ic = 1:nCells
         edges = [timestamps(:)+times(ic)-binsize*0.5, timestamps(:)+times(ic)+binsize*0.5];   % (9000 x 2)

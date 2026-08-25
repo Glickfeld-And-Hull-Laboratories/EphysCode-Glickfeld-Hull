@@ -1,7 +1,7 @@
 
 %% getCSD_marmV1_Wiesel
 close all; clear all;
-iexp=2;
+iexp=9;
 
 chnls       = 2:2:260;  % Only take even channels because NPX probe has two columns of staggered channels
 depth       = -2500;
@@ -10,12 +10,17 @@ depth       = -2500;
 doSpikes = 0;
 %%
 
-expts = {'g01','g06','g12','g17','tss2','tss6','tss7'};
+expts = {'g01','g06','g12','g17','tss2','tss6','tss7', 'tss4','elf1'};
 
 % Create path to neuropixel data
     dataPath = fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Data/fromNicholas/CrossOri_randDirFourPhase_V1_marmoset_LFP/', expts{iexp}); % For Wiesel
     cd(dataPath)
 
+% Make sure save path exists
+    if exist(fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP']),'dir')
+    else
+        mkdir(fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP']))
+    end
 
 % Load LFP data (expected to be NPX data collected at 2500hz and reported in mV)
     lfFile      = dir(fullfile(pwd, '*imec0.lf.bin'));   % Get info on file that ends in imec0.lf.bin
@@ -55,7 +60,7 @@ expts = {'g01','g06','g12','g17','tss2','tss6','tss7'};
     %
     %   stim conditions:
     %       1 - stim on time
-    %       2 - type (0, gratings,  1, plaids)
+    %       2 - type (0, gratings,� 1, plaids)
     %       3 - direction
     %       4 - phase
     %       5 - SF
@@ -105,100 +110,104 @@ expts = {'g01','g06','g12','g17','tss2','tss6','tss7'};
 
 if doSpikes == 1
 
-% PARAMETERS
-fs_spike   = 30000;     % <-- FIX THIS if different
-binSize    = 0.01;      % 10 ms bins
-win        = [-baseWin onWin];   % e.g. [-0.25 0.25]
-
-edges      = win(1):binSize:win(2);
-tCenters   = edges(1:end-1) + binSize/2;
-
-nCells     = size(gspikes,1);
-nTrials    = length(timestamps);
-nBins      = length(tCenters);
-
-% Output: cells x trials x time
-PSTH = zeros(nCells, nTrials, nBins);
-
-% LOOP
-for iCell = 1:nCells
-    
-    % Convert spike indices to seconds
-    spkIdx   = find(gspikes(iCell,:));   % get spike sample indices
-    spkTimes = spkIdx / fs_spike;        % convert to seconds
-    
-    for iTrial = 1:nTrials
-        
-        % Align spikes to this trial
-        alignedSpikes = spkTimes - timestamps(iTrial);
-        
-        % Keep spikes in window
-        alignedSpikes = alignedSpikes(alignedSpikes >= win(1) & alignedSpikes <= win(2));
-        
-        % Bin
-        PSTH(iCell,iTrial,:) = histcounts(alignedSpikes, edges);
-        
+    if exist('gspikes4ph', 'var')
+        gspikes = gspikes4ph;
     end
-end
-
-% OPTIONAL: convert to firing rate (Hz)
-PSTH_rate = PSTH / binSize;
-
-
-
     
-figure;
-    imagesc(squeeze(mean(PSTH,2))); clim([0 .1])
-
-grat = find(stimdef(:,2) == 0);
-plaid = find(stimdef(:,2) == 1);
-
-figure;
-    unit = 117;
-    sgtitle(['expt ' expts{iexp} ', unit ' num2str(unit)])
-    subplot(3,3,1)
-        plot(1:50,squeeze(mean(mean(PSTH(unit,grat,:),2),1)))
-        xline(25)
-        xline(29,'r')
-        subtitle(['all grating trials, n=' num2str(length(grat))])
-    subplot(3,3,4)
-        plot(1:50,squeeze(mean(mean(PSTH(unit,plaid,:),2),1)))
-        xline(25)
-        xline(29,'r')
-        subtitle(['all plaid trials, n=' num2str(length(plaid))])
-    subplot(3,3,2)
-        plot(1:50,squeeze(mean(mean(PSTH(unit,1:150,:),2),1)))
-        xline(25)
-        xline(29,'r')
-        subtitle('trials 1:150')
-    subplot(3,3,5)
-        plot(1:50,squeeze(mean(mean(PSTH(unit,151:300,:),2),1)))
-        xline(25)
-        xline(29,'r')
-        subtitle('trials 151:300')
-    subplot(3,3,8)
-        plot(1:50,squeeze(mean(mean(PSTH(unit,301:451,:),2),1)))
-        xline(25)
-        xline(29,'r')
-        subtitle('trials 301:450')
-    subplot(3,3,3)
-        plot(1:50,squeeze(mean(mean(PSTH(unit,451:500,:),2),1)))
-        xline(25)
-        xline(29,'r')
-        subtitle('trials 451:500')
-    subplot(3,3,6)
-        plot(1:50,squeeze(mean(mean(PSTH(unit,501:651,:),2),1)))
-        xline(25)
-        xline(29,'r')
-        subtitle('trials 501:650')
-    subplot(3,3,9)
-        plot(1:50,squeeze(mean(mean(PSTH(unit,651:700,:),2),1)))
-        xline(25)
-        xline(29,'r')
-        subtitle('trials 651:700')
-    print(fullfile(['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp} 'b'], '/' expts{iexp} '-singleCells_byTrialChunks-cell' num2str(unit) '.pdf']),'-dpdf')
-
-else 
+    % PARAMETERS
+    fs_spike   = 30000;     % <-- FIX THIS if different
+    binSize    = 0.01;      % 10 ms bins
+    win        = [-baseWin onWin];   % e.g. [-0.25 0.25]
+    
+    edges      = win(1):binSize:win(2);
+    tCenters   = edges(1:end-1) + binSize/2;
+    
+    nCells     = size(gspikes,1);
+    nTrials    = length(timestamps);
+    nBins      = length(tCenters);
+    
+    % Output: cells x trials x time
+    PSTH = zeros(nCells, nTrials, nBins);
+    
+    % LOOP
+    for iCell = 1:nCells
+        
+        % Convert spike indices to seconds
+        spkIdx   = find(gspikes(iCell,:));   % get spike sample indices
+        spkTimes = spkIdx / fs_spike;        % convert to seconds
+        
+        for iTrial = 1:nTrials
+            
+            % Align spikes to this trial
+            alignedSpikes = spkTimes - timestamps(iTrial);
+            
+            % Keep spikes in window
+            alignedSpikes = alignedSpikes(alignedSpikes >= win(1) & alignedSpikes <= win(2));
+            
+            % Bin
+            PSTH(iCell,iTrial,:) = histcounts(alignedSpikes, edges);
+            
+        end
+    end
+    
+    % OPTIONAL: convert to firing rate (Hz)
+    PSTH_rate = PSTH / binSize;
+    
+    
+    
+        
+    figure;
+        imagesc(squeeze(mean(PSTH,2))); clim([0 .1])
+    
+    grat = find(stimdef(:,2) == 0);
+    plaid = find(stimdef(:,2) == 1);
+    
+    figure;
+        unit = 202;
+        sgtitle(['expt ' expts{iexp} ', unit ' num2str(unit)])
+        subplot(3,3,1)
+            plot(1:50,squeeze(mean(mean(PSTH(unit,grat,:),2),1)))
+            xline(25)
+            xline(29,'r')
+            subtitle(['all grating trials, n=' num2str(length(grat))])
+        subplot(3,3,4)
+            plot(1:50,squeeze(mean(mean(PSTH(unit,plaid,:),2),1)))
+            xline(25)
+            xline(29,'r')
+            subtitle(['all plaid trials, n=' num2str(length(plaid))])
+        subplot(3,3,2)
+            plot(1:50,squeeze(mean(mean(PSTH(unit,1:150,:),2),1)))
+            xline(25)
+            xline(29,'r')
+            subtitle('trials 1:150')
+        subplot(3,3,5)
+            plot(1:50,squeeze(mean(mean(PSTH(unit,151:300,:),2),1)))
+            xline(25)
+            xline(29,'r')
+            subtitle('trials 151:300')
+        subplot(3,3,8)
+            plot(1:50,squeeze(mean(mean(PSTH(unit,301:451,:),2),1)))
+            xline(25)
+            xline(29,'r')
+            subtitle('trials 301:450')
+        subplot(3,3,3)
+            plot(1:50,squeeze(mean(mean(PSTH(unit,451:500,:),2),1)))
+            xline(25)
+            xline(29,'r')
+            subtitle('trials 451:500')
+        subplot(3,3,6)
+            plot(1:50,squeeze(mean(mean(PSTH(unit,501:651,:),2),1)))
+            xline(25)
+            xline(29,'r')
+            subtitle('trials 501:650')
+        subplot(3,3,9)
+            plot(1:50,squeeze(mean(mean(PSTH(unit,651:700,:),2),1)))
+            xline(25)
+            xline(29,'r')
+            subtitle('trials 651:700')
+        print(fullfile(['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'], '/' expts{iexp} '-singleCells_byTrialChunks-cell' num2str(unit) '.pdf']),'-dpdf')
+    
+    else 
 end
 
 
@@ -264,7 +273,7 @@ figure;
         set(gca,'YDir','normal')
     movegui('center')
     sgtitle([expts{iexp}])
-    print(fullfile(['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp} 'b'], '/' expts{iexp} '-findSurface-LFPbyChannel_byTrialChunks.pdf']),'-dpdf')
+    print(fullfile(['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'], '/' expts{iexp} '-findSurface-LFPbyChannel_byTrialChunks.pdf']),'-dpdf')
 
 
 % CSD analysis
@@ -353,7 +362,9 @@ movegui('center')
         set(gca,'TickDir','out')
         set(gca,'YDir','normal')
     sgtitle([expts{iexp}])
-    print(fullfile(['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp} 'b'], '/' expts{iexp} '-findLayer4-CSD.pdf']),'-dpdf')
+    print(fullfile(['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'], '/' expts{iexp} '-findLayer4-CSD.pdf']),'-dpdf')
 
-%     save(fullfile(['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/' loc '/Analysis/Neuropixel/' date '/' mouse '-' date '-findLayer4-CSD.mat']), 'fLFP', 'CSDraw','chnls', 'Fs', 'dE', 'depth')
+%% save output
+
+    save(fullfile(['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'], [expts{iexp} '-findLayer4-CSD.mat']]), 'fLFP', 'CSDraw', 'gspikes', 'stimdef', 'chnls', 'Fs', 'dE', 'depth')
 

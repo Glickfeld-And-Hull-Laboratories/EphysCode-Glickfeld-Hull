@@ -1,7 +1,7 @@
 
 function [resp] = convolveRFwithStim_HeldOutImageMatrix(filt, runloc, thisMask)
 
-    if runloc == 1    % Hubel
+    if runloc == 1 || runloc == 3    % Hubel, Nuke
         dirBase = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home';
     elseif runloc == 2    % Wiesel
         dirBase = 'home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home';
