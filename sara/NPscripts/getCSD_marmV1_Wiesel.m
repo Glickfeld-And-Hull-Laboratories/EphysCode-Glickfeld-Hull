@@ -1,7 +1,7 @@
 
 %% getCSD_marmV1_Wiesel
 close all; clear all;
-iexp=9;
+iexp = 7;
 
 chnls       = 2:2:260;  % Only take even channels because NPX probe has two columns of staggered channels
 depth       = -2500;
@@ -16,7 +16,7 @@ expts = {'g01','g06','g12','g17','tss2','tss6','tss7', 'tss4','elf1'};
     dataPath = fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Data/fromNicholas/CrossOri_randDirFourPhase_V1_marmoset_LFP/', expts{iexp}); % For Wiesel
     cd(dataPath)
 
-% Make sure save path exists
+% Make sure output path exists
     if exist(fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP']),'dir')
     else
         mkdir(fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP']))
@@ -29,8 +29,6 @@ expts = {'g01','g06','g12','g17','tss2','tss6','tss7', 'tss4','elf1'};
     nSamp       = str2double(metaLFP.imSampRate)*str2double(metaLFP.fileTimeSecs); % Set number of samples to grab (as in, grabs all)
     LFPdata     = ReadBin(0, nSamp, metaLFP, lfFile.name, pwd);    % Load LFP (channels x samples)
     LFPdataraw  = LFPdata;
-
-
 
 % Parameters
     Fs          = 2500; % Sampling frequency in Hz
@@ -45,8 +43,6 @@ expts = {'g01','g06','g12','g17','tss2','tss6','tss7', 'tss4','elf1'};
     d = designfilt('bandstopiir','FilterOrder',2,'HalfPowerFrequency1',119,'HalfPowerFrequency2',121,'DesignMethod','butter','SampleRate',Fs);
     LFPdata = filtfilt(d,LFPdataFilt2);
     clear LFPdataFilt2
-
-
 
 % Load Stimulus On times
     stimTimesMat = dir(fullfile(pwd,'*.mat'));
@@ -68,11 +64,9 @@ expts = {'g01','g06','g12','g17','tss2','tss6','tss7', 'tss4','elf1'};
 
     timestamps = squeeze(stimdef(:,1));
     
-
 % Set windows for baseline and stim on
     onWin       = .25;   % Stim On LFP window: 500 ms
     baseWin     = .25;   % Baseline window: 500 ms
-
 
 % Create LFP window around Stim On times
     all_stimLFP = [];
@@ -104,7 +98,6 @@ expts = {'g01','g06','g12','g17','tss2','tss6','tss7', 'tss4','elf1'};
     fLFP = LFP_blTr;
 %     fLFP = mean(all_stimLFP,3);
 % 
-
 
 %% spike PSTHs
 
@@ -150,20 +143,22 @@ if doSpikes == 1
         end
     end
     
-    % OPTIONAL: convert to firing rate (Hz)
+    % convert to firing rate (Hz), if desired
     PSTH_rate = PSTH / binSize;
-    
-    
-    
-        
+       
+
+    % plot all cells to find vis resp cells
     figure;
+        subplot(1,3,2)
         imagesc(squeeze(mean(PSTH,2))); clim([0 .1])
-    
+    print(fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'], ['/' expts{iexp} '-allCells_PSTH-heatmap.pdf']),'-dpdf','-bestfit')
+
+
     grat = find(stimdef(:,2) == 0);
     plaid = find(stimdef(:,2) == 1);
-    
+
     figure;
-        unit = 202;
+        unit = 49;
         sgtitle(['expt ' expts{iexp} ', unit ' num2str(unit)])
         subplot(3,3,1)
             plot(1:50,squeeze(mean(mean(PSTH(unit,grat,:),2),1)))
@@ -195,18 +190,18 @@ if doSpikes == 1
             xline(25)
             xline(29,'r')
             subtitle('trials 451:500')
-        subplot(3,3,6)
-            plot(1:50,squeeze(mean(mean(PSTH(unit,501:651,:),2),1)))
-            xline(25)
-            xline(29,'r')
-            subtitle('trials 501:650')
-        subplot(3,3,9)
-            plot(1:50,squeeze(mean(mean(PSTH(unit,651:700,:),2),1)))
-            xline(25)
-            xline(29,'r')
-            subtitle('trials 651:700')
-        print(fullfile(['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'], '/' expts{iexp} '-singleCells_byTrialChunks-cell' num2str(unit) '.pdf']),'-dpdf')
-    
+%         subplot(3,3,6)
+%             plot(1:50,squeeze(mean(mean(PSTH(unit,501:651,:),2),1)))
+%             xline(25)
+%             xline(29,'r')
+%             subtitle('trials 501:650')
+%         subplot(3,3,9)
+%             plot(1:50,squeeze(mean(mean(PSTH(unit,651:700,:),2),1)))
+%             xline(25)
+%             xline(29,'r')
+%             subtitle('trials 651:700')
+        print(fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'],['/' expts{iexp} '-singleCells_byTrialChunks-cell' num2str(unit) '.pdf']),'-dpdf')
+
     else 
 end
 
@@ -273,11 +268,10 @@ figure;
         set(gca,'YDir','normal')
     movegui('center')
     sgtitle([expts{iexp}])
-    print(fullfile(['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'], '/' expts{iexp} '-findSurface-LFPbyChannel_byTrialChunks.pdf']),'-dpdf')
+    print(fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'],['/' expts{iexp} '-findSurface-LFPbyChannel_byTrialChunks.pdf']),'-dpdf')
 
 
-% CSD analysis
-
+%% CSD analysis
 
 %  Dimensions 
     Nchan  = size(fLFP, 1);
@@ -362,9 +356,9 @@ movegui('center')
         set(gca,'TickDir','out')
         set(gca,'YDir','normal')
     sgtitle([expts{iexp}])
-    print(fullfile(['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'], '/' expts{iexp} '-findLayer4-CSD.pdf']),'-dpdf')
+    print(fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'],[ '/' expts{iexp} '-findLayer4-CSD.pdf']),'-dpdf')
 
 %% save output
 
-    save(fullfile(['/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'], [expts{iexp} '-findLayer4-CSD.mat']]), 'fLFP', 'CSDraw', 'gspikes', 'stimdef', 'chnls', 'Fs', 'dE', 'depth')
+    save(fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'], [expts{iexp} '-findLayer4-CSD.mat']), 'fLFP', 'CSDraw', 'gspikes', 'stimdef', 'chnls', 'Fs', 'dE', 'depth')
 

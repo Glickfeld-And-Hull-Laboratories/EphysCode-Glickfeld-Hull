@@ -210,19 +210,21 @@ end
 
 %% Marmoset expt
 close all; clc; clear all
-expt = 'g12';
+iexpt = 9;
+
+expts = {'g01','g06','g12','g17','tss2','tss6','tss7','tss4','elf1'};
 
 % Get stim struct
-    stimStruct = createStimStruct_marm(expt);
+    stimStruct = createStimStruct_marm(expts{iexpt});
 
 % Make goodUnitStruct
-    spkFileName = ['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Data\fromNicholas\CrossOri_randDirFourPhase_V1_marmoset_LFP\' expt '\postphy_' expt '.mat'];
+    spkFileName = ['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Data\fromNicholas\CrossOri_randDirFourPhase_V1_marmoset_LFP\' expts{iexpt} '\postphy_' expts{iexpt} '.mat'];
     load(spkFileName);
 
     % Initialize
     fs = 30000;
 
-    if expt =='g17'
+    if iexpt == 4
         goodIdx = find(strcmp({clustinfo.KSLabel}, 'good'));  % select good units    
     else
         goodIdx = find(strcmp([clustinfo.KSLabel], 'good'));  % select good units
@@ -258,7 +260,7 @@ expt = 'g12';
     [trialStruct, gratingRespMatrix, gratingRespOFFMatrix, resp, base] = createTrialStruct12Dir4Phase(stimStruct, goodUnitStruct);     
 
 % get12Dir4PhaseFits
-        nCells  = size(resp,1);
+    nCells  = size(resp,1);
     nDirs   = size(resp,2);
     nPhas   = size(resp,3);
     nStim   = (nDirs*(nPhas+1));
@@ -268,7 +270,6 @@ expt = 'g12';
     h_resp          = NaN(nCells, nDirs, nPhas, 2);
     p_resp          = NaN(nCells, nDirs, nPhas, 2);
     trialsperstim   = NaN(nDirs, nPhas, 2);
-    
     
     mean_base_all = nan(nCells,1);  % Initialize for baseline means
 
@@ -358,14 +359,11 @@ expt = 'g12';
         R_square_all    = phaseModStruct.rsq;
     
 
-
-
-       
 % Plot FR by depth
     [avg_resp_dir, resp_ind_dir] = getResponses(resp, base);
 
 figure(1);
-    sgtitle([expt ', vis resp units by depth'])
+    sgtitle([expts{iexpt} ', vis resp units by depth'])
     subplot 241
         depth_all   = [goodUnitStruct.depth];
         FR_all      = [goodUnitStruct.FR];
@@ -454,5 +452,5 @@ figure(1);
         movegui('center')
         subtitle('only vis resp cells')
 
-print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\marmosetFromNicholas\',[ 'marmosetV1_' expt 'b'],'\cellsByDepth.pdf']),'-dpdf');
+print(fullfile(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara\Analysis\Neuropixel\marmosetFromNicholas\',[ 'marmosetV1_' expts{iexpt}],'\cellsByDepth.pdf']),'-dpdf');
 
