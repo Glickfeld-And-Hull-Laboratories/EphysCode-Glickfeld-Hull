@@ -158,7 +158,7 @@ if doSpikes == 1
     plaid = find(stimdef(:,2) == 1);
 
     figure;
-        unit = 49;
+        unit = 60;
         sgtitle(['expt ' expts{iexp} ', unit ' num2str(unit)])
         subplot(3,3,1)
             plot(1:50,squeeze(mean(mean(PSTH(unit,grat,:),2),1)))
