@@ -290,7 +290,7 @@ dogFits_params = model_params{1};
         end
         dx = p(9);
         dy = p(10);
-        offsetMag(i)   = sqrt(dx.^2 + dy.^2);
+        offsetMag(i)   = sqrt(dx.^2 + dy.^2) * 2;  % x2 to convert to degrees
         offsetAngle(i) = atan2(dy, dx);  % radians, use rad2deg() if you want degrees
     end
 
@@ -996,6 +996,71 @@ print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\'
 
 
 %save('workspace_5chunks_crop_260821.mat')
+%%
+% --- Combine Size across groups ---
+allSize = [gaus_size(indGau); dog_sizeC(indDoG); gabor_size(indGab)];
+allAR   = [gaus_AR(indGau);   dog_AR(indDoG);    gabor_AR(indGab)];
+
+% Zc/Zp need to be combined using the SAME index pattern per group
+Zc_plot = [Zc_avg(indGau)'; Zc_avg(indDoG)'; Zc_avg(indGab)'];
+Zp_plot = [Zp_avg(indGau)'; Zp_avg(indDoG)'; Zp_avg(indGab)'];
+
+b_plot   = [b_all(cellsSelected(indGau)); b_all(cellsSelected(indDoG)); b_all(cellsSelected(indGab))];
+amp_plot = [amp_all(cellsSelected(indGau)); amp_all(cellsSelected(indDoG)); amp_all(cellsSelected(indGab))];
+
+figure;
+    subplot(2,2,1)
+        scatter_reg(allSize,Zc_plot,12)
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('mean Zc'); ylim([-1 4]); 
+        xlabel('Size')
+    subplot(2,2,2)
+        scatter_reg(allSize,Zp_plot,12)
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('mean Zp'); ylim([-1 4]); 
+        xlabel('Size')
+    subplot(2,2,3)
+        scatter_reg(allAR,Zc_plot,12)
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('mean Zc'); ylim([-1 4]); 
+        xlabel('Aspect ratio')
+    subplot(2,2,4)
+        scatter_reg(allAR,Zp_plot,12)
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('mean Zp'); ylim([-1 4]); 
+        xlabel('Aspect ratio')
+    sgtitle('plot all cells as 1 group')    
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', 'modelFits_summary3.pdf'), '-dpdf', '-bestfit')
+
+
+figure;
+    subplot(2,2,1)
+        scatter_reg(allSize,b_plot,12)
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('baseline'); %ylim([-1 4]); 
+        xlabel('Size')
+    subplot(2,2,2)
+        scatter_reg(allSize,amp_plot,12)
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('amplitude'); %ylim([-1 4]); 
+        xlabel('Size')
+    subplot(2,2,3)
+        scatter_reg(allAR,b_plot,12)
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('baseline'); %ylim([-1 4]); 
+        xlabel('Aspect ratio')
+    subplot(2,2,4)
+        scatter_reg(allAR,amp_plot,12)
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('amplitude');% ylim([-1 4]); 
+        xlabel('Aspect ratio')
+    sgtitle('plot all cells as 1 group')    
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', 'modelFits_summary4.pdf'), '-dpdf', '-bestfit')
+
+
+
+
+
 
 %% Zp-Zc baseline and amplitude
 
@@ -1063,7 +1128,7 @@ print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\'
            
 
 
-    figure;
+figure;
         subplot(2,2,1)
             scatter(offsetMag(indDoG),b_all(indDoG),12,'filled')
             set(gca,'TickDir','out'); box off
@@ -1079,6 +1144,79 @@ print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\'
 print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', 'modelFits_PCIfit_offset.pdf'), '-dpdf', '-bestfit')
 
 
+%% Differences in Zp, Zc, phase selectivity, etc.
+
+
+figure;
+    subplot(2,4,1)
+        cdfplot(Zc_avg(indGau)); hold on
+        cdfplot(Zc_avg(indDoG))
+        cdfplot(Zc_avg(indGab))
+        axis('square')
+        xlabel('Zc avg')
+    subplot(2,4,2)
+        cdfplot(Zp_avg(indGau)); hold on
+        cdfplot(Zp_avg(indDoG))
+        cdfplot(Zp_avg(indGab))
+        axis('square')
+        xlabel('Zp avg')
+
+    subplot(2,4,5)
+        data = {Zc_avg(indGau), Zc_avg(indDoG), Zc_avg(indGab)};
+        m = cellfun(@mean, data);
+        sem = cellfun(@(x) std(x)/sqrt(numel(x)), data);
+        b = bar(m); hold on
+        errorbar(1:3, m, sem, 'k.', 'LineWidth', 1.2, 'CapSize', 10)
+        set(gca, 'XTickLabel', {'Gau','DoG','Gab'})
+        ylabel('Zc avg (mean \pm SEM)')
+        title('Zc avg by group')
+    subplot(2,4,6)
+        data = {Zp_avg(indGau), Zp_avg(indDoG), Zp_avg(indGab)};
+        m = cellfun(@mean, data);
+        sem = cellfun(@(x) std(x)/sqrt(numel(x)), data);
+        b = bar(m); hold on
+        errorbar(1:3, m, sem, 'k.', 'LineWidth', 1.2, 'CapSize', 10)
+        set(gca, 'XTickLabel', {'Gau','DoG','Gab'})
+        ylabel('Zp avg (mean \pm SEM)')
+        title('Zp avg by group')
+    subplot(2,4,7)
+        data = {b_all(cellsSelected(indGau)), b_all(cellsSelected(indDoG)), b_all(cellsSelected(indGab))};
+        m = cellfun(@mean, data);
+        sem = cellfun(@(x) std(x)/sqrt(numel(x)), data);
+        b = bar(m); hold on
+        errorbar(1:3, m, sem, 'k.', 'LineWidth', 1.2, 'CapSize', 10)
+        set(gca, 'XTickLabel', {'Gau','DoG','Gab'})
+        ylabel('baseline (mean \pm SEM)')
+        title('baseline by group')
+    subplot(2,4,8)
+        data = {amp_all(cellsSelected(indGau)), amp_all(cellsSelected(indDoG)), amp_all(cellsSelected(indGab))};
+        m = cellfun(@mean, data);
+        sem = cellfun(@(x) std(x)/sqrt(numel(x)), data);
+        b = bar(m); hold on
+        errorbar(1:3, m, sem, 'k.', 'LineWidth', 1.2, 'CapSize', 10)
+        set(gca, 'XTickLabel', {'Gau','DoG','Gab'})
+        ylabel('amp (mean \pm SEM)')
+        title('amp by group')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', 'modelFits_PopulationComparison.pdf'), '-dpdf', '-bestfit')
+
+
+winners_DoG = cellsSelected(indDoG);
+winners_Gau = cellsSelected(indGau);
+winners_Gab = cellsSelected(indGab);
+
+save( ...
+    fullfile( ...
+        dirBase, ...
+        'sara', ...
+        'Analysis', ...
+        'Neuropixel', ...
+        'CrossOri', ...
+        'randDirFourPhase', ...
+        'spatialRFs_heldOut', ...
+        'heldOut_ModelChoice_winningIndices.mat'), ...
+    'winners_DoG', ...
+    'winners_Gau', ...
+    'winners_Gab');
 
 
 

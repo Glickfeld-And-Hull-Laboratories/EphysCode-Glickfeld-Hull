@@ -1,16 +1,14 @@
 
 %% getCSD_marmV1_Wiesel
 close all; clear all;
-iexp = 7;
 
+doSpikes = 0;
+expts = {'g01','g06','g12','g17','tss2','tss6','tss7', 'tss4','elf1'};
 chnls       = 2:2:260;  % Only take even channels because NPX probe has two columns of staggered channels
 depth       = -2500;
 
 
-doSpikes = 0;
-%%
-
-expts = {'g01','g06','g12','g17','tss2','tss6','tss7', 'tss4','elf1'};
+for iexp = 1:9
 
 % Create path to neuropixel data
     dataPath = fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Data/fromNicholas/CrossOri_randDirFourPhase_V1_marmoset_LFP/', expts{iexp}); % For Wiesel
@@ -101,7 +99,6 @@ expts = {'g01','g06','g12','g17','tss2','tss6','tss7', 'tss4','elf1'};
 
 %% spike PSTHs
 
-if doSpikes == 1
 
     if exist('gspikes4ph', 'var')
         gspikes = gspikes4ph;
@@ -147,12 +144,17 @@ if doSpikes == 1
     PSTH_rate = PSTH / binSize;
        
 
+
+
     % plot all cells to find vis resp cells
     figure;
         subplot(1,3,2)
         imagesc(squeeze(mean(PSTH,2))); clim([0 .1])
     print(fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'], ['/' expts{iexp} '-allCells_PSTH-heatmap.pdf']),'-dpdf','-bestfit')
 
+
+
+if doSpikes == 1
 
     grat = find(stimdef(:,2) == 0);
     plaid = find(stimdef(:,2) == 1);
@@ -204,6 +206,62 @@ if doSpikes == 1
 
     else 
 end
+
+% ============================================================
+% CHUNK PSTH ACROSS TRIALS, AVERAGED ACROSS CELLS
+% ============================================================
+
+    % ---- PARAMETERS ----
+    chunkSize   = 150;              % trials per chunk (adjust as needed)
+    cellsToUse  = 1:nCells;         % or a subset, e.g. visually responsive cells
+    stimLine1   = 0;                % e.g. stim onset time (in seconds, matches tCenters)
+    stimLine2   = 0.04;             % e.g. second event (in seconds)
+    
+    % ---- BUILD CHUNK EDGES ----
+    nTrials     = size(PSTH,2);
+    chunkStarts = 1:chunkSize:nTrials;
+    chunkEnds   = min(chunkStarts + chunkSize - 1, nTrials);
+    nChunks     = length(chunkStarts);
+    
+    % ---- SUBPLOT GRID (auto-size) ----
+    nCols = ceil(sqrt(nChunks));
+    nRows = ceil(nChunks / nCols);
+    
+    % ---- AVERAGE PSTH ACROSS CELLS, PER TRIAL CHUNK ----
+    % Result: nChunks x nBins
+    chunkPSTH = nan(nChunks, size(PSTH,3));
+    
+    for iChunk = 1:nChunks
+        trialIdx = chunkStarts(iChunk):chunkEnds(iChunk);
+        % average across selected cells, then across trials in this chunk
+        chunkPSTH(iChunk,:) = squeeze(mean(mean(PSTH(cellsToUse, trialIdx, :), 2), 1));
+    end
+    
+    % ---- PLOT ----
+    figure;
+    sgtitle(['expt ' expts{iexp} ', avg across ' num2str(length(cellsToUse)) ' cells'])
+    
+    for iChunk = 1:nChunks
+        subplot(nRows, nCols, iChunk)
+            plot(tCenters, chunkPSTH(iChunk,:), 'LineWidth', 1)
+            xline(stimLine1)
+            xline(stimLine2, 'r')
+            set(gca,'TickDir','out'); box off
+            subtitle(sprintf('trials %d:%d (n=%d)', ...
+                chunkStarts(iChunk), chunkEnds(iChunk), ...
+                chunkEnds(iChunk)-chunkStarts(iChunk)+1))
+            if iChunk > (nRows-1)*nCols
+                xlabel('Time (s)')
+            end
+            if mod(iChunk-1, nCols) == 0
+                ylabel('Firing rate (Hz)')
+            end
+    end
+    
+    print(fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/', ...
+        ['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'], ...
+        ['/' expts{iexp} '-allCells_PSTH-byTrialChunks.pdf']), '-dpdf', '-bestfit')
+
 
 
 %% LFP chunks and CSD analysis
@@ -362,3 +420,4 @@ movegui('center')
 
     save(fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'], [expts{iexp} '-findLayer4-CSD.mat']), 'fLFP', 'CSDraw', 'gspikes', 'stimdef', 'chnls', 'Fs', 'dE', 'depth')
 
+end
