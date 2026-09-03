@@ -2,10 +2,10 @@
 % This takes ~7h to run for all 15 experiments (100 cells) for 5 chunks
 clear all; close all; clc
 
-exptsToRun  = [1:10 12 14 15];
+exptsToRun  = [1:15];
 exptloc     = 'V1';
 runloc      = 1;   % Where is this script being run? 1 == Hubel, 2 == Wiesel
-nChunks     = 10; % number of held-out segments, nChunks=10 is 10% held out
+nChunks     = 10;   % number of held-out segments, nChunks=10 is 10% held out
 doCrop      = 1;
 
 
@@ -80,7 +80,7 @@ corr_HO_all   = struct('dog', [], 'gabor', [], 'gaus', []);
 corr_full_all = struct('dog', [], 'gabor', [], 'gaus', []);
 model_params = repmat({cell(0,1)}, 3, 1);   % one growing cell array per model
 
-for exptN = [1:10 12 14 15] %:15   % Choose experiment (1 through 15)
+for exptN = 1:15   % Choose experiment(s) (1 through 15)
 
     exptloc     = 'V1';
     analysisDir = ('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase');
@@ -426,15 +426,26 @@ end
 
 %% Load Zp Zc data
 
+doL4only = 1;
+
 analysisDir=('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase');
 load([analysisDir '\CrossOri_randDirFourPhase_summary.mat'])
 
 Zc_avg = mean(Zc_all(:, cellsSelected),1);
 Zp_avg = mean(Zp_all(:, cellsSelected),1);
 
-indDoG = find(winningModel==1);
-indGab = find(winningModel==2);
-indGau = find(winningModel==3);
+omitcells = [19 41 43 57 65 79 95];
+
+L4_ind = find(layer_all(cellsSelected)==4);
+if doL4only == 1
+    indDoG = intersect(setdiff(find(winningModel==1),omitcells),L4_ind);
+    indGab = intersect(setdiff(find(winningModel==2),omitcells),L4_ind);
+    indGau = intersect(setdiff(find(winningModel==3),omitcells),L4_ind);
+else
+    indDoG = setdiff(find(winningModel==1),omitcells);
+    indGab = setdiff(find(winningModel==2),omitcells);
+    indGau = setdiff(find(winningModel==3),omitcells);
+end
 
 figure;
     sgtitle('DoG winners')
@@ -990,7 +1001,7 @@ print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\'
 figure;
     subplot(1,3,1)
         histogram(winningModel)
-        set(gca,'TickDir','out'); box off; axis square
+        set(gca,'TickDir','out'); box off; 
         ylabel('# of cells')
 print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', 'modelFits_winners.pdf'), '-dpdf', '-bestfit')
 
@@ -1010,22 +1021,22 @@ amp_plot = [amp_all(cellsSelected(indGau)); amp_all(cellsSelected(indDoG)); amp_
 
 figure;
     subplot(2,2,1)
-        scatter_reg(allSize,Zc_plot,12)
+        scatter_reg(allSize,Zc_plot,20)
         set(gca,'TickDir','out'); box off; axis square
         ylabel('mean Zc'); ylim([-1 4]); 
         xlabel('Size')
     subplot(2,2,2)
-        scatter_reg(allSize,Zp_plot,12)
+        scatter_reg(allSize,Zp_plot,20)
         set(gca,'TickDir','out'); box off; axis square
         ylabel('mean Zp'); ylim([-1 4]); 
         xlabel('Size')
     subplot(2,2,3)
-        scatter_reg(allAR,Zc_plot,12)
+        scatter_reg(allAR,Zc_plot,20)
         set(gca,'TickDir','out'); box off; axis square
         ylabel('mean Zc'); ylim([-1 4]); 
         xlabel('Aspect ratio')
     subplot(2,2,4)
-        scatter_reg(allAR,Zp_plot,12)
+        scatter_reg(allAR,Zp_plot,20)
         set(gca,'TickDir','out'); box off; axis square
         ylabel('mean Zp'); ylim([-1 4]); 
         xlabel('Aspect ratio')
@@ -1035,22 +1046,22 @@ print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\'
 
 figure;
     subplot(2,2,1)
-        scatter_reg(allSize,b_plot,12)
+        scatter_reg(allSize,b_plot,20)
         set(gca,'TickDir','out'); box off; axis square
         ylabel('baseline'); %ylim([-1 4]); 
         xlabel('Size')
     subplot(2,2,2)
-        scatter_reg(allSize,amp_plot,12)
+        scatter_reg(allSize,amp_plot,20)
         set(gca,'TickDir','out'); box off; axis square
         ylabel('amplitude'); %ylim([-1 4]); 
         xlabel('Size')
     subplot(2,2,3)
-        scatter_reg(allAR,b_plot,12)
+        scatter_reg(allAR,b_plot,20)
         set(gca,'TickDir','out'); box off; axis square
         ylabel('baseline'); %ylim([-1 4]); 
         xlabel('Aspect ratio')
     subplot(2,2,4)
-        scatter_reg(allAR,amp_plot,12)
+        scatter_reg(allAR,amp_plot,20)
         set(gca,'TickDir','out'); box off; axis square
         ylabel('amplitude');% ylim([-1 4]); 
         xlabel('Aspect ratio')
@@ -1068,60 +1079,60 @@ print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\'
 figure;
     sgtitle('blue=Gaussian   red=DoG   yellow=Gabor')
         subplot(2,2,1)
-            scatter(gaus_AR(indGau),b_all(indGau),12,'filled'); hold on
+            scatter(gaus_AR(indGau),b_all(cellsSelected(indGau)),12,'filled'); hold on
             set(gca,'TickDir','out'); box off; axis square
             ylabel('baseline'); 
         subplot(2,2,2)
-            scatter(gaus_AR(indGau),amp_all(indGau),12,'filled'); hold on
+            scatter(gaus_AR(indGau),amp_all(cellsSelected(indGau)),12,'filled'); hold on
             set(gca,'TickDir','out'); box off; axis square
             ylabel('amp'); 
         subplot(2,2,1)
-            scatter(dog_AR(indDoG),b_all(indDoG),12,'filled')
+            scatter(dog_AR(indDoG),b_all(cellsSelected(indDoG)),12,'filled')
             set(gca,'TickDir','out'); box off
             ylabel('baseline'); 
             xlabel('Aspect ratio')
         subplot(2,2,2)
-            scatter(dog_AR(indDoG),amp_all(indDoG),12,'filled')
+            scatter(dog_AR(indDoG),amp_all(cellsSelected(indDoG)),12,'filled')
             set(gca,'TickDir','out'); box off
             ylabel('amp'); 
             xlabel('Aspect ratio')
         subplot(2,2,1)
-            scatter(gabor_AR(indGab),b_all(indGab),12,'filled')
+            scatter(gabor_AR(indGab),b_all(cellsSelected(indGab)),12,'filled')
             set(gca,'TickDir','out'); box off
             ylabel('Zp-Zc mod baseline'); 
             xlabel('Aspect ratio');
         subplot(2,2,2)
-            scatter(gabor_AR(indGab),amp_all(indGab),12,'filled')
+            scatter(gabor_AR(indGab),amp_all(cellsSelected(indGab)),12,'filled')
             set(gca,'TickDir','out'); box off
             ylabel('Zp-Zc mod amp');
             xlabel('Aspect ratio');
    
         subplot(2,2,3)
-            scatter(gaus_size(indGau),b_all(indGau),12,'filled'); hold on
+            scatter(gaus_size(indGau),b_all(cellsSelected(indGau)),12,'filled'); hold on
             set(gca,'TickDir','out'); box off; axis square
             ylabel('baseline'); 
             xlabel('Size'); 
         subplot(2,2,4)
-            scatter(gaus_size(indGau),amp_all(indGau),12,'filled'); hold on
+            scatter(gaus_size(indGau),amp_all(cellsSelected(indGau)),12,'filled'); hold on
             set(gca,'TickDir','out'); box off; axis square
             ylabel('amp');
             xlabel('Size'); 
         subplot(2,2,3)
-            scatter(dog_sizeC(indDoG),b_all(indDoG),12,'filled')
+            scatter(dog_sizeC(indDoG),b_all(cellsSelected(indDoG)),12,'filled')
             set(gca,'TickDir','out'); box off
             ylabel('baseline');
             %xlabel('Size center')
         subplot(2,2,4)
-            scatter(dog_sizeC(indDoG),amp_all(indDoG),12,'filled')
+            scatter(dog_sizeC(indDoG),amp_all(cellsSelected(indDoG)),12,'filled')
             set(gca,'TickDir','out'); box off
             ylabel('amp'); 
             %xlabel('Size center')
         subplot(2,2,3)
-            scatter(gabor_size(indGab),b_all(indGab),12,'filled')
+            scatter(gabor_size(indGab),b_all(cellsSelected(indGab)),12,'filled')
             set(gca,'TickDir','out'); box off
             ylabel('Zp-Zc mod baseline');
         subplot(2,2,4)
-            scatter(gabor_size(indGab),amp_all(indGab),12,'filled')
+            scatter(gabor_size(indGab),amp_all(cellsSelected(indGab)),12,'filled')
             set(gca,'TickDir','out'); box off
             ylabel('Zp-Zc mod amp'); 
 print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', 'modelFits_PCIfit.pdf'), '-dpdf', '-bestfit')
@@ -1130,16 +1141,16 @@ print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\'
 
 figure;
         subplot(2,2,1)
-            scatter(offsetMag(indDoG),b_all(indDoG),12,'filled')
+            scatter_reg(offsetMag(indDoG),b_all(cellsSelected(indDoG)),20)
             set(gca,'TickDir','out'); box off
-            ylabel('Zp-Zc mod baseline'); %ylim([-1 4])
-            xlabel('offset')
+            ylabel('Zp-Zc mod baseline'); ylim([-6 2])
+            xlabel('offset'); xlim([0 21])
             subtitle('DoG winners')
         subplot(2,2,2)
-            scatter(offsetMag(indDoG),amp_all(indDoG),12,'filled')
+            scatter_reg(offsetMag(indDoG),amp_all(cellsSelected(indDoG)),20)
             set(gca,'TickDir','out'); box off
-            ylabel('Zp-Zc mod amp'); %ylim([-1 4])
-            xlabel('offset')
+            ylabel('Zp-Zc mod amp'); ylim([0 4])
+            xlabel('offset') ; xlim([0 21])
             subtitle('DoG winners')
 print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', 'modelFits_PCIfit_offset.pdf'), '-dpdf', '-bestfit')
 
@@ -1199,7 +1210,6 @@ figure;
         title('amp by group')
 print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', 'modelFits_PopulationComparison.pdf'), '-dpdf', '-bestfit')
 
-
 winners_DoG = cellsSelected(indDoG);
 winners_Gau = cellsSelected(indGau);
 winners_Gab = cellsSelected(indGab);
@@ -1218,7 +1228,65 @@ save( ...
     'winners_Gau', ...
     'winners_Gab');
 
+%% layer analysis for each group
 
+layers = [3 4 5];
+
+figure;
+    groupNames = {'Gau','DoG','Gab'};
+    groupInds  = {indGau, indDoG, indGab};
+    
+    for g = 1:3
+        layerVals = layer_all(cellsSelected(groupInds{g}));
+        frac = arrayfun(@(L) mean(layerVals == L), layers);
+        
+        subplot(2,3,g)
+            bar(frac)
+            set(gca, 'XTickLabel', {'L2/3','L4','L5/6'})
+            ylim([0 1])
+            ylabel('Fraction of cells')
+            title(groupNames{g})
+            axis square
+    end
+    
+    fracMat = zeros(3,3); % rows = layers, cols = groups
+    for g = 1:3
+        layerVals = layer_all(cellsSelected(groupInds{g}));
+        fracMat(:,g) = arrayfun(@(L) mean(layerVals == L), layers);
+    end
+
+    subplot(2,3,4)
+        bar(fracMat)
+        set(gca, 'XTickLabel', {'L2/3','L4','L5/6'})
+        legend(groupNames)
+        ylabel('Fraction of cells')
+        title('Layer distribution by group')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', 'modelFits_PopulationComparison_layers.pdf'), '-dpdf', '-bestfit')
+
+
+
+% offsetMag for L4 vs L5, DoG group only
+layerVals_DoG = layer_all(cellsSelected(indDoG));
+offsetMag_DoG = offsetMag(indDoG);
+
+idxL4 = layerVals_DoG == 4;
+idxL5 = layerVals_DoG == 5;
+
+data = {offsetMag_DoG(idxL4), offsetMag_DoG(idxL5)};
+m = cellfun(@mean, data);
+sem = cellfun(@(x) std(x)/sqrt(numel(x)), data);
+
+figure;
+    b = bar(m); hold on
+    errorbar(1:2, m, sem, 'k.', 'LineWidth', 1.2, 'CapSize', 10)
+    set(gca, 'XTickLabel', {'L4 DoG','L5 DoG'})
+    ylabel('offsetMag (mean \pm SEM)')
+    title('offsetMag: DoG cells by layer')
+    axis('square')     
+
+% 
+% figure;
+%     scatter(depth_all(cellsSelected(indDoG)),offsetMag_DoG)
 
 %%
 
