@@ -4,7 +4,7 @@ clear all; close all; clc
 
 exptsToRun  = [1:15];
 exptloc     = 'V1';
-runloc      = 2;   % Where is this script being run? 1 == Hubel, 2 == Wiesel
+runloc      = 1;   % Where is this script being run? 1 == Hubel, 2 == Wiesel
 nChunks     = 10; % number of held-out segments, nChunks=10 is 10% held out
 doCrop      = 1;
 
@@ -79,7 +79,8 @@ gaus_fits_all       = [];
 corr_HO_all   = struct('dog', [], 'gabor', [], 'gaus', []);
 corr_full_all = struct('dog', [], 'gabor', [], 'gaus', []);
 model_params = repmat({cell(0,1)}, 3, 1);   % one growing cell array per model
-model_rsq = repmat({zeros(0,1)}, 3, 1);   % plain numeric arrays, not cells
+model_rsq_full  = repmat({zeros(0,1)}, 3, 1);      % one growing vector per model, full-model fits
+model_rsq_HO    = cell(0, 3);                       % rows = chunks, cols = models, each cell a growing vector
 
 for exptN = [1:15] %:15   % Choose experiment (1 through 15)
 
@@ -116,16 +117,26 @@ for exptN = [1:15] %:15   % Choose experiment (1 through 15)
 
     % get model parameters for the full model
     m_params = [results_full.params];
-    m_rsq = [results_full.R2];
+    m_rsq_full = results_full.R2;   % adjust to however the full-model R2 is actually stored
     for m = 1:3
-        model_params{m} = [model_params{m}; m_params{m}];
-        model_rsq{m} = [model_rsq{m}; m_rsq{m}];
+        model_params{m}   = [model_params{m}; m_params{m}];
+        model_rsq_full{m} = [model_rsq_full{m}; m_rsq_full{m}];
+    end
+
+    for ih = 1:nChunks
+        m_rsq = results_HO{ih+1}.R2;
+        for m = 1:3
+            if size(model_rsq_HO,1) < ih || isempty(model_rsq_HO{ih,m})
+                model_rsq_HO{ih,m} = zeros(0,1);   % lazily initialize new chunk rows
+            end
+            model_rsq_HO{ih,m} = [model_rsq_HO{ih,m}; m_rsq{m}];
+        end
     end
 
 end
 
 
-%% get winning model for all cells
+%% get winning model for all cells (correlaiton w observed spiking)
 
 mNames   = {'dog','gabor','gaus'};
 nParams  = struct('dog',10,'gabor',8,'gaus',7);
@@ -167,7 +178,7 @@ for ic = 1:size(winFractions,1)
         winningModel(ic) = tiedIdx(minLocal);
     end
 end
-
+nChunksWonByWinner = winCounts(sub2ind(size(winCounts), (1:nSelected)', winningModel));
 
 % maxVal for the winning model, averaged across chunks
 maxVal_winningModel = nan(nSelected, 1);
@@ -184,6 +195,49 @@ maxVal_avgAcrossChunksAndModels = mean(maxValAllChunks, 2);
 
 figure;
 scatter(maxVal_winningModel,maxVal_avgAcrossChunksAndModels)
+
+
+%% get winning model for all cells (pixelwise Rsq)
+
+% reshape pixelwise R2 (model_rsq_HO) into corr_HO_all-style matrices
+rsq_HO_all = struct();
+for m = 1:3
+    rsq_HO_all.(mNames{m}) = cell2mat(model_rsq_HO(:, m)');   % nSelected x nChunks (drop the trailing ')
+end
+nSelected_rsq = size(rsq_HO_all.dog, 1);
+winCounts_rsq = zeros(nSelected_rsq, length(mNames));
+maxValAllChunks_rsq = nan(nSelected_rsq, nChunks);  % per-chunk max (across models)
+
+for ic = 1:nSelected_rsq
+    for ih = 1:nChunks
+        vals = [rsq_HO_all.dog(ic,ih), rsq_HO_all.gabor(ic,ih), rsq_HO_all.gaus(ic,ih)];
+        [maxVal, winnerIdx] = max(vals);
+        maxValAllChunks_rsq(ic, ih) = maxVal;
+        % Find all models within epsilon of the max (candidate ties)
+        tol = 0.05 * maxVal;
+        tiedIdx = find(vals >= (maxVal - tol));
+        if length(tiedIdx) > 1
+            % Among tied models, pick the one with fewest params
+            tiedParams = cellfun(@(m) nParams.(m), mNames(tiedIdx));
+            [~, minParamLocalIdx] = min(tiedParams);
+            winnerIdx = tiedIdx(minParamLocalIdx);
+        end
+        winCounts_rsq(ic, winnerIdx) = winCounts_rsq(ic, winnerIdx) + 1;
+    end
+end
+
+winFractions_rsq = winCounts_rsq ./ sum(winCounts_rsq, 2);
+[maxFrac_rsq, winningModel_rsq] = max(winFractions_rsq, [], 2);
+% break exact ties by lower param count
+for ic = 1:size(winFractions_rsq, 1)
+    tiedIdx = find(winFractions_rsq(ic,:) == maxFrac_rsq(ic));
+    if length(tiedIdx) > 1
+        [~, minLocal] = min(paramVec(tiedIdx));
+        winningModel_rsq(ic) = tiedIdx(minLocal);
+    end
+end
+
+nChunksWonByWinner_rsq = winCounts_rsq(sub2ind(size(winCounts_rsq), (1:nSelected_rsq)', winningModel_rsq));
 
 %% Determine winning model from one-standard-error (1-SE) rule, from the cross-validation model-selection literature (Hastie/Tibshirani/Friedman)
 % choose the simplest model whose performance is not statistically distinguishable from the best model, 
@@ -229,7 +283,7 @@ maxSmth = max(max(max(max(abs(data_all)))));
 pdfDir = fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut');
 if ~exist(pdfDir, 'dir'); mkdir(pdfDir); end
 
-pdfFile = fullfile(pdfDir, 'spatialRFs_zscored_heldOut_withWinningFit.pdf');
+pdfFile = fullfile(pdfDir, 'spatialRFs_zscored_heldOut_withWinningFit_allinfo.pdf');
 if isfile(pdfFile); delete(pdfFile); end
 
 for ic = 1:size(zscoreSTAs_allExpts,2)
@@ -280,19 +334,23 @@ for ic = 1:size(zscoreSTAs_allExpts,2)
         xlim([0.5 3.5]); ylim([-0.05 0.2])
         set(gca, 'xtick', 1:3, 'xticklabel', mNames)
         ylabel('held-out corr')
-        title(['winner: ' mNames{winningModel(ic)}])
+        title(['winner: ' mNames{winningModel(ic)} ' (' num2str(nChunksWonByWinner(ic)) '/' num2str(nChunks) ')'])
         box off
 
     subplot(2,4,6)
         hold on
         colors = lines(3);
         for m = 1:3
-            thisRsq = model_rsq{m}(ic);   % scalar for this cell
-            scatter(m, thisRsq, 15, colors(m,:), 'filled')
+            thisRsq = rsq_HO_all.(mNames{m})(ic,:);   % 1 x nChunks
+            xJitter = m + (rand(size(thisRsq))-0.5)*0.15;  % small jitter so points don't overlap
+            scatter(xJitter, thisRsq, 10, colors(m,:), 'filled'); hold on
+            meanValsRsq(m) = mean(thisRsq);
+            scatter(m, meanValsRsq(m), 15, 'k', 'filled')
         end
         xlim([0.5 3.5]); ylim([0 1])
         set(gca, 'xtick', 1:3, 'xticklabel', mNames)
-        ylabel('R^2')
+        ylabel('pixelwise R^2')
+        title(['winner: ' mNames{winningModel_rsq(ic)} ' (' num2str(nChunksWonByWinner_rsq(ic)) '/' num2str(nChunks) ')'])
         box off
 
     otherModels = setdiff(1:3, modelToPlot);
@@ -337,123 +395,6 @@ for ic = 1:size(zscoreSTAs_allExpts,2)
     close all
 end
 
-
-%%
-
-data_all                    =  zscoreSTAs_allExpts;
-maxSmth = max(max(max(max(abs(data_all)))));
-
-% Print STA time point choices
-pdfDir = fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut');
-if ~exist(pdfDir, 'dir'); mkdir(pdfDir); end
-
-pdfFile = fullfile(pdfDir, 'spatialRFs_zscored_heldOut_withWinningFit_allInfo.pdf');
-if isfile(pdfFile); delete(pdfFile); end
-
-for ic = 1:size(zscoreSTAs_allExpts,2)
-    iCell = cellsSelected(ic);
-    figure();
-    movegui('center')
-    sgtitle(['cell ' num2str(iCell) ', ic = ' num2str(ic)])
-        data = medfilt2(imgaussfilt(squeeze(data_all(1,ic,:,:)),1));
-        subplot(2,4,1:2)
-            imagesc(data); hold on
-            pbaspect([16 9 1])
-            colormap(gray)
-            clim([-5 5])
-            box off; axis off; set(gca, 'Color', 'none')
-            set(gca,'xtick',[]); set(gca,'xticklabel',[])
-            set(gca,'ytick',[]); set(gca,'yticklabel',[])
-            subtitle('STA')
-
-    modelToPlot = winningModel(ic);
-    if modelToPlot == 1
-        data = squeeze(dog_fits_all(:,:,ic,1));
-    elseif modelToPlot == 2
-        data = squeeze(gabor_fits_all(:,:,ic,1));
-    else
-        data = squeeze(gaus_fits_all(:,:,ic,1));
-    end
-
-    subplot(2,4,3:4)
-        imagesc(data); hold on
-        subtitle(mNames{modelToPlot})
-        pbaspect([16 9 1])
-        colormap(gray)
-        clim([-5 5])
-        box off; axis off; set(gca, 'Color', 'none')
-        set(gca,'xtick',[]); set(gca,'xticklabel',[])
-        set(gca,'ytick',[]); set(gca,'yticklabel',[])
-
-    subplot(2,4,5)
-        hold on
-        colors = lines(3);
-        for m = 1:3
-            thisHO = corr_HO_all.(mNames{m})(ic,:);   % 1 x nChunks
-            xJitter = m + (rand(size(thisHO))-0.5)*0.15;  % small jitter so points don't overlap
-            scatter(xJitter, thisHO, 10, colors(m,:), 'filled'); hold on
-            meanVals(m) = mean(thisHO);
-            scatter(m, meanVals(m), 15, 'k', 'filled')
-        end
-        xlim([0.5 3.5]); ylim([-0.05 0.2])
-        set(gca, 'xtick', 1:3, 'xticklabel', mNames)
-        ylabel('held-out corr')
-        title(['winner: ' mNames{winningModel(ic)}])
-        box off
-
-    subplot(2,4,6)
-        hold on
-        colors = lines(3);
-        for m = 1:3
-            thisRsq = model_rsq{m}(ic);   % scalar for this cell
-            scatter(m, thisRsq, 15, colors(m,:), 'filled')
-        end
-        xlim([0.5 3.5]); ylim([0 1])
-        set(gca, 'xtick', 1:3, 'xticklabel', mNames)
-        ylabel('R^2')
-        box off
-
-    otherModels = setdiff(1:3, modelToPlot);
-    if otherModels(1) == 1
-        data = squeeze(dog_fits_all(:,:,ic,1));
-    elseif modelToPlot+1 == 2
-        data = squeeze(gabor_fits_all(:,:,ic,1));
-    else
-        data = squeeze(gaus_fits_all(:,:,ic,1));
-    end
-    subplot(4,4,11:12)
-        imagesc(data); hold on
-        subtitle(mNames{otherModels(1)})
-        pbaspect([16 9 1])
-        colormap(gray)
-        clim([-5 5])
-        box off; axis off; set(gca, 'Color', 'none')
-        set(gca,'xtick',[]); set(gca,'xticklabel',[])
-        set(gca,'ytick',[]); set(gca,'yticklabel',[])
-
-    if otherModels(2) == 1
-        data = squeeze(dog_fits_all(:,:,ic,1));
-    elseif otherModels(2) == 2
-        data = squeeze(gabor_fits_all(:,:,ic,1));
-    else
-        data = squeeze(gaus_fits_all(:,:,ic,1));
-    end
-    subplot(4,4,15:16)
-        imagesc(data); hold on
-        subtitle(mNames{otherModels(2)})
-        pbaspect([16 9 1])
-        colormap(gray)
-        clim([-5 5])
-        box off; axis off; set(gca, 'Color', 'none')
-        set(gca,'xtick',[]); set(gca,'xticklabel',[])
-        set(gca,'ytick',[]); set(gca,'yticklabel',[])
- 
-
-    % Append current figure as a new page in the PDF
-    exportgraphics(gcf, pdfFile,'ContentType', 'vector','Append', true);
-    close(gcf)
-    close all
-end
 
 
 
@@ -606,13 +547,13 @@ omitcells = [19 41 43 57 65 79 95];
 
 L4_ind = find(layer_all(cellsSelected)==4);
 if doL4only == 1
-    indDoG = intersect(setdiff(find(winningModel==1),omitcells),L4_ind);
-    indGab = intersect(setdiff(find(winningModel==2),omitcells),L4_ind);
-    indGau = intersect(setdiff(find(winningModel==3),omitcells),L4_ind);
+    indDoG = intersect(setdiff(find(winningModel_rsq==1),omitcells),L4_ind);
+    indGab = intersect(setdiff(find(winningModel_rsq==2),omitcells),L4_ind);
+    indGau = intersect(setdiff(find(winningModel_rsq==3),omitcells),L4_ind);
 else
-    indDoG = setdiff(find(winningModel==1),omitcells);
-    indGab = setdiff(find(winningModel==2),omitcells);
-    indGau = setdiff(find(winningModel==3),omitcells);
+    indDoG = setdiff(find(winningModel_rsq==1),omitcells);
+    indGab = setdiff(find(winningModel_rsq==2),omitcells);
+    indGau = setdiff(find(winningModel_rsq==3),omitcells);
 end
 
 figure;
@@ -716,82 +657,121 @@ figure;
  
 
 figure;
-    subplot(2,2,1)
+    subplot(3,2,1)
         scatter(gaus_size(indGau),Zc_avg(indGau),12,'filled'); hold on
         set(gca,'TickDir','out'); box off; axis square
         ylabel('mean Zc'); ylim([-1 4])
         xlabel('Size'); 
-    subplot(2,2,2)
+    subplot(3,2,2)
         scatter(gaus_size(indGau),Zp_avg(indGau),12,'filled'); hold on
         set(gca,'TickDir','out'); box off; axis square
         ylabel('mean Zp'); ylim([-1 4])
         xlabel('Size'); 
-    subplot(2,2,1)
+    subplot(3,2,1)
         scatter(dog_sizeC(indDoG),Zc_avg(indDoG),12,'filled')
         set(gca,'TickDir','out'); box off
         ylabel('mean Zc'); ylim([-1 4])
         %xlabel('Size center')
-    subplot(2,2,2)
+    subplot(3,2,2)
         scatter(dog_sizeC(indDoG),Zp_avg(indDoG),12,'filled')
         set(gca,'TickDir','out'); box off
         ylabel('mean Zp'); ylim([-1 4])
         %xlabel('Size center')
-    subplot(2,2,1)
+    subplot(3,2,1)
         scatter(gabor_size(indGab),Zc_avg(indGab),12,'filled')
         set(gca,'TickDir','out'); box off
         ylabel('mean Zc'); ylim([-1 4])
-    subplot(2,2,2)
+    subplot(3,2,2)
         scatter(gabor_size(indGab),Zp_avg(indGab),12,'filled')
         set(gca,'TickDir','out'); box off
         ylabel('mean Zp'); ylim([-1 4])
-    subplot(2,2,3)
+    subplot(3,2,3)
         scatter(gaus_AR(indGau),Zc_avg(indGau),12,'filled'); hold on
         set(gca,'TickDir','out'); box off; axis square
         ylabel('mean Zc'); ylim([-1 4])
-    subplot(2,2,4)
+    subplot(3,2,4)
         scatter(gaus_AR(indGau),Zp_avg(indGau),12,'filled'); hold on
         set(gca,'TickDir','out'); box off; axis square
         ylabel('mean Zp'); ylim([-1 4])
-    subplot(2,2,3)
+    subplot(3,2,3)
         scatter(dog_AR(indDoG),Zc_avg(indDoG),12,'filled')
         set(gca,'TickDir','out'); box off
         ylabel('mean Zc'); ylim([-1 4])
         xlabel('Aspect ratio')
-    subplot(2,2,4)
+    subplot(3,2,4)
         scatter(dog_AR(indDoG),Zp_avg(indDoG),12,'filled')
         set(gca,'TickDir','out'); box off
         ylabel('mean Zp'); ylim([-1 4])
         xlabel('Aspect ratio')
-    subplot(2,2,3)
+    subplot(3,2,3)
         scatter(gabor_AR(indGab),Zc_avg(indGab),12,'filled')
         set(gca,'TickDir','out'); box off
         ylabel('mean Zc'); ylim([-1 4])
         xlabel('Aspect ratio');
-    subplot(2,2,4)
+    subplot(3,2,4)
         scatter(gabor_AR(indGab),Zp_avg(indGab),12,'filled')
         set(gca,'TickDir','out'); box off
         ylabel('mean Zp'); ylim([-1 4])
         xlabel('Aspect ratio'); 
+    subplot(3,2,5)
+        scatter(gaus_AR(indGau),Zc_max(indGau),12,'filled'); hold on
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('max Zc');
+    subplot(3,2,6)
+        scatter(gaus_AR(indGau),Zp_max(indGau),12,'filled'); hold on
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('max Zp'); 
+    subplot(3,2,5)
+        scatter(dog_AR(indDoG),Zc_max(indDoG),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('max Zc'); 
+        xlabel('Aspect ratio')
+    subplot(3,2,6)
+        scatter(dog_AR(indDoG),Zp_max(indDoG),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('max Zp'); 
+        xlabel('Aspect ratio')
+    subplot(3,2,5)
+        scatter(gabor_AR(indGab),Zc_max(indGab),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('max Zc'); ylim([0 7])
+        xlabel('Aspect ratio');
+    subplot(3,2,6)
+        scatter(gabor_AR(indGab),Zp_max(indGab),12,'filled')
+        set(gca,'TickDir','out'); box off
+        ylabel('max Zp'); ylim([0 7])
+        xlabel('Aspect ratio'); 
 print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', 'modelFits_summary.pdf'), '-dpdf', '-bestfit')
 
 
+
 figure;
-    subplot(2,2,1)
+    subplot(3,2,1)
         scatter(offsetMag(indDoG),Zc_avg(indDoG),12,'filled')
         set(gca,'TickDir','out'); box off; axis square
         ylabel('mean Zc'); ylim([-1 4])
         xlabel('Subunit offset')
-    subplot(2,2,2)
+    subplot(3,2,2)
         scatter(offsetMag(indDoG),Zp_avg(indDoG),12,'filled')
         set(gca,'TickDir','out'); box off; axis square
         ylabel('mean Zp'); ylim([-1 4])
+        xlabel('Subunit offset')
+    subplot(3,2,3)
+        scatter(offsetMag(indDoG),Zc_max(indDoG),12,'filled')
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('max Zc'); ylim([0 7])
+        xlabel('Subunit offset')
+    subplot(3,2,4)
+        scatter(offsetMag(indDoG),Zp_max(indDoG),12,'filled')
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('max Zp'); ylim([0 7])
         xlabel('Subunit offset')
 print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', 'modelFits_summary2.pdf'), '-dpdf', '-bestfit')
 
 
 figure;
     subplot(1,3,1)
-        histogram(winningModel)
+        histogram(winningModel_rsq)
         set(gca,'TickDir','out'); box off; 
         ylabel('# of cells')
 print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', 'modelFits_winners.pdf'), '-dpdf', '-bestfit')
@@ -807,9 +787,37 @@ allAR   = [gaus_AR(indGau);   dog_AR(indDoG);    gabor_AR(indGab)];
 % Zc/Zp need to be combined using the SAME index pattern per group
 Zc_plot = [Zc_avg(indGau)'; Zc_avg(indDoG)'; Zc_avg(indGab)'];
 Zp_plot = [Zp_avg(indGau)'; Zp_avg(indDoG)'; Zp_avg(indGab)'];
+Zc_plotMax = [Zc_max(indGau)'; Zc_max(indDoG)'; Zc_max(indGab)'];
+Zp_plotMax = [Zp_max(indGau)'; Zp_max(indDoG)'; Zp_max(indGab)'];
 
 b_plot   = [b_all(cellsSelected(indGau)); b_all(cellsSelected(indDoG)); b_all(cellsSelected(indGab))];
 amp_plot = [amp_all(cellsSelected(indGau)); amp_all(cellsSelected(indDoG)); amp_all(cellsSelected(indGab))];
+
+% OSI
+% ===== OSI calculation =====
+    nCells  = size(avg_resp_dir_all,1);
+    nDir    = size(avg_resp_dir_all,2);
+    for iCell = 1:nCells
+        resp = squeeze(avg_resp_dir_all(iCell,:,1,1,1));
+        resp(resp < 0) = 0;
+        % ---- collapse to orientation (average opposite directions) ----
+        ori_resp = (resp(1:nDir/2) + resp(nDir/2+1:end)) / 2;
+        % ---- preferred orientation ----
+        [Rpref, prefInd] = max(ori_resp);
+        % ---- orthogonal orientation (90 deg away) ----
+        orthShift = (nDir/2) / 2;   % = nDir/4
+        orthInd = prefInd + orthShift;
+        if orthInd > nDir/2
+            orthInd = orthInd - nDir/2;
+        end
+        Rorth = ori_resp(orthInd);
+        % ---- OSI calculation ----
+        OSI_mouseEphys(iCell) = (Rpref - Rorth) / (Rpref + Rorth);
+        % ---- store preferred orientation (degrees) ----
+        OSI_ind(iCell) = (prefInd - 1) * (360 / nDir); 
+    end
+OSI_plot   = [OSI_mouseEphys(cellsSelected(indGau))'; OSI_mouseEphys(cellsSelected(indDoG))'; OSI_mouseEphys(cellsSelected(indGab))'];
+
 
 figure;
     subplot(2,2,1)
@@ -832,8 +840,31 @@ figure;
         set(gca,'TickDir','out'); box off; axis square
         ylabel('mean Zp'); ylim([-1 4]); 
         xlabel('Aspect ratio')
-    sgtitle('plot all cells as 1 group')    
 print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', 'modelFits_summary3.pdf'), '-dpdf', '-bestfit')
+
+
+figure;
+    subplot(2,2,1)
+        scatter_reg(allSize,Zc_plotMax,20)
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('max Zc'); ylim([0 7]); 
+        xlabel('Size')
+    subplot(2,2,2)
+        scatter_reg(allSize,Zp_plotMax,20)
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('max Zp'); ylim([0 7]); 
+        xlabel('Size')
+    subplot(2,2,3)
+        scatter_reg(allAR,Zc_plotMax,20)
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('max Zc'); ylim([0 7]); 
+        xlabel('Aspect ratio')
+    subplot(2,2,4)
+        scatter_reg(allAR,Zp_plotMax,20)
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('max Zp'); ylim([0 7]); 
+        xlabel('Aspect ratio')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', 'modelFits_summary4.pdf'), '-dpdf', '-bestfit')
 
 
 figure;
@@ -857,10 +888,191 @@ figure;
         set(gca,'TickDir','out'); box off; axis square
         ylabel('amplitude');% ylim([-1 4]); 
         xlabel('Aspect ratio')
-    sgtitle('plot all cells as 1 group')    
-print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', 'modelFits_summary4.pdf'), '-dpdf', '-bestfit')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', 'modelFits_summary5.pdf'), '-dpdf', '-bestfit')
 
 
+figure;
+    subplot(2,2,1)
+        scatter_reg(allSize,OSI_plot,20)
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('baseline'); %ylim([-1 4]); 
+        xlabel('Size')
+    subplot(2,2,2)
+        scatter_reg(allAR,OSI_plot,20)
+        set(gca,'TickDir','out'); box off; axis square
+        ylabel('OSI'); %ylim([-1 4]); 
+        xlabel('Aspect ratio')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', 'modelFits_summary6.pdf'), '-dpdf', '-bestfit')
+
+
+
+%% heatmaps
+
+
+nBins = 7;
+doLogBins = 1;
+
+figure;
+
+    % Define bins
+    if doLogBins
+        assert(min(allSize) > 0, 'allSize contains non-positive values - log bins invalid');
+        assert(min(allAR)   > 0, 'allAR contains non-positive values - log bins invalid');
+        size_edges  = logspace(log10(min(allSize)), log10(max(allSize)), nBins+1);
+        elong_edges = logspace(log10(min(allAR)),   log10(max(allAR)),   nBins+1);
+        axisType = 'Log';
+    else
+        size_edges  = linspace(min(allSize), max(allSize), nBins+1);
+        elong_edges = linspace(min(allAR),   max(allAR),   nBins+1);
+        axisType = 'Normal';
+    end
+
+    % Preallocate
+    amp_map     = nan(nBins, nBins);
+    b_map       = nan(nBins, nBins);
+    Zp_map      = nan(nBins, nBins);
+    Zc_map      = nan(nBins, nBins);
+    ZpMax_map   = nan(nBins, nBins);
+    ZcMax_map   = nan(nBins, nBins);
+    OSI_map     = nan(nBins, nBins);
+    n_map       = zeros(nBins, nBins); % optional counts
+    % Loop over 2D bins
+    for i = 1:nBins
+        for j = 1:nBins
+            idx = allSize >= size_edges(i) & (allSize < size_edges(i+1) | (i==nBins & allSize==size_edges(i+1))) & ...
+                    allAR   >= elong_edges(j) & (allAR   < elong_edges(j+1) | (j==nBins & allAR==elong_edges(j+1)));
+            n_map(i,j) = sum(idx);
+                if any(idx)
+                amp_map(j,i)    = mean(amp_plot(idx));   % note (j,i)
+                b_map(j,i)      = mean(b_plot(idx));
+                Zp_map(j,i)     = mean(Zp_plot(idx));   % note (j,i)
+                Zc_map(j,i)     = mean(Zc_plot(idx));
+                ZpMax_map(j,i)  = mean(Zp_plotMax(idx));   % note (j,i)
+                ZcMax_map(j,i)  = mean(Zc_plotMax(idx));
+                OSI_map(j,i)    = mean(OSI_plot(idx));
+            end
+        end
+    end
+
+    subplot(3,3,1)
+        imagesc(size_edges, elong_edges, b_map); axis square
+        set(gca,'YDir','normal')
+        colorbar; colormap parula
+        if doLogBins
+            % relabel ticks with actual bin edge values (log-spaced)
+            tickIdx = 1:(nBins+1);   % pick a subset of edges to avoid clutter; adjust spacing as needed
+            xticks(tickIdx - 0.5)      % -0.5 offsets to align with imagesc's bin-edge convention
+            xticklabels(compose('%.2g', size_edges(tickIdx)))
+            yticks(tickIdx - 0.5)
+            yticklabels(compose('%.2g', elong_edges(tickIdx)))
+        end
+        xlabel('Size')
+        ylabel('Aspect ratio')
+        title('Fit baseline')
+    subplot(3,3,2)
+        imagesc(size_edges, elong_edges, amp_map); axis square
+        set(gca,'YDir','normal')   % IMPORTANT (fix flipped y-axis)
+        colorbar; colormap parula
+        if doLogBins
+            % relabel ticks with actual bin edge values (log-spaced)
+            tickIdx = 1:(nBins+1);   % pick a subset of edges to avoid clutter; adjust spacing as needed
+            xticks(tickIdx - 0.5)      % -0.5 offsets to align with imagesc's bin-edge convention
+            xticklabels(compose('%.2g', size_edges(tickIdx)))
+            yticks(tickIdx - 0.5)
+            yticklabels(compose('%.2g', elong_edges(tickIdx)))
+        end
+        xlabel('Size')
+        ylabel('Aspect ratio')
+        title('Fit amplitude')
+    subplot(3,3,3)
+        imagesc(size_edges, elong_edges, Zp_map); axis square
+        set(gca,'YDir','normal')   % IMPORTANT (fix flipped y-axis)
+        colorbar; colormap parula
+        if doLogBins
+            % relabel ticks with actual bin edge values (log-spaced)
+            tickIdx = 1:(nBins+1);   % pick a subset of edges to avoid clutter; adjust spacing as needed
+            xticks(tickIdx - 0.5)      % -0.5 offsets to align with imagesc's bin-edge convention
+            xticklabels(compose('%.2g', size_edges(tickIdx)))
+            yticks(tickIdx - 0.5)
+            yticklabels(compose('%.2g', elong_edges(tickIdx)))
+        end
+        xlabel('Size')
+        ylabel('Aspect ratio')
+        title('Zp avg')
+    subplot(3,3,4)
+        imagesc(size_edges, elong_edges, Zc_map); axis square
+        set(gca,'YDir','normal')
+        colorbar; colormap parula
+        if doLogBins
+            % relabel ticks with actual bin edge values (log-spaced)
+            tickIdx = 1:(nBins+1);   % pick a subset of edges to avoid clutter; adjust spacing as needed
+            xticks(tickIdx - 0.5)      % -0.5 offsets to align with imagesc's bin-edge convention
+            xticklabels(compose('%.2g', size_edges(tickIdx)))
+            yticks(tickIdx - 0.5)
+            yticklabels(compose('%.2g', elong_edges(tickIdx)))
+        end
+        xlabel('Size')
+        ylabel('Aspect ratio')
+        title('Zc avg')
+    subplot(3,3,5)
+        imagesc(size_edges, elong_edges, ZpMax_map); axis square
+        set(gca,'YDir','normal')   % IMPORTANT (fix flipped y-axis)
+        colorbar; colormap parula
+        if doLogBins
+            % relabel ticks with actual bin edge values (log-spaced)
+            tickIdx = 1:(nBins+1);   % pick a subset of edges to avoid clutter; adjust spacing as needed
+            xticks(tickIdx - 0.5)      % -0.5 offsets to align with imagesc's bin-edge convention
+            xticklabels(compose('%.2g', size_edges(tickIdx)))
+            yticks(tickIdx - 0.5)
+            yticklabels(compose('%.2g', elong_edges(tickIdx)))
+        end
+        xlabel('Size')
+        ylabel('Aspect ratio')
+        title('Zp max')
+    subplot(3,3,6)
+        imagesc(size_edges, elong_edges, ZcMax_map); axis square
+        set(gca,'YDir','normal')
+        colorbar; colormap parula
+        if doLogBins
+            % relabel ticks with actual bin edge values (log-spaced)
+            tickIdx = 1:(nBins+1);   % pick a subset of edges to avoid clutter; adjust spacing as needed
+            xticks(tickIdx - 0.5)      % -0.5 offsets to align with imagesc's bin-edge convention
+            xticklabels(compose('%.2g', size_edges(tickIdx)))
+            yticks(tickIdx - 0.5)
+            yticklabels(compose('%.2g', elong_edges(tickIdx)))
+        end
+        xlabel('Size')
+        ylabel('Aspect ratio')
+        title('Zc max')
+    subplot(3,3,7)
+        imagesc(size_edges, elong_edges, OSI_map); axis square
+        set(gca,'YDir','normal')
+        colorbar; colormap parula
+        if doLogBins
+            % relabel ticks with actual bin edge values (log-spaced)
+            tickIdx = 1:(nBins+1);   % pick a subset of edges to avoid clutter; adjust spacing as needed
+            xticks(tickIdx - 0.5)      % -0.5 offsets to align with imagesc's bin-edge convention
+            xticklabels(compose('%.2g', size_edges(tickIdx)))
+            yticks(tickIdx - 0.5)
+            yticklabels(compose('%.2g', elong_edges(tickIdx)))
+        end
+        xlabel('Size')
+        ylabel('Aspect ratio')
+        title('OSI')
+    subplot(3,3,9)
+        axis square; axis off
+        xlim([0 nBins]); ylim([0 nBins])
+        set(gca,'YDir','normal')
+        title('Counts (n)')
+        for i = 1:nBins
+            for j = 1:nBins
+                text(i-0.5, j-0.5, num2str(n_map(i,j)), ...
+                    'HorizontalAlignment','center', 'VerticalAlignment','middle', ...
+                    'FontSize', 8)
+            end
+        end
+
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', ['modelFits_HeatMaps_axis' axisType '.pdf']), '-dpdf', '-bestfit')
 
 
 
