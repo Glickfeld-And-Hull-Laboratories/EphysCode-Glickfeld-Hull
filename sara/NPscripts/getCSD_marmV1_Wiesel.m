@@ -264,6 +264,62 @@ end
 
 
 
+% ============================================================
+% CHUNK PSTH ACROSS TRIALS, AVERAGED ACROSS CELLS
+% ============================================================
+
+    % ---- PARAMETERS ----
+    chunkSize   = 150;              % trials per chunk (adjust as needed)
+    cellsToUse  = 1:nCells;         % or a subset, e.g. visually responsive cells
+    stimLine1   = 0;                % e.g. stim onset time (in seconds, matches tCenters)
+    stimLine2   = 0.04;             % e.g. second event (in seconds)
+    
+    % ---- BUILD CHUNK EDGES ----
+    nTrials     = size(PSTH,2);
+    chunkStarts = 1:chunkSize:600;
+    chunkEnds   = min(chunkStarts + chunkSize - 1, nTrials);
+    nChunks     = length(chunkStarts);
+    
+    % ---- SUBPLOT GRID (auto-size) ----
+    nCols = ceil(sqrt(nChunks));
+    nRows = ceil(nChunks / nCols);
+    
+    % ---- AVERAGE PSTH ACROSS CELLS, PER TRIAL CHUNK ----
+    % Result: nChunks x nBins
+    chunkPSTH = nan(nChunks, size(PSTH,3));
+    
+    for iChunk = 1:nChunks
+        trialIdx = chunkStarts(iChunk):chunkEnds(iChunk);
+        % average across selected cells, then across trials in this chunk
+        chunkPSTH(iChunk,:) = squeeze(mean(mean(PSTH(cellsToUse, trialIdx, :), 2), 1));
+    end
+    
+    % ---- PLOT ----
+    figure;
+    sgtitle(['expt ' expts{iexp} ', avg across ' num2str(length(cellsToUse)) ' cells'])
+    
+    for iChunk = 1:nChunks
+        subplot(nRows, nCols, iChunk)
+            plot(tCenters, chunkPSTH(iChunk,:), 'LineWidth', 1)
+            ylim([0 0.08])
+            xline(stimLine1)
+            xline(stimLine2, 'r')
+            set(gca,'TickDir','out'); box off
+            subtitle(sprintf('trials %d:%d (n=%d)', ...
+                chunkStarts(iChunk), chunkEnds(iChunk), ...
+                chunkEnds(iChunk)-chunkStarts(iChunk)+1))
+            if iChunk > (nRows-1)*nCols
+                xlabel('Time (s)')
+            end
+            if mod(iChunk-1, nCols) == 0
+                ylabel('Firing rate (Hz)')
+            end
+    end
+    
+    print(fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/', ...
+        ['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'], ...
+        ['/' expts{iexp} '-allCells_PSTH-byTrialChunks_trials1-600.pdf']), '-dpdf', '-bestfit')
+
 %% LFP chunks and CSD analysis
 
 figure;
