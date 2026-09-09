@@ -1,8 +1,8 @@
 clear all; close all; clc
 baseDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
 
-iexp = 9; % Choose experiment
-exptloc = 'LG'; %LG
+iexp = 16; % Choose experiment
+exptloc = 'V1'; %LG
 
 [exptStruct] = createExptStruct(iexp,exptloc); % Load relevant times and directories for this experiment
 
@@ -29,9 +29,13 @@ else
     cd(fullfile(baseDir, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date, 'KS_Output\')) % Navigate to KS_Output folder
 end
 
-% Choose imec0.ap.bin file (I just choose the CatGT bin file)
-[allUnitStruct, goodUnitStruct] = importKSdata_SG();
-save(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStruct.date '_' exptStruct.mouse '_unitStructs.mat']), 'allUnitStruct', 'goodUnitStruct');
+if exist(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStruct.date '_' exptStruct.mouse '_unitStructs.mat']))
+    load(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStruct.date '_' exptStruct.mouse '_unitStructs.mat']))
+else
+    % Choose imec0.ap.bin file (I just choose the CatGT bin file)
+    [allUnitStruct, goodUnitStruct] = importKSdata_SG();
+    save(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStruct.date '_' exptStruct.mouse '_unitStructs.mat']), 'allUnitStruct', 'goodUnitStruct');
+end
 
 %% Load stimulus "on" timestamps
 
@@ -62,7 +66,7 @@ if iexp == 11
 else
     b = 5; % What stimulus presentation block to use for RandDirFourPhase analysis?
 end
-[trialStruct, gratingRespMatrix, gratingRespOFFMatrix, resp, base] = createTrialStruct12Dir4Phase(stimStruct, goodUnitStruct, b);     
+[trialStruct, gratingRespMatrix, gratingRespOFFMatrix, spikeMatForPSTH, resp, base] = createTrialStruct12Dir4Phase(stimStruct, goodUnitStruct, b);     
 [f0mat, f1mat, f1overf0mat] = getF1_SG(gratingRespMatrix);
 save(fullfile(baseDir, 'sara\\Analysis\Neuropixel', [exptStruct.date], [exptStruct.date '_' exptStruct.mouse '_F1F0.mat']), 'f0mat', 'f1mat', 'f1overf0mat');
 
@@ -127,6 +131,68 @@ figure;
     print(fullfile([outDir, '\' exptStruct.mouse '-' exptStruct.date '-depth' num2str(-depth) '-unit' num2str(ic) '.pdf']),'-dpdf','-bestfit');
     close all
 end
+
+%% Plot PSTHs chunked by trial
+
+outDir=(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\' exptStruct.date '\']);
+
+nCells = size(spikeMatForPSTH,1);
+nTrials = size(spikeMatForPSTH,2);
+
+% ---- PARAMETERS ----
+    binSize    = 0.01;      % 10 ms bins
+    win        = [-0.20 1];   % e.g. [-0.25 0.25] 
+    edges      = win(1):binSize:win(2);
+    tCenters   = edges(1:end-1) + binSize/2;
+    chunkSize   = 150;              % trials per chunk (adjust as needed)
+    cellsToUse  = 1:nCells;         % or a subset, e.g. visually responsive cells
+    stimLine1   = 0;                % e.g. stim onset time (in seconds, matches tCenters)
+    stimLine2   = 0.04;             % e.g. second event (in seconds)
+    
+% ---- BUILD CHUNK EDGES ----
+    chunkStarts = 1:chunkSize:nTrials;
+    chunkEnds   = min(chunkStarts + chunkSize - 1, nTrials);
+    nChunks     = length(chunkStarts);
+    
+% ---- SUBPLOT GRID (auto-size) ----
+    nCols = ceil(sqrt(nChunks));
+    nRows = ceil(nChunks / nCols);
+    
+% ---- AVERAGE PSTH ACROSS CELLS, PER TRIAL CHUNK ----
+    % Result: nChunks x nBins
+    chunkPSTH = nan(nChunks, size(spikeMatForPSTH,3));
+    
+    for iChunk = 1:nChunks
+        trialIdx = chunkStarts(iChunk):chunkEnds(iChunk);
+        % average across selected cells, then across trials in this chunk
+        chunkPSTH(iChunk,:) = squeeze(mean(mean(spikeMatForPSTH(cellsToUse, trialIdx, :), 2), 1));
+    end
+    
+% ---- PLOT ----
+    figure;
+    sgtitle(['expt ' num2str(iexp) ', avg across ' num2str(length(cellsToUse)) ' cells'])
+    
+    for iChunk = 1:nChunks
+        subplot(nRows, nCols, iChunk)
+            plot(tCenters, chunkPSTH(iChunk,:), 'LineWidth', 1)
+            xline(stimLine1)
+            xline(stimLine2, 'r')
+            xlim([-0.2 0.25]);
+            set(gca,'TickDir','out'); box off
+            subtitle(sprintf('trials %d:%d (n=%d)', ...
+                chunkStarts(iChunk), chunkEnds(iChunk), ...
+                chunkEnds(iChunk)-chunkStarts(iChunk)+1))
+            if iChunk > (nRows-1)*nCols
+                xlabel('Time (s)')
+            end
+            if mod(iChunk-1, nCols) == 0
+                ylabel('Firing rate (Hz)')
+            end
+    end
+    
+    print(fullfile(outDir, ...
+        [exptStruct.mouse '_' exptStruct.date '-allCells_PSTH-byTrialChunks.pdf']), '-dpdf', '-bestfit')
+
 
 
 
