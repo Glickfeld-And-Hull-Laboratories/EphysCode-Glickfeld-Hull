@@ -3,21 +3,30 @@
 close all; clear all;
 
 doSpikes = 0;
+runloc = 1;
 expts = {'g01','g06','g12','g17','tss2','tss6','tss7', 'tss4','elf1'};
 chnls       = 2:2:260;  % Only take even channels because NPX probe has two columns of staggered channels
 depth       = -2500;
 
 
-for iexp = 1:9
+for iexp = 2:9
+
+    if runloc == 1 || runloc == 3    % Hubel, Nuke 
+        dirBase = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara';
+    elseif runloc == 2    % Wiesel
+        dirBase = '/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara';
+    else
+        error('Location not valid. 1 == Hubel, 2 == Wiesel.')
+    end
 
 % Create path to neuropixel data
-    dataPath = fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Data/fromNicholas/CrossOri_randDirFourPhase_V1_marmoset_LFP/', expts{iexp}); % For Wiesel
+    dataPath = fullfile(dirBase, 'Data', 'fromNicholas','CrossOri_randDirFourPhase_V1_marmoset_LFP', expts{iexp}); % For Wiesel
     cd(dataPath)
 
 % Make sure output path exists
-    if exist(fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP']),'dir')
+    if exist(fullfile(dirBase, 'Analysis','Neuropixel','marmosetFromNicholas', ['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP']),'dir')
     else
-        mkdir(fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP']))
+        mkdir(fullfile(dirBase, 'Analysis','Neuropixel','marmosetFromNicholas', ['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP']))
     end
 
 % Load LFP data (expected to be NPX data collected at 2500hz and reported in mV)
@@ -99,7 +108,6 @@ for iexp = 1:9
 
 %% spike PSTHs
 
-
     if exist('gspikes4ph', 'var')
         gspikes = gspikes4ph;
     end
@@ -150,7 +158,7 @@ for iexp = 1:9
     figure;
         subplot(1,3,2)
         imagesc(squeeze(mean(PSTH,2))); clim([0 .1])
-    print(fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'], ['/' expts{iexp} '-allCells_PSTH-heatmap.pdf']),'-dpdf','-bestfit')
+    print(fullfile(dirBase, 'Analysis','Neuropixel','marmosetFromNicholas', ['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'], [expts{iexp} '-allCells_PSTH-heatmap.pdf']),'-dpdf','-bestfit')
 
 
 
@@ -202,7 +210,7 @@ if doSpikes == 1
 %             xline(25)
 %             xline(29,'r')
 %             subtitle('trials 651:700')
-        print(fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'],['/' expts{iexp} '-singleCells_byTrialChunks-cell' num2str(unit) '.pdf']),'-dpdf')
+        print(fullfile(dirBase, 'Analysis','Neuropixel','marmosetFromNicholas',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'],[expts{iexp} '-singleCells_byTrialChunks-cell' num2str(unit) '.pdf']),'-dpdf')
 
     else 
 end
@@ -258,9 +266,9 @@ end
             end
     end
     
-    print(fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/', ...
+    print(fullfile(dirBase, 'Analysis','Neuropixel','marmosetFromNicholas', ...
         ['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'], ...
-        ['/' expts{iexp} '-allCells_PSTH-byTrialChunks.pdf']), '-dpdf', '-bestfit')
+        [expts{iexp} '-allCells_PSTH-byTrialChunks.pdf']), '-dpdf', '-bestfit')
 
 
 
@@ -294,31 +302,38 @@ end
         chunkPSTH(iChunk,:) = squeeze(mean(mean(PSTH(cellsToUse, trialIdx, :), 2), 1));
     end
     
+    % ---- DETERMINE SHARED Y-LIMITS (fixed range, data-dependent position) ----
+    yRange   = 0.04;
+    yDataMin = min(chunkPSTH(:));
+    yDataMax = max(chunkPSTH(:));
+    % center the fixed-width window on the data's midpoint
+    yMid  = (yDataMin + yDataMax) / 2;
+    yLims = [yMid - yRange/2, yMid + yRange/2];
+
     % ---- PLOT ----
     figure;
     sgtitle(['expt ' expts{iexp} ', avg across ' num2str(length(cellsToUse)) ' cells'])
-    
     for iChunk = 1:nChunks
-        subplot(nRows, nCols, iChunk)
+        subplot(4, 4, iChunk)
             plot(tCenters, chunkPSTH(iChunk,:), 'LineWidth', 1)
-            ylim([0 0.08])
+            ylim(yLims)
             xline(stimLine1)
             xline(stimLine2, 'r')
             set(gca,'TickDir','out'); box off
             subtitle(sprintf('trials %d:%d (n=%d)', ...
                 chunkStarts(iChunk), chunkEnds(iChunk), ...
                 chunkEnds(iChunk)-chunkStarts(iChunk)+1))
-            if iChunk > (nRows-1)*nCols
+            if iChunk > 3
                 xlabel('Time (s)')
             end
-            if mod(iChunk-1, nCols) == 0
+            if iChunk == 1 || iChunk == 3 
                 ylabel('Firing rate (Hz)')
             end
     end
     
-    print(fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/', ...
+    print(fullfile(dirBase, 'Analysis','Neuropixel','marmosetFromNicholas', ...
         ['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'], ...
-        ['/' expts{iexp} '-allCells_PSTH-byTrialChunks_trials1-600.pdf']), '-dpdf', '-bestfit')
+        [expts{iexp} '-allCells_PSTH-byTrialChunks_trials1-600.pdf']), '-dpdf', '-bestfit')
 
 %% LFP chunks and CSD analysis
 
@@ -382,7 +397,7 @@ figure;
         set(gca,'YDir','normal')
     movegui('center')
     sgtitle([expts{iexp}])
-    print(fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'],['/' expts{iexp} '-findSurface-LFPbyChannel_byTrialChunks.pdf']),'-dpdf')
+    print(fullfile(dirBase, 'Analysis','Neuropixel','marmosetFromNicholas',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'],[expts{iexp} '-findSurface-LFPbyChannel_byTrialChunks.pdf']),'-dpdf')
 
 
 %% CSD analysis
@@ -470,10 +485,10 @@ movegui('center')
         set(gca,'TickDir','out')
         set(gca,'YDir','normal')
     sgtitle([expts{iexp}])
-    print(fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'],[ '/' expts{iexp} '-findLayer4-CSD.pdf']),'-dpdf')
+    print(fullfile(dirBase, 'Analysis','Neuropixel','marmosetFromNicholas',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'],[expts{iexp} '-findLayer4-CSD.pdf']),'-dpdf')
 
 %% save output
 
-    save(fullfile('/home/smg92@dhe.duke.edu/GlickfeldLabShare/All_Staff/home/sara/Analysis/Neuropixel/marmosetFromNicholas/',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'], [expts{iexp} '-findLayer4-CSD.mat']), 'fLFP', 'CSDraw', 'gspikes', 'stimdef', 'chnls', 'Fs', 'dE', 'depth')
+    save(fullfile(dirBase, 'Analysis','Neuropixel','marmosetFromNicholas',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'], [expts{iexp} '-findLayer4-CSD.mat']), 'fLFP', 'CSDraw', 'gspikes', 'stimdef', 'chnls', 'Fs', 'dE', 'depth')
 
 end
