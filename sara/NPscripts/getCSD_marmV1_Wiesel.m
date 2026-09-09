@@ -9,8 +9,7 @@ chnls       = 2:2:260;  % Only take even channels because NPX probe has two colu
 depth       = -2500;
 
 
-for iexp = 2:9
-
+for iexp = 3:9 
     if runloc == 1 || runloc == 3    % Hubel, Nuke 
         dirBase = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara';
     elseif runloc == 2    % Wiesel
@@ -35,7 +34,7 @@ for iexp = 2:9
     LFPtime     = 0:1/str2double(metaLFP.imSampRate):str2double(metaLFP.fileTimeSecs);  % Time of each sample
     nSamp       = str2double(metaLFP.imSampRate)*str2double(metaLFP.fileTimeSecs); % Set number of samples to grab (as in, grabs all)
     LFPdata     = ReadBin(0, nSamp, metaLFP, lfFile.name, pwd);    % Load LFP (channels x samples)
-    LFPdataraw  = LFPdata;
+    % LFPdataraw  = LFPdata;
 
 % Parameters
     Fs          = 2500; % Sampling frequency in Hz
@@ -491,4 +490,5 @@ movegui('center')
 
     save(fullfile(dirBase, 'Analysis','Neuropixel','marmosetFromNicholas',['marmosetV1_' expts{iexp}], [expts{iexp} '_LFP'], [expts{iexp} '-findLayer4-CSD.mat']), 'fLFP', 'CSDraw', 'gspikes', 'stimdef', 'chnls', 'Fs', 'dE', 'depth')
 
+    clear LFPdata LFPdataFilt1 LFPdataraw
 end
