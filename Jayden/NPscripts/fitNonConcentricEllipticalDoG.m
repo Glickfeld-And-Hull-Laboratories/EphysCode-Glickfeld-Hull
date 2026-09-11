@@ -100,40 +100,56 @@ function [params, modelRF, fitInfo] = fitNonConcentricEllipticalDoG(data, gaussi
     bestOutput = [];
     bestExitflag = [];
     
-    for s = 1:nStarts
-    
+    maxAttempts = 300;   % safety cap so this can't loop forever
+    attempts = 0;
+    validFits = 0;
+
+    while validFits < nStarts && attempts < maxAttempts
+
+        attempts = attempts + 1;
+
         % ---- Generate a randomized initial guess ----
         p0s = p0;
-    
-        % randomize amplitudes (preserve scale)
         p0s(1:2) = p0(1:2) .* (0.5 + rand(1,2));
-    
-        % randomize sigmas
-        p0s(3) = p0(3) * (0.5 + rand);
-        p0s(4) = p0(4) * (0.5 + rand);
-    
-        % randomize tau
-        p0s(5) = 0.5 + 2*rand;
-    
-        % randomize theta
-        p0s(6) = -pi + 2*pi*rand;
-    
-        % randomize center
-        p0s(7) = (rand-0.5) * range(x);
-        p0s(8) = (rand-0.5) * range(y);
-    
-        % randomize surround offset
-        p0s(9)  = (rand-0.5) * nx/2;
-        p0s(10) = (rand-0.5) * ny/2;
-    
+        p0s(3)   = p0(3) * (0.5 + rand);
+        p0s(4)   = p0(4) * (0.5 + rand);
+        p0s(5)   = 0.5 + 2*rand;
+        p0s(6)   = -pi + 2*pi*rand;
+        p0s(7)   = (rand-0.5) * range(x);
+        p0s(8)   = (rand-0.5) * range(y);
+        p0s(9)   = (rand-0.5) * nx/2;
+        p0s(10)  = (rand-0.5) * ny/2;
+
         % ---- Fit ----
         try
             [pfit, ~, res, exitflag, output] = ...
                 lsqcurvefit(fun, p0s, XYdata, datav, lb, ub, opts);
-    
+
+            % ---- Check constraint on the FITTED params ----
+            % Use the ellipse's radius IN THE DIRECTION OF THE OFFSET,
+            % not the raw sigmaC/sigmaS (which ignore tau, theta)
+            sc    = pfit(3);
+            ss    = pfit(4);
+            tau   = pfit(5);
+            theta = pfit(6);
+            dx    = pfit(9);
+            dy    = pfit(10);
+
+            % Rotate offset into the ellipse's local (Xcp, Ycp) frame
+            dxL =  cos(theta)*dx + sin(theta)*dy;
+            dyL = -sin(theta)*dx + cos(theta)*dy;
+
+            % Combined directional "footprint" of center+surround along
+            % the offset direction (equivalent to sigmaC_eff + sigmaS_eff)
+            D = sqrt(dxL^2 + (tau*dyL)^2);
+
+            if D > (sc + ss + 2) % reject if offset is bigger than the sigmas combined, plus 2 just to give a little breathing room
+                continue   % reject this fit, don't count it, try again
+            end
+
+            validFits = validFits + 1;
             RSS = sum(res.^2);
-    
-            % ---- Keep best ----
+
             if RSS < bestRSS
                 bestRSS = RSS;
                 bestParams = pfit;
@@ -143,8 +159,14 @@ function [params, modelRF, fitInfo] = fitNonConcentricEllipticalDoG(data, gaussi
         catch
             % ignore failed starts
         end
+
     end
 
+    if isempty(bestParams)
+        warning('No valid fits found satisfying offset <= sigmaC + sigmaS within %d attempts.', maxAttempts);
+    end
+    
+    fprintf('Reached %d valid fits (of %d requested) in %d attempts.\n', validFits, nStarts, attempts);
 
     % Evaluate fitted model
     params = bestParams;
