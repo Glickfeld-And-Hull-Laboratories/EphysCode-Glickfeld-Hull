@@ -2,7 +2,7 @@
 % This takes ~7h to run for all 15 experiments (100 cells) for 5 chunks
 clear all; close all; clc
 
-exptsToRun  = [1:15];
+exptsToRun  =  [1:15]; %[1:15]
 exptloc     = 'V1';
 runloc      = 1;   % Where is this script being run? 1 == Hubel, 2 == Wiesel
 nChunks     = 10; % number of held-out segments, nChunks=10 is 10% held out
@@ -168,22 +168,14 @@ for ic = 1:nSelected
 end
 
 winFractions = winCounts ./ sum(winCounts,2);
-[maxFrac, winningModel] = max(winFractions, [], 2);
+[maxFrac, winningModel_spk] = max(winFractions, [], 2);
 
-% break exact ties by lower param count
-for ic = 1:size(winFractions,1)
-    tiedIdx = find(winFractions(ic,:) == maxFrac(ic));
-    if length(tiedIdx) > 1
-        [~, minLocal] = min(paramVec(tiedIdx));
-        winningModel(ic) = tiedIdx(minLocal);
-    end
-end
-nChunksWonByWinner = winCounts(sub2ind(size(winCounts), (1:nSelected)', winningModel));
+nChunksWonByWinner = winCounts(sub2ind(size(winCounts), (1:nSelected)', winningModel_spk));
 
 % maxVal for the winning model, averaged across chunks
 maxVal_winningModel = nan(nSelected, 1);
 for ic = 1:nSelected
-    thisModelData = corr_HO_all.(mNames{winningModel(ic)})(ic, :);  % 1 x nChunks
+    thisModelData = corr_HO_all.(mNames{winningModel_spk(ic)})(ic, :);  % 1 x nChunks
     maxVal_winningModel(ic) = mean(thisModelData);
 end
 
@@ -239,40 +231,54 @@ end
 
 nChunksWonByWinner_rsq = winCounts_rsq(sub2ind(size(winCounts_rsq), (1:nSelected_rsq)', winningModel_rsq));
 
-%% Determine winning model from one-standard-error (1-SE) rule, from the cross-validation model-selection literature (Hastie/Tibshirani/Friedman)
-% choose the simplest model whose performance is not statistically distinguishable from the best model, 
-% using the actual variability across your folds/chunks rather than an arbitrary % cutoff
-%
-% Steps per unit (ic):
-% 1.  Fisher z-transform the correlations before averaging (raw correlations aren't additive/normally 
-%     distributed).
-% 2.  Compute mean and SEM of z-transformed correlation across chunks, for each model.
-% 3.  Find the model with the max mean.
-% 4.  Among models whose mean is within 1 SEM of that max, pick the one with fewest parameters.
 
-mNames   = {'dog','gabor','gaus'};
-nParams  = struct('dog',10,'gabor',8,'gaus',7);
-paramVec = [10 8 7];  % dog, gabor, gaus - matches column order below
+%% get ultimate winning model
+% directly compare the tied models' pixelwise R² distributions (across 
+% chunks) for statistical separation. If they're significantly different, 
+% take the one with higher mean R²; if not, fall back to the fewest-params 
+% rule (which is what we want for a case where R² is nearly identical)
 
-nSelected = size(corr_HO_all.dog, 1);
+winningModel = winningModel_spk;
+alpha = 0.05;
 
-winningModel = zeros(nSelected,1);
-for ic = 1:nSelected
-    vals = [corr_HO_all.dog(ic,:); corr_HO_all.gabor(ic,:); corr_HO_all.gaus(ic,:)]'; % nChunks x 3
-
-    % Fisher z-transform (clip to avoid atanh(+/-1) = Inf)
-    z = atanh(max(min(vals, 0.999999), -0.999999));
-
-    zMean = mean(z, 1);
-    zSEM  = std(z, 0, 1) / sqrt(nChunks);
-
-    [bestMean, bestIdx] = max(zMean);
-    thresh = bestMean - zSEM(bestIdx);
-
-    withinSE = find(zMean >= thresh);
-    [~, minLocal] = min(paramVec(withinSE));
-    winningModel(ic) = withinSE(minLocal);
+for ic = 1:size(winFractions,1)
+    tiedIdx = find(winFractions(ic,:) == maxFrac(ic));
+    if length(tiedIdx) > 1
+        % pixelwise R2 across chunks for each tied model (nChunks x nTied)
+        rsqVals = cell2mat(arrayfun(@(m) rsq_HO_all.(mNames{m})(ic,:)', tiedIdx, 'UniformOutput', false));
+        if length(tiedIdx) == 2
+            % Wilcoxon signed-rank, paired, nonparametric (small n, no normality assumption)
+            p = signrank(rsqVals(:,1), rsqVals(:,2));
+        else
+            p = friedman(rsqVals, 1, 'off');  % paired, >2 groups
+        end
+        if p < alpha
+            % significantly different -> take the higher-R2 model
+            [~, bestLocal] = max(mean(rsqVals, 1));
+            winningModel(ic) = tiedIdx(bestLocal);
+        else
+            % not significantly different -> fall back to fewest params
+            [~, minLocal] = min(paramVec(tiedIdx));
+            winningModel(ic) = tiedIdx(minLocal);
+        end
+    end
 end
+
+% 
+% winningModel = winningModel_spk;
+% 
+% for ic = 1:size(winFractions,1)
+%     tiedIdx = find(winFractions(ic,:) == maxFrac(ic));
+%     if length(tiedIdx) > 1
+%         % pixelwise R2 across chunks for each tied model (nChunks x nTied)
+%         rsqVals = cell2mat(arrayfun(@(m) rsq_HO_all.(mNames{m})(ic,:)', ...
+%             tiedIdx, 'UniformOutput', false));
+% 
+%         % take the tied model with the highest mean pixelwise R2
+%         [~, bestLocal] = max(mean(rsqVals, 1));
+%         winningModel(ic) = tiedIdx(bestLocal);
+%     end
+% end
 
 %% Plot winners, and pixelwise Rsq results
 
@@ -334,7 +340,7 @@ for ic = 1:size(zscoreSTAs_allExpts,2)
         xlim([0.5 3.5]); ylim([-0.05 0.2])
         set(gca, 'xtick', 1:3, 'xticklabel', mNames)
         ylabel('held-out corr')
-        title(['winner: ' mNames{winningModel(ic)} ' (' num2str(nChunksWonByWinner(ic)) '/' num2str(nChunks) ')'])
+        title(['winner: ' mNames{winningModel_spk(ic)} ' (' num2str(nChunksWonByWinner(ic)) '/' num2str(nChunks) ')'])
         box off
 
     subplot(2,4,6)
@@ -547,13 +553,13 @@ omitcells = [19 41 43 57 65 79 95];
 
 L4_ind = find(layer_all(cellsSelected)==4);
 if doL4only == 1
-    indDoG = intersect(setdiff(find(winningModel_rsq==1),omitcells),L4_ind);
-    indGab = intersect(setdiff(find(winningModel_rsq==2),omitcells),L4_ind);
-    indGau = intersect(setdiff(find(winningModel_rsq==3),omitcells),L4_ind);
+    indDoG = intersect(setdiff(find(winningModel==1),omitcells),L4_ind);
+    indGab = intersect(setdiff(find(winningModel==2),omitcells),L4_ind);
+    indGau = intersect(setdiff(find(winningModel==3),omitcells),L4_ind);
 else
-    indDoG = setdiff(find(winningModel_rsq==1),omitcells);
-    indGab = setdiff(find(winningModel_rsq==2),omitcells);
-    indGau = setdiff(find(winningModel_rsq==3),omitcells);
+    indDoG = setdiff(find(winningModel==1),omitcells);
+    indGab = setdiff(find(winningModel==2),omitcells);
+    indGau = setdiff(find(winningModel==3),omitcells);
 end
 
 figure;
@@ -771,7 +777,7 @@ print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\'
 
 figure;
     subplot(1,3,1)
-        histogram(winningModel_rsq)
+        histogram(winningModel)
         set(gca,'TickDir','out'); box off; 
         ylabel('# of cells')
 print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','spatialRFs_heldOut', 'modelFits_winners.pdf'), '-dpdf', '-bestfit')

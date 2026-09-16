@@ -9,7 +9,7 @@ chnls       = 2:2:260;  % Only take even channels because NPX probe has two colu
 depth       = -2500;
 
 
-for iexp = 3:9 
+for iexp = 3 % no 3
     if runloc == 1 || runloc == 3    % Hubel, Nuke 
         dirBase = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\sara';
     elseif runloc == 2    % Wiesel
@@ -34,7 +34,7 @@ for iexp = 3:9
     LFPtime     = 0:1/str2double(metaLFP.imSampRate):str2double(metaLFP.fileTimeSecs);  % Time of each sample
     nSamp       = str2double(metaLFP.imSampRate)*str2double(metaLFP.fileTimeSecs); % Set number of samples to grab (as in, grabs all)
     LFPdata     = ReadBin(0, nSamp, metaLFP, lfFile.name, pwd);    % Load LFP (channels x samples)
-    % LFPdataraw  = LFPdata;
+    LFPdataraw  = LFPdata;
 
 % Parameters
     Fs          = 2500; % Sampling frequency in Hz
@@ -42,13 +42,14 @@ for iexp = 3:9
     cutofflow   = 150; % Cutoff frequency in Hz
     [b, a] = butter(4, cutofflow/(Fs/2), 'low'); % Design filter (Butterworth, 4th order)
     LFPdataFilt1 = filtfilt(b, a, LFPdata);
+    clear LFPdata
     % 60Hhz notch filter
     d = designfilt('bandstopiir','FilterOrder',2,'HalfPowerFrequency1',59,'HalfPowerFrequency2',61,'DesignMethod','butter','SampleRate',Fs);
     LFPdataFilt2 = filtfilt(d,LFPdataFilt1);
     clear LFPdataFilt1
     d = designfilt('bandstopiir','FilterOrder',2,'HalfPowerFrequency1',119,'HalfPowerFrequency2',121,'DesignMethod','butter','SampleRate',Fs);
     LFPdata = filtfilt(d,LFPdataFilt2);
-    clear LFPdataFilt2
+    clear LFPdataFilt2 
 
 % Load Stimulus On times
     stimTimesMat = dir(fullfile(pwd,'*.mat'));
@@ -62,7 +63,7 @@ for iexp = 3:9
     %
     %   stim conditions:
     %       1 - stim on time
-    %       2 - type (0, gratings,� 1, plaids)
+    %       2 - type (0, gratings, 1, plaids)
     %       3 - direction
     %       4 - phase
     %       5 - SF
