@@ -1,5 +1,5 @@
 
-function [trialStruct, gratingRespMatrix, gratingOFFRespMatrix, resp, base] = createTrialStruct12Dir4Phase(stimStruct, goodUnitStruct, b)
+function [trialStruct, gratingRespMatrix, gratingOFFRespMatrix, spikeMatForPSTH, resp, base] = createTrialStruct12Dir4Phase(stimStruct, goodUnitStruct, b)
     trialStruct = struct(); 
 
     % Create trial-by-trial structure
@@ -67,6 +67,9 @@ function [trialStruct, gratingRespMatrix, gratingOFFRespMatrix, resp, base] = cr
             % Bin spikes into 10 ms bins
             respCounts = histcounts(trialSpikes, 0:binSize:stimDuration);
             baseCounts = histcounts(trialOFFSpikes, -preStimTime:binSize:0);
+
+            % nCells x nTrials x stimulusPeriod array for PSTHs
+            spikeMatForPSTH(i, j, :) = [baseCounts, respCounts];
 
             % Get trial information
             dirIdx   = find(uniqueDirs == trialStruct(j).stimDir);      % Find corresponding direction index

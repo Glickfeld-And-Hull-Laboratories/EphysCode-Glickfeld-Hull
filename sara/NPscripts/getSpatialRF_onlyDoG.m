@@ -33,10 +33,21 @@ end
     idxCon      = setdiff(indRF_con,indRF_pix); % contrast method only
     
     ind         = intersect(resp_ind_dir_all, find(DSI_all>.5));
-    ind_DS      = intersect(idxInt,ind); % visually responsive and direction-selective
+
+    ind_DS = intersect(find(DSI_all>0.25),find(gDSI_all>0.2));
+        [DSIstruct_new] = getDSIstruct_new(avg_resp_dir_all);
+        gratResp        = DSIstruct_new.resp;
+        maxGratResp     = max(gratResp,[],2);
+        minGratResp     = min(gratResp,[],2);
+    ind_peakFRmin   = find(maxGratResp>1);
+    ind_rangeFRmin  = find(maxGratResp > (abs(minGratResp)*2));
+    ind_FR = intersect(ind_peakFRmin,ind_rangeFRmin);
+    
+    ind_mouseEphys = intersect(intersect(intersect(ind_DS,resp_ind_dir_all),ind_FR),find(~isnan(layer_all)));
+
 
 % use visually responsive cells with DS > .5 and reliable RFs.
-    cellsSelected = intersect(idxInt, ind_DS);
+    cellsSelected = intersect(idxInt, ind_mouseEphys);
 
     omitCells   = [];
     cellsIdx    = setdiff(cellsSelected, omitCells);
@@ -125,9 +136,10 @@ end
 
 %% omit bad STA cells
 
-omitCells = [19 41 43 57 65 87 95];
+omitCells = [1441 1558 1753];
 
-cellsIdx_final = setdiff(cellsIdx,cellsIdx(omitCells));
+omitCells = [1441 1558 1753 1015 1438]; 
+cellsIdx_final = setdiff(cellsIdx,omitCells);
 
 save( ...
     fullfile( ...
@@ -139,6 +151,8 @@ save( ...
         'randDirFourPhase', ...
         'mouse_RFs', ...
         'final_RFindices.mat'), ...
+     'cellsIdx', ...
+     'dog_fits_Uncropped',...
     'cellsIdx_final');
 
 %% Plot STAs and fits
@@ -295,139 +309,148 @@ Zp_max = max(Zp_all(:, cellsIdx_final),[],1);
 baseline = b_all(cellsIdx_final)';
 amplitude = amp_all(cellsIdx_final)';
 
-indDoG = setdiff(1:length(cellsIdx),omitCells);
+indDoG = ~ismember(cellsIdx,omitCells);
 
+% cell1 = find(cellsIdx==1015);
+% cell2 = find(cellsIdx==1438);
+% 
+% offsetMag(cell1) = 0;
+% offsetMag(cell2) = 0;
 
 %%
 
 figure;
-    subplot(4,4,1)
+    subplot(4,3,1)
         scatter_reg(offsetMag(indDoG)',Zc_avg,12)
         set(gca,'TickDir','out'); box off
-        ylabel('mean Zc'); ylim([-1 4])
+        ylabel('mean Zc'); ylim([-2 6])
         xlabel('offset')
-    subplot(4,4,2)
+    subplot(4,3,2)
         scatter_reg(offsetMag(indDoG)',Zp_avg,12)
         set(gca,'TickDir','out'); box off
-        ylabel('mean Zp'); ylim([-1 4])
+        ylabel('mean Zp'); ylim([-2 6])
         xlabel('offset')
-    subplot(4,4,3)
+    subplot(4,3,3)
         scatter_reg(dog_AR(indDoG)',Zc_avg,12)
         set(gca,'TickDir','out'); box off
-        ylabel('mean Zc'); ylim([-1 4])
+        ylabel('mean Zc'); ylim([-2 6])
         xlabel('aspect ratio (tau)')
-    subplot(4,4,4)
+    subplot(4,3,4)
         scatter_reg(dog_AR(indDoG)',Zp_avg,12)
         set(gca,'TickDir','out'); box off
-        ylabel('mean Zp'); ylim([-1 4])
+        ylabel('mean Zp'); ylim([-2 6])
         xlabel('aspect ratio (tau)')
-    subplot(4,4,5)
+    subplot(4,3,5)
         scatter_reg(dog_sizeC(indDoG)',Zc_avg,12)
         set(gca,'TickDir','out'); box off
-        ylabel('mean Zc'); ylim([-1 4])
+        ylabel('mean Zc'); ylim([-2 6])
         xlabel('size center')
-    subplot(4,4,6)
+    subplot(4,3,6)
         scatter_reg(dog_sizeC(indDoG)',Zp_avg,12)
         set(gca,'TickDir','out'); box off
-        ylabel('mean Zp'); ylim([-1 4])
+        ylabel('mean Zp'); ylim([-2 6])
         xlabel('size center')
-    subplot(4,4,7)
+    subplot(4,3,7)
         scatter_reg(dog_sizeS(indDoG)',Zc_avg,12)
         set(gca,'TickDir','out'); box off
-        ylabel('mean Zc'); ylim([-1 4])
+        ylabel('mean Zc'); ylim([-2 6])
         xlabel('size surround')
-    subplot(4,4,8)
+    subplot(4,3,8)
         scatter_reg(dog_sizeS(indDoG)',Zp_avg,12)
         set(gca,'TickDir','out'); box off
-        ylabel('mean Zp'); ylim([-1 4])
+        ylabel('mean Zp'); ylim([-2 6])
         xlabel('size surround')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary1.pdf'), '-dpdf', '-bestfit')
 
 figure;
-    subplot(4,4,1)
+    subplot(4,3,1)
         scatter_reg(offsetMag(indDoG)',Zc_max,12)
         set(gca,'TickDir','out'); box off
-        ylabel('max Zc'); ylim([0 7])
+        ylabel('max Zc'); ylim([-1 7])
         xlabel('offset')
-    subplot(4,4,2)
+    subplot(4,3,2)
         scatter_reg(offsetMag(indDoG)',Zp_max,12)
         set(gca,'TickDir','out'); box off
-        ylabel('max Zp'); ylim([0 7])
+        ylabel('max Zp'); ylim([-1 7])
         xlabel('offset')
-    subplot(4,4,3)
+    subplot(4,3,3)
         scatter_reg(dog_AR(indDoG)',Zc_max,12)
         set(gca,'TickDir','out'); box off
-        ylabel('meamaxn Zc'); ylim([0 7])
+        ylabel('meamaxn Zc'); ylim([-1 7])
         xlabel('aspect ratio (tau)')
-    subplot(4,4,4)
+    subplot(4,3,4)
         scatter_reg(dog_AR(indDoG)',Zp_max,12)
         set(gca,'TickDir','out'); box off
-        ylabel('max Zp'); ylim([0 7])
+        ylabel('max Zp'); ylim([-1 7])
         xlabel('aspect ratio (tau)')
-    subplot(4,4,5)
+    subplot(4,3,5)
         scatter_reg(dog_sizeC(indDoG)',Zc_max,12)
         set(gca,'TickDir','out'); box off
-        ylabel('max Zc'); ylim([0 7])
+        ylabel('max Zc'); ylim([-1 7])
         xlabel('size center')
-    subplot(4,4,6)
+    subplot(4,3,6)
         scatter_reg(dog_sizeC(indDoG)',Zp_max,12)
         set(gca,'TickDir','out'); box off
-        ylabel('max Zp'); ylim([0 7])
+        ylabel('max Zp'); ylim([-1 7])
         xlabel('size center')
-    subplot(4,4,7)
+    subplot(4,3,7)
         scatter_reg(dog_sizeS(indDoG)',Zc_max,12)
         set(gca,'TickDir','out'); box off
-        ylabel('max Zc'); ylim([0 7])
+        ylabel('max Zc'); ylim([-1 7])
         xlabel('size surround')
-    subplot(4,4,8)
+    subplot(4,3,8)
         scatter_reg(dog_sizeS(indDoG)',Zp_max,12)
         set(gca,'TickDir','out'); box off
-        ylabel('max Zp'); ylim([0 7])
+        ylabel('max Zp'); ylim([-1 7])
         xlabel('size surround')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary2.pdf'), '-dpdf', '-bestfit')
 
 figure;
-    subplot(4,4,1)
+    subplot(4,3,1)
         scatter_reg(offsetMag(indDoG)',baseline,12)
         set(gca,'TickDir','out'); box off
         ylabel('baseline'); 
         xlabel('offset')
-    subplot(4,4,2)
+    subplot(4,3,2)
         scatter_reg(offsetMag(indDoG)',amplitude,12)
         set(gca,'TickDir','out'); box off
         ylabel('amplitude'); 
         xlabel('offset')
-    subplot(4,4,3)
+    subplot(4,3,3)
         scatter_reg(dog_AR(indDoG)',baseline,12)
         set(gca,'TickDir','out'); box off
         ylabel('baseline'); 
         xlabel('aspect ratio (tau)')
-    subplot(4,4,4)
+    subplot(4,3,4)
         scatter_reg(dog_AR(indDoG)',amplitude,12)
         set(gca,'TickDir','out'); box off
         ylabel('amplitude');
         xlabel('aspect ratio (tau)')
-    subplot(4,4,5)
+    subplot(4,3,5)
         scatter_reg(dog_sizeC(indDoG)',baseline,12)
         set(gca,'TickDir','out'); box off
         ylabel('baseline'); 
         xlabel('size center')
-    subplot(4,4,6)
+    subplot(4,3,6)
         scatter_reg(dog_sizeC(indDoG)',amplitude,12)
         set(gca,'TickDir','out'); box off
         ylabel('amplitude'); 
         xlabel('size center')
-    subplot(4,4,7)
+    subplot(4,3,7)
         scatter_reg(dog_sizeS(indDoG)',baseline,12)
         set(gca,'TickDir','out'); box off
         ylabel('baseline'); 
         xlabel('size surround')
-    subplot(4,4,8)
+    subplot(4,3,8)
         scatter_reg(dog_sizeS(indDoG)',amplitude,12)
         set(gca,'TickDir','out'); box off
         ylabel('amplitude'); 
         xlabel('size surround')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary3.pdf'), '-dpdf', '-bestfit')
 
 
-        
+
+
 
 %%
 
@@ -449,29 +472,75 @@ figure;
 scatter_reg(PO(indDoG),PO_fft(indDoG))
 
 
+% 
+% 
+% figure;
+%     subplot(4,4,1)
+%         scatter_reg(phaseCoh(indDoG),baseline,12)
+%         set(gca,'TickDir','out'); box off
+%         ylabel('baseline'); 
+%         xlabel('phaseCoh')
+%     subplot(4,4,2)
+%         scatter_reg(phaseCoh(indDoG),amplitude,12)
+%         set(gca,'TickDir','out'); box off
+%         ylabel('amplitude'); 
+%         xlabel('phaseCoh')
+%     subplot(4,4,3)
+%         scatter_reg(phaseCoh_fft(indDoG),baseline,12)
+%         set(gca,'TickDir','out'); box off
+%         ylabel('baseline'); 
+%         xlabel('phaseCoh POfft')
+%     subplot(4,4,4)
+%         scatter_reg(phaseCoh_fft(indDoG),amplitude,12)
+%         set(gca,'TickDir','out'); box off
+%         ylabel('amplitude'); 
+%         xlabel('phaseCoh POfft')
+
 
 
 figure;
-    subplot(4,4,1)
-        scatter_reg(phaseCoh(indDoG),baseline,12)
+    subplot(4,3,1)
+        scatter_reg(offsetMag(indDoG)',baseline,12)
         set(gca,'TickDir','out'); box off
         ylabel('baseline'); 
-        xlabel('phaseCoh')
-    subplot(4,4,2)
-        scatter_reg(phaseCoh(indDoG),amplitude,12)
+        xlabel('offset')
+    subplot(4,3,2)
+        scatter_reg(offsetMag(indDoG)',amplitude,12)
         set(gca,'TickDir','out'); box off
         ylabel('amplitude'); 
-        xlabel('phaseCoh')
-    subplot(4,4,3)
-        scatter_reg(phaseCoh_fft(indDoG),baseline,12)
+        xlabel('offset')
+    subplot(4,3,3)
+        scatter_reg(dog_AR(indDoG)',baseline,12)
         set(gca,'TickDir','out'); box off
         ylabel('baseline'); 
-        xlabel('phaseCoh POfft')
-    subplot(4,4,4)
-        scatter_reg(phaseCoh_fft(indDoG),amplitude,12)
+        xlabel('aspect ratio (tau)')
+    subplot(4,3,4)
+        scatter_reg(dog_AR(indDoG)',amplitude,12)
+        set(gca,'TickDir','out'); box off
+        ylabel('amplitude');
+        xlabel('aspect ratio (tau)')
+    subplot(4,3,5)
+        scatter_reg(dog_sizeC(indDoG)',baseline,12)
+        set(gca,'TickDir','out'); box off
+        ylabel('baseline'); 
+        xlabel('size center')
+    subplot(4,3,6)
+        scatter_reg(dog_sizeC(indDoG)',amplitude,12)
         set(gca,'TickDir','out'); box off
         ylabel('amplitude'); 
-        xlabel('phaseCoh POfft')
+        xlabel('size center')
+    subplot(4,3,7)
+        scatter_reg(dog_sizeS(indDoG)',baseline,12)
+        set(gca,'TickDir','out'); box off
+        ylabel('baseline'); 
+        xlabel('size surround')
+    subplot(4,3,8)
+        scatter_reg(dog_sizeS(indDoG)',amplitude,12)
+        set(gca,'TickDir','out'); box off
+        ylabel('amplitude'); 
+        xlabel('size surround')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary3.pdf'), '-dpdf', '-bestfit')
+
 
 
 

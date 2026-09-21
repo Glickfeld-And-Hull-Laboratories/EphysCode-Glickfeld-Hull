@@ -40,7 +40,6 @@ x = x(valid);
 y = y(valid);
 
 scatter(x,y,sz,'filled','LineWidth',0.2,'MarkerEdgeColor','w')
-axis square
 set(gca,'TickDir','out')
 hold on
 
