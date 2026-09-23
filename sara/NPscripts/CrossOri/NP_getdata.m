@@ -1,7 +1,7 @@
 clear all; close all; clc
 baseDir = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\';
 
-iexp = 16; % Choose experiment
+iexp = 13; % Choose experiment % 13 18 19 20 21 22 23 24 25 26 27 28 29 30 31
 exptloc = 'V1'; %LG
 
 [exptStruct] = createExptStruct(iexp,exptloc); % Load relevant times and directories for this experiment
@@ -61,7 +61,7 @@ getSpatialRF(iexp, exptloc)
 
 
 %% Sort spikes into trials and bins
-if iexp == 11 
+if iexp < 13
     b = 4;
 else
     b = 5; % What stimulus presentation block to use for RandDirFourPhase analysis?
@@ -167,7 +167,15 @@ nTrials = size(spikeMatForPSTH,2);
         % average across selected cells, then across trials in this chunk
         chunkPSTH(iChunk,:) = squeeze(mean(mean(spikeMatForPSTH(cellsToUse, trialIdx, :), 2), 1));
     end
-    
+
+% ---- DETERMINE SHARED Y-LIMITS (fixed range, data-dependent position) ----
+    yRange   = 0.08;
+    yDataMin = min(chunkPSTH(:));
+    yDataMax = max(chunkPSTH(:));
+    % center the fixed-width window on the data's midpoint
+    yMid  = (yDataMin + yDataMax) / 2;
+    yLims = [yMid - yRange/2, yMid + yRange/2];   
+
 % ---- PLOT ----
     figure;
     sgtitle(['expt ' num2str(iexp) ', avg across ' num2str(length(cellsToUse)) ' cells'])
@@ -175,6 +183,7 @@ nTrials = size(spikeMatForPSTH,2);
     for iChunk = 1:nChunks
         subplot(nRows, nCols, iChunk)
             plot(tCenters, chunkPSTH(iChunk,:), 'LineWidth', 1)
+            ylim(yLims)
             xline(stimLine1)
             xline(stimLine2, 'r')
             xlim([-0.2 0.25]);
@@ -265,20 +274,11 @@ end
 
 
 
-
-
-
-
-
-
-
-
-
 %% Marmoset expt
 close all; clc; clear all
-iexpt = 9;
+iexpt = 10;
 
-expts = {'g01','g06','g12','g17','tss2','tss6','tss7','tss4','elf1'};
+expts = {'g01','g06','g12','g17','tss2','tss6','tss7','tss4','elf1','elf3'};
 
 % Get stim struct
     stimStruct = createStimStruct_marm(expts{iexpt});

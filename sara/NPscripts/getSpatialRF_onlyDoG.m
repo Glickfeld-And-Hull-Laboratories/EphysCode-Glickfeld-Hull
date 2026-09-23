@@ -298,6 +298,8 @@ dogFits_params = results.params{1};
 
 %%
 
+data_DoG_all = permute(dog_fits_Uncropped,[3 1 2]);
+
 analysisDir=('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase');
 load([analysisDir '\CrossOri_randDirFourPhase_summary.mat'])
 
@@ -311,51 +313,113 @@ amplitude = amp_all(cellsIdx_final)';
 
 indDoG = ~ismember(cellsIdx,omitCells);
 
-% cell1 = find(cellsIdx==1015);
-% cell2 = find(cellsIdx==1438);
-% 
-% offsetMag(cell1) = 0;
-% offsetMag(cell2) = 0;
+
+[DSIstruct] = getDSIstruct_new(avg_resp_dir_all);
+    gOSI_all = [DSIstruct.gOSI];
+    gOSI_toplot = gOSI_all(cellsIdx_final);
+
+
+ygrid       = ((1:29) - 14.5) * 2;   % 29 points, centered, spanning -28 to +28 deg
+xgrid       = ((1:52) - 26) * 2; % 52 points, centered, spanning -51 to +51 deg
+SF          = 0.05; % plaid grating's spatial frequency
+beta        = 60; % half the angle between the two plaid components
+
+for ic = 1:nSelected
+    prefDir     = dirs(indDir(ic));    % actual direction in degrees, 0-330
+    RF          = squeeze(data_all(ic,:,:));
+    RF_dog      = squeeze(data_DoG_all(ic,:,:));
+    PO(ic)      = mod(prefDir, 180);   % preferred orientation
+    [PO_fftAll(ic), OSI_fftAll(ic), prefSF(ic)] = estimatePOfromFFT(RF, xgrid, ygrid);
+    [PO_fft(ic), OSI_fft(ic), ~] = estimatePOfromFFT(RF, xgrid, ygrid, SF);
+    phaseCoh(ic) = estimatePhaseCoherence(RF, xgrid, ygrid, PO(ic), SF, beta);
+    phaseCoh_fft(ic) = estimatePhaseCoherence(RF, xgrid, ygrid, PO_fft(ic), SF, beta);
+
+    [PO_dog_fftAll(ic), OSI_dog_fftAll(ic), prefSF_dog(ic)] = estimatePOfromFFT(RF_dog, xgrid, ygrid);
+    [PO_dog_fft(ic), OSI_dog_fft(ic), ~] = estimatePOfromFFT(RF_dog, xgrid, ygrid, SF);
+end
+
+figure;
+    subplot 221
+        scatter_reg(PO(indDoG),PO_fftAll(indDoG))
+    subplot 222
+        scatter_reg(PO(indDoG),PO_fft(indDoG),20)
+        set(gca,'TickDir','out'); axis square; box off
+        xlim([0 180]); xlabel('Orientation (deg)')
+        ylim([0 180]); ylabel('Orientation (deg)')
+    subplot 223
+        scatter_reg(OSI_dog_fft(indDoG),gOSI_toplot,20)
+        set(gca,'TickDir','out'); axis square; box off
+        ylabel('Spiking gOSI')
+        xlabel('STA gOSI (0.05)')
+        xlim([0 1])
+        ylim([0 1])
+    subplot 224
+        scatter_reg(OSI_dog_fft(indDoG),OSI_dog_fftAll(indDoG),20)
+        set(gca,'TickDir','out'); axis square; box off
+        ylabel('STA gOSI (pref)')
+        xlabel('STA gOSI (0.05)')
+        xlim([0 1])
+        ylim([0 1])
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary_gOSISpikeVSTA.pdf'), '-dpdf', '-bestfit')
+    
+%% plot FFT for example cells
+
+cellsToPlot = find(ismember(cellsIdx, [1613 1624 1347]));  
+
+figure
+for k = 1:numel(cellsToPlot)
+    ic = cellsToPlot(k);    
+    RF = squeeze(data_all(ic,:,:));
+    RF_dog = squeeze(data_DoG_all(ic,:,:));
+
+    subplot(2,3,k)
+    plotRF_FFT(RF_dog, xgrid, ygrid, 'SF', SF, 'prefOri', PO_dog_fft(ic), 'title', sprintf('cell %d', cellsIdx(ic)))
+    subplot(2,3,k+length(cellsToPlot))
+    plotRF_FFT(RF, xgrid, ygrid, 'SF', SF, 'prefOri', PO_dog_fft(ic), 'title', sprintf('cell %d', cellsIdx(ic)))
+end
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_exampleCells_STAffts.pdf'), '-dpdf', '-bestfit')
+
+
 
 %%
 
 figure;
-    subplot(4,3,1)
+    subplot(3,3,1)
         scatter_reg(offsetMag(indDoG)',Zc_avg,12)
         set(gca,'TickDir','out'); box off
         ylabel('mean Zc'); ylim([-2 6])
         xlabel('offset')
-    subplot(4,3,2)
+    subplot(3,3,2)
         scatter_reg(offsetMag(indDoG)',Zp_avg,12)
         set(gca,'TickDir','out'); box off
         ylabel('mean Zp'); ylim([-2 6])
         xlabel('offset')
-    subplot(4,3,3)
+    subplot(3,3,3)
         scatter_reg(dog_AR(indDoG)',Zc_avg,12)
         set(gca,'TickDir','out'); box off
         ylabel('mean Zc'); ylim([-2 6])
         xlabel('aspect ratio (tau)')
-    subplot(4,3,4)
+    subplot(3,3,4)
         scatter_reg(dog_AR(indDoG)',Zp_avg,12)
         set(gca,'TickDir','out'); box off
         ylabel('mean Zp'); ylim([-2 6])
         xlabel('aspect ratio (tau)')
-    subplot(4,3,5)
+    subplot(3,3,5)
         scatter_reg(dog_sizeC(indDoG)',Zc_avg,12)
         set(gca,'TickDir','out'); box off
         ylabel('mean Zc'); ylim([-2 6])
         xlabel('size center')
-    subplot(4,3,6)
+    subplot(3,3,6)
         scatter_reg(dog_sizeC(indDoG)',Zp_avg,12)
         set(gca,'TickDir','out'); box off
         ylabel('mean Zp'); ylim([-2 6])
         xlabel('size center')
-    subplot(4,3,7)
+    subplot(3,3,7)
         scatter_reg(dog_sizeS(indDoG)',Zc_avg,12)
         set(gca,'TickDir','out'); box off
         ylabel('mean Zc'); ylim([-2 6])
         xlabel('size surround')
-    subplot(4,3,8)
+    subplot(3,3,8)
         scatter_reg(dog_sizeS(indDoG)',Zp_avg,12)
         set(gca,'TickDir','out'); box off
         ylabel('mean Zp'); ylim([-2 6])
@@ -406,42 +470,42 @@ figure;
 print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary2.pdf'), '-dpdf', '-bestfit')
 
 figure;
-    subplot(4,3,1)
+    subplot(3,3,1)
         scatter_reg(offsetMag(indDoG)',baseline,12)
         set(gca,'TickDir','out'); box off
         ylabel('baseline'); 
         xlabel('offset')
-    subplot(4,3,2)
+    subplot(3,3,2)
         scatter_reg(offsetMag(indDoG)',amplitude,12)
         set(gca,'TickDir','out'); box off
         ylabel('amplitude'); 
         xlabel('offset')
-    subplot(4,3,3)
+    subplot(3,3,3)
         scatter_reg(dog_AR(indDoG)',baseline,12)
         set(gca,'TickDir','out'); box off
         ylabel('baseline'); 
         xlabel('aspect ratio (tau)')
-    subplot(4,3,4)
+    subplot(3,3,4)
         scatter_reg(dog_AR(indDoG)',amplitude,12)
         set(gca,'TickDir','out'); box off
         ylabel('amplitude');
         xlabel('aspect ratio (tau)')
-    subplot(4,3,5)
+    subplot(3,3,5)
         scatter_reg(dog_sizeC(indDoG)',baseline,12)
         set(gca,'TickDir','out'); box off
         ylabel('baseline'); 
         xlabel('size center')
-    subplot(4,3,6)
+    subplot(3,3,6)
         scatter_reg(dog_sizeC(indDoG)',amplitude,12)
         set(gca,'TickDir','out'); box off
         ylabel('amplitude'); 
         xlabel('size center')
-    subplot(4,3,7)
+    subplot(3,3,7)
         scatter_reg(dog_sizeS(indDoG)',baseline,12)
         set(gca,'TickDir','out'); box off
         ylabel('baseline'); 
         xlabel('size surround')
-    subplot(4,3,8)
+    subplot(3,3,8)
         scatter_reg(dog_sizeS(indDoG)',amplitude,12)
         set(gca,'TickDir','out'); box off
         ylabel('amplitude'); 
@@ -450,26 +514,277 @@ print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\'
 
 
 
-
-
-%%
-
-for ic = 1:nSelected
-    prefDir     = dirs(indDir(ic));    % actual direction in degrees, 0-330
-    RF          = squeeze(data_all(ic,:,:));
-    ygrid       = ((1:29) - 14.5) * 2;   % 29 points, centered, spanning -28 to +28 deg
-    xgrid       = ((1:52) - 26) * 2; % 52 points, centered, spanning -51 to +51 deg
-    PO(ic)      = mod(prefDir, 180);   % preferred orientation
-    PO_fft(ic)  = estimatePOfromFFT(RF, xgrid, ygrid);
-    SF          = 0.05; % plaid grating's spatial frequency
-    beta        = 60; % half the angle between the two plaid components
-    
-    phaseCoh(ic) = estimatePhaseCoherence(RF, xgrid, ygrid, PO(ic), SF, beta);
-    phaseCoh_fft(ic) = estimatePhaseCoherence(RF, xgrid, ygrid, PO_fft(ic), SF, beta);
-end
+% COLOR CODE by STA FFT OSI at 0.05 SF
+figure;
+    subplot(4,3,1)
+        scatter_reg(offsetMag(indDoG)',Zc_avg,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zc'); ylim([-2 6])
+        xlabel('offset')
+    subplot(4,3,2)
+        scatter_reg(offsetMag(indDoG)',Zp_avg,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zp'); ylim([-2 6])
+        xlabel('offset')
+    subplot(4,3,3)
+        scatter_reg(dog_AR(indDoG)',Zc_avg,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zc'); ylim([-2 6])
+        xlabel('aspect ratio (tau)')
+    subplot(4,3,4)
+        scatter_reg(dog_AR(indDoG)',Zp_avg,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zp'); ylim([-2 6])
+        xlabel('aspect ratio (tau)')
+    subplot(4,3,5)
+        scatter_reg(dog_sizeC(indDoG)',Zc_avg,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zc'); ylim([-2 6])
+        xlabel('size center')
+    subplot(4,3,6)
+        scatter_reg(dog_sizeC(indDoG)',Zp_avg,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zp'); ylim([-2 6])
+        xlabel('size center')
+    subplot(4,3,7)
+        scatter_reg(dog_sizeS(indDoG)',Zc_avg,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zc'); ylim([-2 6])
+        xlabel('size surround')
+    subplot(4,3,8)
+        scatter_reg(dog_sizeS(indDoG)',Zp_avg,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zp'); ylim([-2 6])
+        xlabel('size surround')
+sgtitle('color code by gOSI (STA FFT @ 0.05 SF)')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary1_colorOSI_fft.pdf'), '-dpdf', '-bestfit')
 
 figure;
-scatter_reg(PO(indDoG),PO_fft(indDoG))
+    subplot(4,3,1)
+        scatter_reg(offsetMag(indDoG)',Zc_max,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('max Zc'); ylim([-1 7])
+        xlabel('offset')
+    subplot(4,3,2)
+        scatter_reg(offsetMag(indDoG)',Zp_max,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('max Zp'); ylim([-1 7])
+        xlabel('offset')
+    subplot(4,3,3)
+        scatter_reg(dog_AR(indDoG)',Zc_max,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('meamaxn Zc'); ylim([-1 7])
+        xlabel('aspect ratio (tau)')
+    subplot(4,3,4)
+        scatter_reg(dog_AR(indDoG)',Zp_max,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('max Zp'); ylim([-1 7])
+        xlabel('aspect ratio (tau)')
+    subplot(4,3,5)
+        scatter_reg(dog_sizeC(indDoG)',Zc_max,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('max Zc'); ylim([-1 7])
+        xlabel('size center')
+    subplot(4,3,6)
+        scatter_reg(dog_sizeC(indDoG)',Zp_max,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('max Zp'); ylim([-1 7])
+        xlabel('size center')
+    subplot(4,3,7)
+        scatter_reg(dog_sizeS(indDoG)',Zc_max,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('max Zc'); ylim([-1 7])
+        xlabel('size surround')
+    subplot(4,3,8)
+        scatter_reg(dog_sizeS(indDoG)',Zp_max,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('max Zp'); ylim([-1 7])
+        xlabel('size surround')
+sgtitle('color code by gOSI (STA FFT @ 0.05 SF)')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary2_colorOSI_fft.pdf'), '-dpdf', '-bestfit')
+
+figure;
+    subplot(4,3,1)
+        scatter_reg(offsetMag(indDoG)',baseline,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('baseline'); 
+        xlabel('offset')
+    subplot(4,3,2)
+        scatter_reg(offsetMag(indDoG)',amplitude,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('amplitude'); 
+        xlabel('offset')
+    subplot(4,3,3)
+        scatter_reg(dog_AR(indDoG)',baseline,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('baseline'); 
+        xlabel('aspect ratio (tau)')
+    subplot(4,3,4)
+        scatter_reg(dog_AR(indDoG)',amplitude,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('amplitude');
+        xlabel('aspect ratio (tau)')
+    subplot(4,3,5)
+        scatter_reg(dog_sizeC(indDoG)',baseline,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('baseline'); 
+        xlabel('size center')
+    subplot(4,3,6)
+        scatter_reg(dog_sizeC(indDoG)',amplitude,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('amplitude'); 
+        xlabel('size center')
+    subplot(4,3,7)
+        scatter_reg(dog_sizeS(indDoG)',baseline,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('baseline'); 
+        xlabel('size surround')
+    subplot(4,3,8)
+        scatter_reg(dog_sizeS(indDoG)',amplitude,12,OSI_fft(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('amplitude'); 
+        xlabel('size surround')
+sgtitle('color code by gOSI (STA FFT @ 0.05 SF)')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary3_colorOSI_fft.pdf'), '-dpdf', '-bestfit')
+
+
+% COLOR CODE by spiking OSI
+figure;
+    subplot(4,3,1)
+        scatter_reg(offsetMag(indDoG)',Zc_avg,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zc'); ylim([-2 6])
+        xlabel('offset')
+    subplot(4,3,2)
+        scatter_reg(offsetMag(indDoG)',Zp_avg,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zp'); ylim([-2 6])
+        xlabel('offset')
+    subplot(4,3,3)
+        scatter_reg(dog_AR(indDoG)',Zc_avg,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zc'); ylim([-2 6])
+        xlabel('aspect ratio (tau)')
+    subplot(4,3,4)
+        scatter_reg(dog_AR(indDoG)',Zp_avg,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zp'); ylim([-2 6])
+        xlabel('aspect ratio (tau)')
+    subplot(4,3,5)
+        scatter_reg(dog_sizeC(indDoG)',Zc_avg,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zc'); ylim([-2 6])
+        xlabel('size center')
+    subplot(4,3,6)
+        scatter_reg(dog_sizeC(indDoG)',Zp_avg,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zp'); ylim([-2 6])
+        xlabel('size center')
+    subplot(4,3,7)
+        scatter_reg(dog_sizeS(indDoG)',Zc_avg,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zc'); ylim([-2 6])
+        xlabel('size surround')
+    subplot(4,3,8)
+        scatter_reg(dog_sizeS(indDoG)',Zp_avg,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('mean Zp'); ylim([-2 6])
+        xlabel('size surround')
+sgtitle('color code by gOSI (spiking)')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary1_colorOSI.pdf'), '-dpdf', '-bestfit')
+
+figure;
+    subplot(4,3,1)
+        scatter_reg(offsetMag(indDoG)',Zc_max,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('max Zc'); ylim([-1 7])
+        xlabel('offset')
+    subplot(4,3,2)
+        scatter_reg(offsetMag(indDoG)',Zp_max,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('max Zp'); ylim([-1 7])
+        xlabel('offset')
+    subplot(4,3,3)
+        scatter_reg(dog_AR(indDoG)',Zc_max,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('meamaxn Zc'); ylim([-1 7])
+        xlabel('aspect ratio (tau)')
+    subplot(4,3,4)
+        scatter_reg(dog_AR(indDoG)',Zp_max,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('max Zp'); ylim([-1 7])
+        xlabel('aspect ratio (tau)')
+    subplot(4,3,5)
+        scatter_reg(dog_sizeC(indDoG)',Zc_max,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('max Zc'); ylim([-1 7])
+        xlabel('size center')
+    subplot(4,3,6)
+        scatter_reg(dog_sizeC(indDoG)',Zp_max,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('max Zp'); ylim([-1 7])
+        xlabel('size center')
+    subplot(4,3,7)
+        scatter_reg(dog_sizeS(indDoG)',Zc_max,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('max Zc'); ylim([-1 7])
+        xlabel('size surround')
+    subplot(4,3,8)
+        scatter_reg(dog_sizeS(indDoG)',Zp_max,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('max Zp'); ylim([-1 7])
+        xlabel('size surround')
+sgtitle('color code by gOSI (spiking)')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary2_colorOSI.pdf'), '-dpdf', '-bestfit')
+
+figure;
+    subplot(4,3,1)
+        scatter_reg(offsetMag(indDoG)',baseline,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('baseline'); 
+        xlabel('offset')
+    subplot(4,3,2)
+        scatter_reg(offsetMag(indDoG)',amplitude,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('amplitude'); 
+        xlabel('offset')
+    subplot(4,3,3)
+        scatter_reg(dog_AR(indDoG)',baseline,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('baseline'); 
+        xlabel('aspect ratio (tau)')
+    subplot(4,3,4)
+        scatter_reg(dog_AR(indDoG)',amplitude,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('amplitude');
+        xlabel('aspect ratio (tau)')
+    subplot(4,3,5)
+        scatter_reg(dog_sizeC(indDoG)',baseline,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('baseline'); 
+        xlabel('size center')
+    subplot(4,3,6)
+        scatter_reg(dog_sizeC(indDoG)',amplitude,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('amplitude'); 
+        xlabel('size center')
+    subplot(4,3,7)
+        scatter_reg(dog_sizeS(indDoG)',baseline,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('baseline'); 
+        xlabel('size surround')
+    subplot(4,3,8)
+        scatter_reg(dog_sizeS(indDoG)',amplitude,12,gOSI_toplot)
+        set(gca,'TickDir','out'); box off
+        ylabel('amplitude'); 
+        xlabel('size surround')
+sgtitle('color code by gOSI (spiking)')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary3_colorOSI.pdf'), '-dpdf', '-bestfit')
+
+
+
+
+%% STA FFT plots
 
 
 % 
@@ -500,47 +815,349 @@ scatter_reg(PO(indDoG),PO_fft(indDoG))
 
 figure;
     subplot(4,3,1)
-        scatter_reg(offsetMag(indDoG)',baseline,12)
+        scatter_reg(OSI_fftAll(indDoG),baseline,12)
         set(gca,'TickDir','out'); box off
         ylabel('baseline'); 
-        xlabel('offset')
+        xlabel('gOSI fft (pref SF)')
     subplot(4,3,2)
-        scatter_reg(offsetMag(indDoG)',amplitude,12)
+        scatter_reg(OSI_fftAll(indDoG),amplitude,12)
         set(gca,'TickDir','out'); box off
         ylabel('amplitude'); 
-        xlabel('offset')
+        xlabel('gOSI fft (pref SF)')
     subplot(4,3,3)
-        scatter_reg(dog_AR(indDoG)',baseline,12)
-        set(gca,'TickDir','out'); box off
-        ylabel('baseline'); 
-        xlabel('aspect ratio (tau)')
+        scatter_reg(OSI_fftAll(indDoG),Zc_avg,12)
+        set(gca,'TickDir','out'); box off; ylim([-2 6])
+        ylabel('Zc avg'); 
+        xlabel('gOSI fft (spiking)')
     subplot(4,3,4)
-        scatter_reg(dog_AR(indDoG)',amplitude,12)
-        set(gca,'TickDir','out'); box off
-        ylabel('amplitude');
-        xlabel('aspect ratio (tau)')
+        scatter_reg(OSI_fftAll(indDoG),Zp_avg,12)
+        set(gca,'TickDir','out'); box off; ylim([-2 6])
+        ylabel('Zp avg'); 
+        xlabel('gOSI fft (spiking)')
     subplot(4,3,5)
-        scatter_reg(dog_sizeC(indDoG)',baseline,12)
-        set(gca,'TickDir','out'); box off
-        ylabel('baseline'); 
-        xlabel('size center')
+        scatter_reg(OSI_fftAll(indDoG),Zc_max,12)
+        set(gca,'TickDir','out'); box off; ylim([-1 7])
+        ylabel('Zc max'); 
+        xlabel('gOSI fft (pref SF)')
     subplot(4,3,6)
-        scatter_reg(dog_sizeC(indDoG)',amplitude,12)
-        set(gca,'TickDir','out'); box off
-        ylabel('amplitude'); 
-        xlabel('size center')
+        scatter_reg(OSI_fftAll(indDoG),Zp_max,12)
+        set(gca,'TickDir','out'); box off; ylim([-1 7])
+        ylabel('Zp max'); 
+        xlabel('gOSI fft (pref SF)')
+
     subplot(4,3,7)
-        scatter_reg(dog_sizeS(indDoG)',baseline,12)
+        scatter_reg(OSI_fft(indDoG),baseline,12)
         set(gca,'TickDir','out'); box off
         ylabel('baseline'); 
-        xlabel('size surround')
+        xlabel('gOSI fft (at SF 0.05)')
     subplot(4,3,8)
-        scatter_reg(dog_sizeS(indDoG)',amplitude,12)
+        scatter_reg(OSI_fft(indDoG),amplitude,12)
         set(gca,'TickDir','out'); box off
         ylabel('amplitude'); 
-        xlabel('size surround')
-print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary3.pdf'), '-dpdf', '-bestfit')
+        xlabel('gOSI fft (at SF 0.05)')
+    subplot(4,3,9)
+        scatter_reg(OSI_fft(indDoG),Zc_avg,12)
+        set(gca,'TickDir','out'); box off; ylim([-2 6])
+        ylabel('Zc avg'); 
+        xlabel('gOSI fft (at SF 0.05)')
+    subplot(4,3,10)
+        scatter_reg(OSI_fft(indDoG),Zp_avg,12)
+        set(gca,'TickDir','out'); box off; ylim([-2 6])
+        ylabel('Zp avg'); 
+        xlabel('gOSI fft (at SF 0.05)')
+    subplot(4,3,11)
+        scatter_reg(OSI_fft(indDoG),Zc_max,12)
+        set(gca,'TickDir','out'); box off; ylim([-1 7])
+        ylabel('Zc max'); 
+        xlabel('gOSI fft (at SF 0.05)')
+    subplot(4,3,12)
+        scatter_reg(OSI_fft(indDoG),Zp_max,12)
+        set(gca,'TickDir','out'); box off; ylim([-1 7])
+        ylabel('Zp max'); 
+        xlabel('gOSI fft (at SF 0.05)')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary4.pdf'), '-dpdf', '-bestfit')
 
+
+figure;
+    subplot(3,3,1)
+        scatter_reg(gOSI_toplot,baseline,12)
+        set(gca,'TickDir','out'); box off
+        ylabel('baseline'); 
+        xlabel('gOSI (spiking)')
+        xlim([0 1])
+    subplot(3,3,2)
+        scatter_reg(gOSI_toplot,amplitude,12)
+        set(gca,'TickDir','out'); box off
+        ylabel('amplitude'); 
+        xlabel('gOSI (spiking)')
+        xlim([0 1])
+    subplot(3,3,3)
+        scatter_reg(gOSI_toplot,Zc_avg,12)
+        set(gca,'TickDir','out'); box off; ylim([-2 6])
+        ylabel('Zc avg'); 
+        xlabel('gOSI (spiking)')
+        xlim([0 1])
+    subplot(3,3,4)
+        scatter_reg(gOSI_toplot,Zp_avg,12)
+        set(gca,'TickDir','out'); box off; ylim([-2 6])
+        ylabel('Zp avg'); 
+        xlabel('gOSI (spiking)')
+        xlim([0 1])
+    subplot(3,3,5)
+        scatter_reg(gOSI_toplot,Zc_max,12)
+        set(gca,'TickDir','out'); box off; ylim([-1 7])
+        ylabel('Zc max'); 
+        xlabel('gOSI (spiking)')
+        xlim([0 1])
+    subplot(3,3,6)
+        scatter_reg(gOSI_toplot,Zp_max,12)
+        set(gca,'TickDir','out'); box off; ylim([-1 7])
+        ylabel('Zp max'); 
+        xlabel('gOSI (spiking)')
+        xlim([0 1])
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary5.pdf'), '-dpdf', '-bestfit')
+
+
+figure;
+    subplot(4,3,1)
+        scatter_reg(OSI_fftAll(indDoG),baseline,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('baseline'); 
+        xlabel('gOSI fft (pref SF)')
+    subplot(4,3,2)
+        scatter_reg(OSI_fftAll(indDoG),amplitude,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('amplitude'); 
+        xlabel('gOSI fft (pref SF)')
+    subplot(4,3,3)
+        scatter_reg(OSI_fftAll(indDoG),Zc_avg,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off; ylim([-2 6])
+        ylabel('Zc avg'); 
+        xlabel('gOSI fft (pref SF)')
+    subplot(4,3,4)
+        scatter_reg(OSI_fftAll(indDoG),Zp_avg,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off; ylim([-2 6])
+        ylabel('Zp avg'); 
+        xlabel('gOSI fft (pref SF)')
+    subplot(4,3,5)
+        scatter_reg(OSI_fftAll(indDoG),Zc_max,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off; ylim([-1 7])
+        ylabel('Zc max'); 
+        xlabel('gOSI fft (pref SF)')
+    subplot(4,3,6)
+        scatter_reg(OSI_fftAll(indDoG),Zp_max,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off; ylim([-1 7])
+        ylabel('Zp max'); 
+        xlabel('gOSI fft (pref SF)')
+
+    subplot(4,3,7)
+        scatter_reg(OSI_fft(indDoG),baseline,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('baseline'); 
+        xlabel('gOSI fft (at SF 0.05)')
+    subplot(4,3,8)
+        scatter_reg(OSI_fft(indDoG),amplitude,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('amplitude'); 
+        xlabel('gOSI fft (at SF 0.05)')
+    subplot(4,3,9)
+        scatter_reg(OSI_fft(indDoG),Zc_avg,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off; ylim([-2 6])
+        ylabel('Zc avg'); 
+        xlabel('gOSI fft (at SF 0.05)')
+    subplot(4,3,10)
+        scatter_reg(OSI_fft(indDoG),Zp_avg,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off; ylim([-2 6])
+        ylabel('Zp avg'); 
+        xlabel('OSI fft (at SF 0.05)')
+    subplot(4,3,11)
+        scatter_reg(OSI_fft(indDoG),Zc_max,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off; ylim([-1 7])
+        ylabel('Zc max'); 
+        xlabel('OSI fft (at SF 0.05)')
+    subplot(4,3,12)
+        scatter_reg(OSI_fft(indDoG),Zp_max,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off; ylim([-1 7])
+        ylabel('Zp max'); 
+        xlabel('gOSI fft (at SF 0.05)')
+sgtitle('color code by preferred SF (from FFT of STA)')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary4_colorPrefSF.pdf'), '-dpdf', '-bestfit')
+
+
+figure;
+    subplot(4,3,1)
+        scatter_reg(gOSI_toplot,baseline,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('baseline'); 
+        xlabel('gOSI (spiking)')
+    subplot(4,3,2)
+        scatter_reg(gOSI_toplot,amplitude,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('amplitude'); 
+        xlabel('gOSI (spiking)')
+    subplot(4,3,3)
+        scatter_reg(gOSI_toplot,Zc_avg,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off; ylim([-2 6])
+        ylabel('Zc avg'); 
+        xlabel('gOSI (spiking)')
+    subplot(4,3,4)
+        scatter_reg(gOSI_toplot,Zp_avg,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off; ylim([-2 6])
+        ylabel('Zp avg'); 
+        xlabel('gOSI (spiking)')
+    subplot(4,3,5)
+        scatter_reg(gOSI_toplot,Zc_max,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off; ylim([-1 7])
+        ylabel('Zc max'); 
+        xlabel('gOSI (spiking)')
+    subplot(4,3,6)
+        scatter_reg(gOSI_toplot,Zp_max,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off; ylim([-1 7])
+        ylabel('Zp max'); 
+        xlabel('gOSI (spiking)')
+sgtitle('color code by preferred SF (from FFT of STA)')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary5_colorPrefSF.pdf'), '-dpdf', '-bestfit')
+
+
+%% DoG Fit FFT
+
+
+
+figure;
+    % subplot(4,3,1)
+    %     scatter_reg(OSI_dog_fftAll(indDoG),baseline,12)
+    %     set(gca,'TickDir','out'); box off
+    %     ylabel('baseline'); 
+    %     xlabel('dog gOSI fft (pref SF)')
+    % subplot(4,3,2)
+    %     scatter_reg(OSI_dog_fftAll(indDoG),amplitude,12)
+    %     set(gca,'TickDir','out'); box off
+    %     ylabel('amplitude'); 
+    %     xlabel('dog gOSI fft (pref SF)')
+    % subplot(4,3,3)
+    %     scatter_reg(OSI_dog_fftAll(indDoG),Zc_avg,12)
+    %     set(gca,'TickDir','out'); box off; ylim([-2 6])
+    %     ylabel('Zc avg'); 
+    %     xlabel('dog gOSI fft (pref SF)')
+    % subplot(4,3,4)
+    %     scatter_reg(OSI_dog_fftAll(indDoG),Zp_avg,12)
+    %     set(gca,'TickDir','out'); box off; ylim([-2 6])
+    %     ylabel('Zp avg'); 
+    %     xlabel('dog gOSI fft (pref SF)')
+    % subplot(4,3,5)
+    %     scatter_reg(OSI_dog_fftAll(indDoG),Zc_max,12)
+    %     set(gca,'TickDir','out'); box off; ylim([-1 7])
+    %     ylabel('Zc max'); 
+    %     xlabel('dog gOSI fft (pref SF)')
+    % subplot(4,3,6)
+    %     scatter_reg(OSI_dog_fftAll(indDoG),Zp_max,12)
+    %     set(gca,'TickDir','out'); box off; ylim([-1 7])
+    %     ylabel('Zp max'); 
+    %     xlabel('dog gOSI fft (pref SF)')
+
+    subplot(3,3,1)
+        scatter_reg(OSI_dog_fft(indDoG),baseline,12)
+        set(gca,'TickDir','out'); box off
+        ylabel('baseline'); 
+        xlabel('dog gOSI fft (at SF 0.05)')
+        xlim([0 1])
+    subplot(3,3,2)
+        scatter_reg(OSI_dog_fft(indDoG),amplitude,12)
+        set(gca,'TickDir','out'); box off
+        ylabel('amplitude'); 
+        xlabel('dog OSI fft (at SF 0.05)')
+        xlim([0 1])
+    subplot(3,3,3)
+        scatter_reg(OSI_dog_fft(indDoG),Zc_avg,12)
+        set(gca,'TickDir','out'); box off; ylim([-2 6])
+        ylabel('Zc avg'); 
+        xlabel('dog gOSI fft (at SF 0.05)')
+        xlim([0 1])
+    subplot(3,3,4)
+        scatter_reg(OSI_dog_fft(indDoG),Zp_avg,12)
+        set(gca,'TickDir','out'); box off; ylim([-2 6])
+        ylabel('Zp avg'); 
+        xlabel('dog gOSI fft (at SF 0.05)')
+        xlim([0 1])
+    subplot(3,3,5)
+        scatter_reg(OSI_dog_fft(indDoG),Zc_max,12)
+        set(gca,'TickDir','out'); box off; ylim([-1 7])
+        ylabel('Zc max'); 
+        xlabel('dog gOSI fft (at SF 0.05)')
+        xlim([0 1])
+    subplot(3,3,6)
+        scatter_reg(OSI_dog_fft(indDoG),Zp_max,12)
+        set(gca,'TickDir','out'); box off; ylim([-1 7])
+        ylabel('Zp max'); 
+        xlabel('dog gOSI fft (at SF 0.05)')
+        xlim([0 1])
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary6.pdf'), '-dpdf', '-bestfit')
+
+
+figure;
+    subplot(4,3,1)
+        scatter_reg(OSI_dog_fftAll(indDoG),baseline,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('baseline'); 
+        xlabel('dog gOSI fft (pref SF)')
+    subplot(4,3,2)
+        scatter_reg(OSI_dog_fftAll(indDoG),amplitude,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('amplitude'); 
+        xlabel('dog gOSI fft (pref SF)')
+    subplot(4,3,3)
+        scatter_reg(OSI_dog_fftAll(indDoG),Zc_avg,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off; ylim([-2 6])
+        ylabel('Zc avg'); 
+        xlabel('dog gOSI fft (pref SF)')
+    subplot(4,3,4)
+        scatter_reg(OSI_dog_fftAll(indDoG),Zp_avg,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off; ylim([-2 6])
+        ylabel('Zp avg'); 
+        xlabel('dog gOSI fft (pref SF)')
+    subplot(4,3,5)
+        scatter_reg(OSI_dog_fftAll(indDoG),Zc_max,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off; ylim([-1 7])
+        ylabel('Zc max'); 
+        xlabel('dog gOSI fft (pref SF)')
+    subplot(4,3,6)
+        scatter_reg(OSI_dog_fftAll(indDoG),Zp_max,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off; ylim([-1 7])
+        ylabel('Zp max'); 
+        xlabel('dog gOSI fft (pref SF)')
+
+    subplot(4,3,7)
+        scatter_reg(OSI_dog_fft(indDoG),baseline,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('baseline'); 
+        xlabel('dog gOSI fft (at SF 0.05)')
+    subplot(4,3,8)
+        scatter_reg(OSI_dog_fft(indDoG),amplitude,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off
+        ylabel('amplitude'); 
+        xlabel('dog gOSI fft (at SF 0.05)')
+    subplot(4,3,9)
+        scatter_reg(OSI_dog_fft(indDoG),Zc_avg,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off; ylim([-2 6])
+        ylabel('Zc avg'); 
+        xlabel('dog gOSI fft (at SF 0.05)')
+    subplot(4,3,10)
+        scatter_reg(OSI_dog_fft(indDoG),Zp_avg,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off; ylim([-2 6])
+        ylabel('Zp avg'); 
+        xlabel('dog gOSI fft (at SF 0.05)')
+    subplot(4,3,11)
+        scatter_reg(OSI_dog_fft(indDoG),Zc_max,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off; ylim([-1 7])
+        ylabel('Zc max'); 
+        xlabel('dog gOSI fft (at SF 0.05)')
+    subplot(4,3,12)
+        scatter_reg(OSI_dog_fft(indDoG),Zp_max,12,prefSF(indDoG))
+        set(gca,'TickDir','out'); box off; ylim([-1 7])
+        ylabel('Zp max'); 
+        xlabel('dog gOSI fft (at SF 0.05)')
+sgtitle('color code by preferred SF (from FFT of DoG)')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary6_colorPrefSF.pdf'), '-dpdf', '-bestfit')
 
 
 

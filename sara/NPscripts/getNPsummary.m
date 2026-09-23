@@ -88,7 +88,7 @@ bottomOfBrainDepth(15)  = -1500; %31
 
 % V1 -- 11 13 18 19 20 21 22 23 24 25 26 28
 
-% V1 -- 13 18 19 20 21 22 23 25 26 28 29 30 31, throwing out 11 for RF position,
+% V1 -- 13 18 19 20 21 22 23 24 25 26 27 28 29 30 31, throwing out 11 for RF position,
 % throwing out 24 because eye camera frames collected ~= timestamps of frames
 
 expts = [13 18 19 20 21 22 23 24 25 26 27 28 29 30 31];
