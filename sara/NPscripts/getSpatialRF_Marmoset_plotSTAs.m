@@ -1,7 +1,8 @@
 %% Compute STAs for marmoset data
-% Script 1 of 2:
+% Script 1 of 3:
 %     getSpatialRF_Marmoset_computeSTAs
 %     getSpatialRF_Marmoset_plotSTAs
+%     getSpatialRF_Marmoset_plotSTAs_withTuning
 
 %% 
 clear all; clc; close all
@@ -21,15 +22,15 @@ end
 %%
 
 res = 'LR';
-load(fullfile(dirBase, 'sara', 'Analysis', 'Neuropixel', 'marmosetFromNicholas', 'spatialRFs', ['elf1_spatialRFs_Wiesel_' res '.mat']))
+load(fullfile(dirBase, 'sara', 'Analysis', 'Neuropixel', 'marmosetFromNicholas', 'spatialRFs', ['elf3_spatialRFs_Wiesel_' res '.mat']))
 
     % ==== vv DELETE THIS IF USING ALL CELLS vv ====
     averageImagesAll_original = averageImagesAll;
     averageImagesAll_shuffled_original = averageImagesAll_shuffled;
     
-    averageImagesAll            = averageImagesAll(1:179,:,:,:);
+    averageImagesAll            = averageImagesAll(:,:,:,:);
     averageImagesAllLR          = averageImagesAll;
-    averageImagesAll_shuffled   = averageImagesAll_shuffled(:,1:179,:,:,:);
+    averageImagesAll_shuffled   = averageImagesAll_shuffled(:,:,:,:,:);
     % ==== ^^ DELETE THIS IF USING ALL CELLS ^^ ====
 
     nTrials             = size(imageMatrix,1);
@@ -50,53 +51,53 @@ load(fullfile(dirBase, 'sara', 'Analysis', 'Neuropixel', 'marmosetFromNicholas',
     averageImageZscoreLR = (averageImagesAll_MinusMean-shuffledMean)./shuffledStd;   % z-score: subtract mean from the raw value and then divide all by standard deviation
 
     clear averageImagesAll averageImagesAll_shuffled averageImagesAll_MinusMean shuffledMean shuffledStd
-
-
-res = 'HR';
-load(fullfile(dirBase, 'sara', 'Analysis', 'Neuropixel', 'marmosetFromNicholas', 'spatialRFs', ['elf1_spatialRFs_Wiesel_' res '.mat']))
-
-    % ==== vv DELETE THIS IF USING ALL CELLS vv ====
-    averageImagesAll_original = averageImagesAll;
-    averageImagesAll_shuffled_original = averageImagesAll_shuffled;
-
-    averageImagesAll            = averageImagesAll(1:179,:,:,:);
-    averageImagesAllHR          = averageImagesAll;
-    averageImagesAll_shuffled   = averageImagesAll_shuffled(:,1:179,:,:,:);
-    % ==== ^^ DELETE THIS IF USING ALL CELLS ^^ ====
-
-
-    nTrials             = size(imageMatrix,1);
-    nFramesPerTrials    = size(imageMatrix,2);
-    nSizeStimSide       = size(imageMatrix,3);
-
-    % Subtract the mean white noise stimulus, because it is nonzero
-    wnMean          = mean(mean(imageMatrix,1),2);
-    wnMeanAvg       = mean(wnMean(:));
-    wnMeanDiffMat   = wnMean-wnMeanAvg;
-
-    averageImagesAll_shuffledMinusMean  = averageImagesAll_shuffled - reshape(reshape(reshape(wnMeanDiffMat,[],nSizeStimSide,nSizeStimSide),[],1,nSizeStimSide,nSizeStimSide),[],1,1,nSizeStimSide,nSizeStimSide);
-    averageImagesAll_MinusMean          = averageImagesAll - reshape(reshape(wnMeanDiffMat,[],nSizeStimSide,nSizeStimSide),[],1,nSizeStimSide,nSizeStimSide);
-
-    shuffledMean    = squeeze(mean(averageImagesAll_shuffledMinusMean,1));
-    shuffledStd     = squeeze(std(averageImagesAll_shuffledMinusMean,0,1));
-
-    averageImageZscoreHR = (averageImagesAll_MinusMean-shuffledMean)./shuffledStd;   % z-score: subtract mean from the raw value and then divide all by standard deviation
-
+% 
+% 
+% res = 'HR';
+% load(fullfile(dirBase, 'sara', 'Analysis', 'Neuropixel', 'marmosetFromNicholas', 'spatialRFs', ['elf1_spatialRFs_Wiesel_' res '.mat']))
+% 
+%     % ==== vv DELETE THIS IF USING ALL CELLS vv ====
+%     averageImagesAll_original = averageImagesAll;
+%     averageImagesAll_shuffled_original = averageImagesAll_shuffled;
+% 
+%     averageImagesAll            = averageImagesAll(1:179,:,:,:);
+%     averageImagesAllHR          = averageImagesAll;
+%     averageImagesAll_shuffled   = averageImagesAll_shuffled(:,1:179,:,:,:);
+%     % ==== ^^ DELETE THIS IF USING ALL CELLS ^^ ====
+% 
+% 
+%     nTrials             = size(imageMatrix,1);
+%     nFramesPerTrials    = size(imageMatrix,2);
+%     nSizeStimSide       = size(imageMatrix,3);
+% 
+%     % Subtract the mean white noise stimulus, because it is nonzero
+%     wnMean          = mean(mean(imageMatrix,1),2);
+%     wnMeanAvg       = mean(wnMean(:));
+%     wnMeanDiffMat   = wnMean-wnMeanAvg;
+% 
+%     averageImagesAll_shuffledMinusMean  = averageImagesAll_shuffled - reshape(reshape(reshape(wnMeanDiffMat,[],nSizeStimSide,nSizeStimSide),[],1,nSizeStimSide,nSizeStimSide),[],1,1,nSizeStimSide,nSizeStimSide);
+%     averageImagesAll_MinusMean          = averageImagesAll - reshape(reshape(wnMeanDiffMat,[],nSizeStimSide,nSizeStimSide),[],1,nSizeStimSide,nSizeStimSide);
+% 
+%     shuffledMean    = squeeze(mean(averageImagesAll_shuffledMinusMean,1));
+%     shuffledStd     = squeeze(std(averageImagesAll_shuffledMinusMean,0,1));
+% 
+%     averageImageZscoreHR = (averageImagesAll_MinusMean-shuffledMean)./shuffledStd;   % z-score: subtract mean from the raw value and then divide all by standard deviation
+% 
 
 
 %% plot
 
 maxSTAlr = max(abs(averageImagesAllLR(:)));
-maxSTAhr = max(abs(averageImagesAllHR(:)));
+% maxSTAhr = max(abs(averageImagesAllHR(:)));
 maxZSTAlr = max(abs(averageImageZscoreLR(:)));
-maxZSTAhr = max(abs(averageImageZscoreHR(:)));
+% maxZSTAhr = max(abs(averageImageZscoreHR(:)));
 % 
 nCells = size(averageImagesAllLR,1);
 
 
-pdfFile = fullfile(dirBase,'sara','Analysis','Neuropixel','marmosetFromNicholas','spatialRFs','elf1-STAs.pdf');
+pdfFile = fullfile(dirBase,'sara','Analysis','Neuropixel','marmosetFromNicholas','spatialRFs','elf3-STAs.pdf');
 
-for ic = 170:176
+for ic = 1:nCells
 
     figure();
     sgtitle(['cell ' num2str(ic)])
@@ -140,24 +141,24 @@ for ic = 170:176
         %             'VerticalAlignment','top');
         %     end
 
-        data = squeeze(averageImagesAllHR(ic,it,:,:)); 
-        subplot(4,5,it+10)
-            imagesc(data); hold on
-            axis square
-            colormap(gray)
-            set(gca,'clim',[-maxSTAhr maxSTAhr]); 
-            box off; axis off
-            set(gca,'xtick',[]); set(gca,'xticklabel',[])
-            set(gca,'ytick',[]); set(gca,'yticklabel',[])
-            subtitle(['-' num2str(beforeSpike(it))])
-            if it == 1
-                text(0.02, 0.98, 'STA high res', ...
-                    'Units','normalized', ...
-                    'Color','w', ...
-                    'FontSize',5, ...
-                    'HorizontalAlignment','left', ...
-                    'VerticalAlignment','top');
-            end
+        % data = squeeze(averageImagesAllHR(ic,it,:,:)); 
+        % subplot(4,5,it+10)
+        %     imagesc(data); hold on
+        %     axis square
+        %     colormap(gray)
+        %     set(gca,'clim',[-maxSTAhr maxSTAhr]); 
+        %     box off; axis off
+        %     set(gca,'xtick',[]); set(gca,'xticklabel',[])
+        %     set(gca,'ytick',[]); set(gca,'yticklabel',[])
+        %     subtitle(['-' num2str(beforeSpike(it))])
+        %     if it == 1
+        %         text(0.02, 0.98, 'STA high res', ...
+        %             'Units','normalized', ...
+        %             'Color','w', ...
+        %             'FontSize',5, ...
+        %             'HorizontalAlignment','left', ...
+        %             'VerticalAlignment','top');
+        %     end
 
         % data = squeeze(averageImageZscoreHR(ic,it,:,:));
         % subplot(4,5,it+15)
@@ -247,11 +248,12 @@ sigRF_timepoints = cells_sigRFbyTime_On+cells_sigRFbyTime_Off;
 ind_sigRF = sum(cells_sigRFbyTime_On,2)+sum(cells_sigRFbyTime_Off,2);
 
 
+%%
 % plot threshold images
 
-pdfFile = fullfile(dirBase,'sara','Analysis','Neuropixel','marmosetFromNicholas','spatialRFs','elf1-STAs_LR_zthreshold.pdf');
+pdfFile = fullfile(dirBase,'sara','Analysis','Neuropixel','marmosetFromNicholas','spatialRFs','elf3-STAs_LR_zthreshold.pdf');
 
-for ic = 170:179
+for ic = 1:nCells
 
     figure();
     sgtitle(['cell ' num2str(ic) ', ' num2str(ind_sigRF(ic)) ' timepoints'])
@@ -282,7 +284,6 @@ for ic = 170:179
 
     % Append current figure as a new page in the PDF
     exportgraphics(gcf, pdfFile,'ContentType', 'vector','Append', true);
-
     close(gcf)
 end
 

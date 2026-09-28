@@ -1024,37 +1024,39 @@ print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\'
 
 
 figure;
-    % subplot(4,3,1)
-    %     scatter_reg(OSI_dog_fftAll(indDoG),baseline,12)
-    %     set(gca,'TickDir','out'); box off
-    %     ylabel('baseline'); 
-    %     xlabel('dog gOSI fft (pref SF)')
-    % subplot(4,3,2)
-    %     scatter_reg(OSI_dog_fftAll(indDoG),amplitude,12)
-    %     set(gca,'TickDir','out'); box off
-    %     ylabel('amplitude'); 
-    %     xlabel('dog gOSI fft (pref SF)')
-    % subplot(4,3,3)
-    %     scatter_reg(OSI_dog_fftAll(indDoG),Zc_avg,12)
-    %     set(gca,'TickDir','out'); box off; ylim([-2 6])
-    %     ylabel('Zc avg'); 
-    %     xlabel('dog gOSI fft (pref SF)')
-    % subplot(4,3,4)
-    %     scatter_reg(OSI_dog_fftAll(indDoG),Zp_avg,12)
-    %     set(gca,'TickDir','out'); box off; ylim([-2 6])
-    %     ylabel('Zp avg'); 
-    %     xlabel('dog gOSI fft (pref SF)')
-    % subplot(4,3,5)
-    %     scatter_reg(OSI_dog_fftAll(indDoG),Zc_max,12)
-    %     set(gca,'TickDir','out'); box off; ylim([-1 7])
-    %     ylabel('Zc max'); 
-    %     xlabel('dog gOSI fft (pref SF)')
-    % subplot(4,3,6)
-    %     scatter_reg(OSI_dog_fftAll(indDoG),Zp_max,12)
-    %     set(gca,'TickDir','out'); box off; ylim([-1 7])
-    %     ylabel('Zp max'); 
-    %     xlabel('dog gOSI fft (pref SF)')
+    subplot(3,3,1)
+        scatter_reg(OSI_dog_fftAll(indDoG),baseline,12)
+        set(gca,'TickDir','out'); box off
+        ylabel('baseline'); 
+        xlabel('dog gOSI fft (pref SF)')
+    subplot(3,3,2)
+        scatter_reg(OSI_dog_fftAll(indDoG),amplitude,12)
+        set(gca,'TickDir','out'); box off
+        ylabel('amplitude'); 
+        xlabel('dog gOSI fft (pref SF)')
+    subplot(3,3,3)
+        scatter_reg(OSI_dog_fftAll(indDoG),Zc_avg,12)
+        set(gca,'TickDir','out'); box off; ylim([-2 6])
+        ylabel('Zc avg'); 
+        xlabel('dog gOSI fft (pref SF)')
+    subplot(3,3,4)
+        scatter_reg(OSI_dog_fftAll(indDoG),Zp_avg,12)
+        set(gca,'TickDir','out'); box off; ylim([-2 6])
+        ylabel('Zp avg'); 
+        xlabel('dog gOSI fft (pref SF)')
+    subplot(3,3,5)
+        scatter_reg(OSI_dog_fftAll(indDoG),Zc_max,12)
+        set(gca,'TickDir','out'); box off; ylim([-1 7])
+        ylabel('Zc max'); 
+        xlabel('dog gOSI fft (pref SF)')
+    subplot(3,3,6)
+        scatter_reg(OSI_dog_fftAll(indDoG),Zp_max,12)
+        set(gca,'TickDir','out'); box off; ylim([-1 7])
+        ylabel('Zp max'); 
+        xlabel('dog gOSI fft (pref SF)')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary7.pdf'), '-dpdf', '-bestfit')
 
+figure;
     subplot(3,3,1)
         scatter_reg(OSI_dog_fft(indDoG),baseline,12)
         set(gca,'TickDir','out'); box off

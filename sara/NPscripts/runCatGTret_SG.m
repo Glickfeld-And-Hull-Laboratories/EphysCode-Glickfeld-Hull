@@ -74,4 +74,7 @@ function runCatGTret_SG(date)
     system(cmd1);
     system(cmd2);
 
+% Delete duplicated .bin file to save space on Isilon
+    deleteDuplicateDataFromCatGTOutput(fullfile(analysisDir, date))
+
 end

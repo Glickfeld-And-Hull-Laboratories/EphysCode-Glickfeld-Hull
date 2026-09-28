@@ -73,6 +73,9 @@ function runCatGT_SG(date)
     cd('C:\Users\smg92\Desktop\CatGTWinApp4.3\CatGT-win');
     system(cmd1);
     system(cmd2);
+    
+% Delete duplicated .bin file to save space on Isilon
+    deleteDuplicateDataFromCatGTOutput(fullfile(analysisDir, date))
 
 end
 
