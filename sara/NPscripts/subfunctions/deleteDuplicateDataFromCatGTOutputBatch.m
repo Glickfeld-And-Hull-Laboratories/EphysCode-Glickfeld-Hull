@@ -8,31 +8,6 @@
 %  directory to look for all CatGT folders and delete corresponding ap.bin
 %  spiking files.
 
-% 
-% function deleteDuplicateDataFromCatGTOutputBatch(parentPath)
-% 
-%     % One recursive scan for every *ap.bin under parentPath, at any depth
-%     files = dir(fullfile(parentPath, '**', '*ap.bin'));
-%     files = files(~[files.isdir]);
-% 
-%     for f = files'
-%         % Only delete if some folder in the file's path starts with 'catgt'
-%         parts = strsplit(f.folder, filesep);
-%         if ~any(startsWith(lower(parts), 'catgt'))
-%             continue
-%         end
-% 
-%         target = fullfile(f.folder, f.name);
-%         delete(target);
-%         if ~isfile(target)
-%             fprintf('%s deleted. From %s\n', f.name, f.folder);
-%         else
-%             fprintf('%s COULD NOT be deleted. From %s\n', f.name, f.folder);
-%         end
-%     end
-% 
-% end
-
 function deleteDuplicateDataFromCatGTOutputBatch(parentPath)
     fprintf('Scanning %s\n', parentPath);
     scanDir(parentPath);
