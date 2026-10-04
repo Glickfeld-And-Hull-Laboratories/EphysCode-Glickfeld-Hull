@@ -11,7 +11,11 @@ section at the end lists the specific errors we hit and their fixes.
 
 Files this guide uses (put all of them on the MATLAB path):
 `OptoTrialAccumulator.m` (v0.3), `run_opto_accumulator.m`, `check_analog_trigger.m`,
-`test_event_detection.m`, and the patched `extractEventSample.m`.
+`test_event_detection.m`, `setTrigger.m`, and the patched `extractEventSample.m`.
+
+The trigger can be either an NI analog channel or an NI digital line, switchable at run
+time; see "Switching the trial trigger" below. The rest of this guide walks through the
+analog case because that is the most common laser-TTL-on-analog-input setup.
 
 ## What this does, in one paragraph
 
@@ -22,6 +26,42 @@ a running OP-GLX fetcher, collects each trial's stimulus-aligned firing rate, bu
 running trial-averaged PSTH with SEM, auto re-arms Event mode for the next pulse, and
 runs a per-channel baseline-versus-evoked test so you can see which channels respond.
 Everything below is per channel, not per sorted unit.
+
+## Switching the trial trigger (analog or digital)
+
+The trigger is detected by the patched `extractEventSample.m`, which supports two modes
+chosen at run time by `sf.hParams.NI.event_mode`. Nothing in the accumulator changes
+between them; only the trigger parameters change. The easiest way to set either one is
+the `setTrigger` helper:
+
+    % Analog trigger (laser TTL on an NI analog channel):
+    setTrigger(sf, 'analog', 'chan', 5, 'thresh', -16000, 'edge', 'falling');
+
+    % Digital trigger (a bit of the NI digital word):
+    setTrigger(sf, 'digital', 'chan', 1, 'bit', 4);     % rising edge by default
+    setTrigger(sf, 'digital', 'chan', 1, 'bit', 4, 'edge', 'falling');
+
+You can call `setTrigger` again at any time to switch between them; it overwrites the mode
+and the fields that mode needs, so no stale settings carry over. After switching, verify
+with `test_event_detection(sf, 5)` before running the accumulator.
+
+What each mode needs, if you prefer to set the fields by hand instead of `setTrigger`:
+
+- Analog: `event_mode='analog'`, `event_chan` = the analog channel index (0-based),
+  `event_thresh` = crossing threshold in int16 counts (NEGATIVE for a negative-going
+  pulse), and `event_edge` = `'rising'` or `'falling'`. `event_edge` sets only the
+  direction of the crossing; the sign of the pulse lives in `event_thresh`.
+- Digital: `event_mode='digital'`, `event_chan` = the digital word channel index,
+  `stim_word` = the bit (1-indexed) carrying the trigger, and `event_edge` =
+  `'rising'` (default) or `'falling'`.
+
+Both modes detect one edge per scan block and feed it to the accumulator identically, so
+your trial averaging, the per-channel test, and the plots are the same no matter which
+trigger you use. For the digital case you do not need the analog diagnostics
+(`check_analog_trigger` is analog-specific); `test_event_detection(sf, 5)` still confirms
+detection and prints whether an event was found. The sections below cover the analog
+case end to end; for a digital trigger, substitute the `setTrigger(sf, 'digital', ...)`
+call at Step 5 and skip the threshold-finding parts of Step 6.
 
 ## Prerequisites
 
