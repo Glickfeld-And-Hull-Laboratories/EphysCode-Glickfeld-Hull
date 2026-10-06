@@ -296,8 +296,20 @@ dogFits_params = results.params{1};
     end
 
 
-%%
+%% get pref dir with von mises fit
 
+stimDirs = 0:30:330;
+y_fits = zeros(360,size(avg_resp_dir_all,1));
+dirs = deg2rad(0:1:359);
+for ic = 1:size(avg_resp_dir_all,1)
+    [b_hat_all(ic,1), k1_hat_all(ic,1), R1_hat_all(ic,1), R2_hat_all(ic,1), u1_hat_all(ic,1), u2_hat_all(ic,1), sse_all(ic,1),R_square_all(ic,1)] = miaovonmisesfit_dir(deg2rad(stimDirs),avg_resp_dir_all(ic,:,1,1,1));
+    dir_yfit_all(:,ic) = b_hat_all(ic,1)+R1_hat_all(ic,1).*exp(k1_hat_all(ic,1).*(cos(dirs-u1_hat_all(ic,1))-1))+R2_hat_all(ic,1).*exp(k1_hat_all(ic,1).*(cos(dirs-u1_hat_all(ic,1))-1));
+end
+
+[~, prefDir_vm] = max(dir_yfit_all,[],1);
+PO_vm      = mod(prefDir_vm, 180);   % preferred orientation
+
+%%
 data_DoG_all = permute(dog_fits_Uncropped,[3 1 2]);
 
 analysisDir=('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\sara\Analysis\Neuropixel\CrossOri\randDirFourPhase');
@@ -318,13 +330,13 @@ indDoG = ~ismember(cellsIdx,omitCells);
     gOSI_all = [DSIstruct.gOSI];
     gOSI_toplot = gOSI_all(cellsIdx_final);
 
-
+dirs = 0:30:330;
 ygrid       = ((1:29) - 14.5) * 2;   % 29 points, centered, spanning -28 to +28 deg
 xgrid       = ((1:52) - 26) * 2; % 52 points, centered, spanning -51 to +51 deg
 SF          = 0.05; % plaid grating's spatial frequency
 beta        = 60; % half the angle between the two plaid components
 
-for ic = 1:nSelected
+for ic = 1:size(data_all,1)
     prefDir     = dirs(indDir(ic));    % actual direction in degrees, 0-330
     RF          = squeeze(data_all(ic,:,:));
     RF_dog      = squeeze(data_DoG_all(ic,:,:));
@@ -335,17 +347,20 @@ for ic = 1:nSelected
     phaseCoh_fft(ic) = estimatePhaseCoherence(RF, xgrid, ygrid, PO_fft(ic), SF, beta);
 
     [PO_dog_fftAll(ic), OSI_dog_fftAll(ic), prefSF_dog(ic)] = estimatePOfromFFT(RF_dog, xgrid, ygrid);
-    [PO_dog_fft(ic), OSI_dog_fft(ic), ~] = estimatePOfromFFT(RF_dog, xgrid, ygrid, SF);
+    [PO_dog_fft(ic), OSI_dog_fft(ic), ~, dog_fft_tuning(ic,:)] = estimatePOfromFFT(RF_dog, xgrid, ygrid, SF);
 end
 
 figure;
     subplot 221
-        scatter_reg(PO(indDoG),PO_fftAll(indDoG))
+        stats = scatter_reg_circ(PO(indDoG),PO_fftAll(indDoG), [], [], 'XPeriod',180, 'YPeriod',180);
+        xlim([0 180]); ylim([0 180]); xticks(0:45:180); yticks(0:45:180)
+        xlabel('pref ori, max')
+        ylabel('pref ori, FFT of STA')
     subplot 222
-        scatter_reg(PO(indDoG),PO_fft(indDoG),20)
-        set(gca,'TickDir','out'); axis square; box off
-        xlim([0 180]); xlabel('Orientation (deg)')
-        ylim([0 180]); ylabel('Orientation (deg)')
+        stats = scatter_reg_circ(PO_vm(cellsIdx(indDoG)),PO_fftAll(indDoG), [], [], 'XPeriod',180, 'YPeriod',180);    
+        xlim([0 180]); ylim([0 180]); xticks(0:45:180); yticks(0:45:180)
+        xlabel('pref ori, von mises')
+        ylabel('pref ori, FFT of STA')
     subplot 223
         scatter_reg(OSI_dog_fft(indDoG),gOSI_toplot,20)
         set(gca,'TickDir','out'); axis square; box off
@@ -364,7 +379,19 @@ print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\'
     
 %% plot FFT for example cells
 
-cellsToPlot = find(ismember(cellsIdx, [1613 1624 1347]));  
+exCells = [232 622 1855];
+cellsToPlot = find(ismember(cellsIdx, exCells));  
+
+
+stimDirs = 0:30:330;
+y_fits = zeros(360,length(cellsToPlot));
+dirs = deg2rad(0:1:359);
+for ic = 1:length(cellsToPlot)
+    iCell = exCells(ic);
+    [b_hat_all(ic,1), k1_hat_all(ic,1), R1_hat_all(ic,1), R2_hat_all(ic,1), u1_hat_all(ic,1), u2_hat_all(ic,1), sse_all(ic,1),R_square_all(ic,1)] = miaovonmisesfit_dir(deg2rad(stimDirs),avg_resp_dir_all(iCell,:,1,1,1));
+    dir_yfit_all(:,ic) = b_hat_all(ic,1)+R1_hat_all(ic,1).*exp(k1_hat_all(ic,1).*(cos(dirs-u1_hat_all(ic,1))-1))+R2_hat_all(ic,1).*exp(k1_hat_all(ic,1).*(cos(dirs-u1_hat_all(ic,1))-1));
+end
+
 
 figure
 for k = 1:numel(cellsToPlot)
@@ -372,11 +399,26 @@ for k = 1:numel(cellsToPlot)
     RF = squeeze(data_all(ic,:,:));
     RF_dog = squeeze(data_DoG_all(ic,:,:));
 
-    subplot(2,3,k)
-    plotRF_FFT(RF_dog, xgrid, ygrid, 'SF', SF, 'prefOri', PO_dog_fft(ic), 'title', sprintf('cell %d', cellsIdx(ic)))
-    subplot(2,3,k+length(cellsToPlot))
-    plotRF_FFT(RF, xgrid, ygrid, 'SF', SF, 'prefOri', PO_dog_fft(ic), 'title', sprintf('cell %d', cellsIdx(ic)))
+    subplot(6,3,k)
+        imagesc(RF_dog); colormap(gca, 'gray'); clim([-5 5]); pbaspect([16 9 1]); axis off; box off
+    subplot(6,3,k+length(cellsToPlot))
+        plotRF_FFT(RF_dog, xgrid, ygrid, 'SF', SF, 'prefOri', PO_dog_fft(ic), 'title', sprintf('cell %d', cellsIdx(ic))); colormap(gca, 'parula'); axis off; axis square
+    subplot(6,3,k+(length(cellsToPlot)*2))
+        imagesc(RF); colormap(gca, 'gray'); clim([-5 5]); pbaspect([16 9 1]); axis off; box off
+    subplot(6,3,k+(length(cellsToPlot)*3))
+        plotRF_FFT(RF, xgrid, ygrid, 'SF', SF, 'prefOri', PO_dog_fft(ic), 'title', sprintf('cell %d', cellsIdx(ic))); colormap(gca, 'parula'); axis off; axis square
+    subplot(6,3,k+(length(cellsToPlot)*4))
+        plot(1:360,dir_yfit_all(:,k)); hold on
+        plot(stimDirs,avg_resp_dir_all(exCells(k),:,1,1,1)) 
+        subtitle('blue - VM fit, orange - spk data')
+        set(gca,'TickDir','out'); box off; axis square
+    subplot(6,3,k+(length(cellsToPlot)*5))
+        plot(1:180,dog_fft_tuning(ic,:))
+        set(gca,'TickDir','out'); box off; axis square
+        subtitle(['Pref ori spk ' num2str(PO_vm(cellsIdx(ic))) ', Pref ori fft ' num2str(PO_fftAll(ic))])
+        xlim([0 400])
 end
+
 print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_exampleCells_STAffts.pdf'), '-dpdf', '-bestfit')
 
 

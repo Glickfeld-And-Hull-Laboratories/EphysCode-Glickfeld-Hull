@@ -13,8 +13,8 @@ runloc  = 1;    % Where is this script being run? 1 == Hubel, 2 == Wiesel
 
 %%
 
-expts = {'g01'};
-%expts = {'g01','g06','g12','g17','tss2','tss4','tss6','tss7','elf1'};
+expts = {'elf3'};
+%expts = {'g01','g06','g12','g17','tss2','tss4','tss6','tss7','elf1','elf3'};
 
 if runloc == 1    % Hubel
     dirBase = '\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff';
@@ -37,7 +37,7 @@ end
     %
     %   stim conditions:
     %       1 - stim on time
-    %       2 - type (0, gratings,  1, plaids)
+    %       2 - type (0, gratings,� 1, plaids)
     %       3 - direction
     %       4 - phase
     %       5 - SF
@@ -60,7 +60,7 @@ end
  
 
 % Turn into variable, 'resp'
-    baseWin = 0.2;
+    baseWin = 0.05;
     onWin = 1.0;
     fs_spike   = 30000;     % sampling rate
     binSize    = 0.01;      % 10 ms bins
@@ -97,7 +97,6 @@ end
             alignedSpikes = spkTimes - timestamps(iTrial); % Align spikes to trial onset
             alignedSpikes = alignedSpikes(alignedSpikes >= win(1) & alignedSpikes <= win(2)); % Keep spikes in window
             PSTH(iCell,iTrial,:) = histcounts(alignedSpikes, edges); % Bin spikes
-            
         end
     end
 
@@ -131,17 +130,17 @@ end
 
     
 %%
-    % 
-    % save( ...
-    % fullfile( ...
-    %     dirBase, ...
-    %     'home', ...
-    %     'sara', ...
-    %     'Data', ...
-    %     'fromNicholas', ...
-    %     'CrossOri_randDirFourPhase_V1_marmoset', ...
-    %     [expts{iexp} '.mat']), ...
-    % 'resp');
+
+    save( ...
+    fullfile( ...
+        dirBase, ...
+        'home', ...
+        'sara', ...
+        'Data', ...
+        'fromNicholas', ...
+        'CrossOri_randDirFourPhase_V1_marmoset', ...
+        [expts{iexp} '.mat']), ...
+    'resp');
 
 
 %% plot grating rasters

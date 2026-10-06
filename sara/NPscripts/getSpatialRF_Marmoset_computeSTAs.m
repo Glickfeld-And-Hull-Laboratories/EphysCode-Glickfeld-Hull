@@ -2,6 +2,7 @@
 % Script 1 of 2:
 %     getSpatialRF_Marmoset_computeSTAs
 %     getSpatialRF_Marmoset_plotSTAs
+%     getSpatialRF_Marmoset_plotSTAs_withTuning
 
 %%
 clear all; close all; clc
@@ -9,7 +10,7 @@ clear all; close all; clc
 runloc = 1;   % Where is this script being run? 1 == Hubel, 2 == Wiesel
 res = 'LR';
 
-nboots = 1;
+nboots = 100;
 beforeSpike = [0.15 0.12 0.09 0.07 0.04]; % Look 40 ms before the spike
 
 %%
@@ -25,7 +26,7 @@ end
 
 %% load RF experiment data
 
-load(fullfile(dirBase,'sara','Data','fromNicholas','CrossOri_randDirFourPhase_V1_marmoset_LFP','elf1','elfrfdata.mat'))
+load(fullfile(dirBase,'sara','Data','fromNicholas','CrossOri_randDirFourPhase_V1_marmoset_LFP', 'elf1' ,'elfrfdatapart1.mat'))
 % Variables loaded:
 %   dgspikes        nCells x nBins (matrix) - 1ms bins with spike counts (0/1)
 %   onstimmatlr     1 x nTrials (cell array) containing [nPixels x nFrames]  - "on" stim image for low resolution experiment
@@ -90,9 +91,18 @@ for it = 1:nTrials
     timestamps(it,:) = trialOnsets(it) + (0:(nFramesPerTrial-1))*fr;  
 end
 
+%% choose idx
 
-%%
-nCells  = size(dgspikes,1);
+load(fullfile(dirBase,'sara','Analysis','Neuropixel','marmosetFromNicholas','marmosetV1_elf1','randDirFourPhase_CrossOri_marmosetV1_elf1_fitsSG.mat'))
+
+ind_DS = intersect(find(DSI>0.25),find(g_dsi>0.2));
+
+cellsIdx = intersect(ind_DS, resp_ind_dir);
+nCells  = length(cellsIdx);
+
+
+%%  
+
 lastTimestamp = timestamps(end)+10; % Last timestamp plus 10 seconds
 
 totalSpikesUsed = [];
@@ -100,10 +110,11 @@ averageImagesAll = [];
 
 parpool("Threads", nThreads)   % Start parallel pool processing
 tic
-for iCell = 170:179
-    fprintf(['cell ' num2str(iCell) '/' num2str(nCells) '\n'])
+for ic = 1:length(cellsIdx)
+    iCell = cellsIdx(ic);
+    fprintf(['cell ' num2str(ic) '/' num2str(length(cellsIdx)) '\n'])
     exCellSpikeTimes = spikeTimesCell{iCell};  % Not continuous recording, there are no spikes after lastTimestamp
-    totalSpikesUsed(iCell) = length(exCellSpikeTimes);
+    totalSpikesUsed(ic) = length(exCellSpikeTimes);
         for it = 1:length(beforeSpike)
             timeBeforeSpike = beforeSpike(it); % Look [40 ms, etc.] before the spike
             nSpikes = length(exCellSpikeTimes);
@@ -125,7 +136,7 @@ for iCell = 170:179
                 imagesAtSpikes(is, :, :) = imagesAtSpikesCell{is};
             end
             averageImageAtSpike = squeeze(nanmean(imagesAtSpikes, 1));
-            averageImagesAll(iCell,it,:,:)  = averageImageAtSpike;  % Put in matrix to use later. Size: [nBoots x nCells x nTimePointsBeforeSpike x xDim x yDim]
+            averageImagesAll(ic,it,:,:)  = averageImageAtSpike;  % Put in matrix to use later. Size: [nBoots x nCells x nTimePointsBeforeSpike x xDim x yDim]
         end
 end
 toc
@@ -134,67 +145,128 @@ delete(gcp("nocreate"));
 
 %% bootstrap script
 
-averageImagesAll_shuffled   = NaN(nboots, nCells, numel(beforeSpike), nSizeStimSide, nSizeStimSide);
-imageMatrix_list            = reshape(imageMatrix, [], size(imageMatrix,3), size(imageMatrix,4));   % Reshape from nTrials x nFrames to one dimension of all trials (nTrials*nFrames)
-frameStarts                 = timestamps;
-frameEnds                   = [timestamps(:,2:end), timestamps(:,end)+0.1];
-[nTrials, nFrames]          = size(timestamps);
-timeOffsets                 = 1:numel(beforeSpike);
+% averageImagesAll_shuffled   = NaN(nboots, nCells, numel(beforeSpike), nSizeStimSide, nSizeStimSide);
+% imageMatrix_list            = reshape(imageMatrix, [], size(imageMatrix,3), size(imageMatrix,4));   % Reshape from nTrials x nFrames to one dimension of all trials (nTrials*nFrames)
+% frameStarts                 = timestamps;
+% frameEnds                   = [timestamps(:,2:end), timestamps(:,end)+0.1];
+% [nTrials, nFrames]          = size(timestamps);
+% timeOffsets                 = 1:numel(beforeSpike);
+% 
+% parpool("Threads", nThreads)   % Start parallel pool processing
+% tic
+% for ib = 1:nboots
+%     fprintf(['boot ' num2str(ib) '/' num2str(nboots) '\n'])
+%     trialOrder          = randperm(size(imageMatrix,1));     % Random permutation of the integers from 1 to number of total trials without repeating elements
+%     frameOrder          = randperm(size(imageMatrix,2)); 
+%     imageMatrix_shuf    = imageMatrix(trialOrder, frameOrder, :, :);   % Resample with the random permutation and then reshape into expected matrix size
+%     cells_list = 1:nCells;
+%     parfor ic = cells_list
+%         iCell = cellsIdx(ic);
+%         exCellSpikeTimes = spikeTimesCell{iCell}; 
+%         for it = timeOffsets
+%             timeBeforeSpike = beforeSpike(it);
+%             shiftedSpikes   = exCellSpikeTimes - timeBeforeSpike;
+%             nSpikes         = length(shiftedSpikes);
+%             trialIdx = NaN(1, nSpikes);                                 
+%             frameIdx = NaN(1, nSpikes);
+% 
+%             % Expand dims
+%             frameStartsExp      = reshape(frameStarts, [nTrials, nFrames, 1]);
+%             frameEndsExp        = reshape(frameEnds,   [nTrials, nFrames, 1]);
+%             shiftedSpikesExp    = reshape(shiftedSpikes, [1, 1, nSpikes]);
+% 
+%             % Get frame for each spike
+%             isInFrame = (shiftedSpikesExp >= frameStartsExp) & (shiftedSpikesExp < frameEndsExp);
+% 
+%             % Collapse trials & frames
+%             isInFrame2D             = reshape(isInFrame, nTrials * nFrames, nSpikes);
+%             [linearIdx, spikeIdx]   = find(isInFrame2D);
+% 
+%             if ~isempty(linearIdx)
+%                 [trialInds, frameInds]      = ind2sub([nTrials, nFrames], linearIdx);
+%                 [uniqueSpikes, firstIdx]    = unique(spikeIdx, 'first');   % Keep only the first match if multiple
+%                 trialIdx(uniqueSpikes)      = trialInds(firstIdx);
+%                 frameIdx(uniqueSpikes)      = frameInds(firstIdx);
+%             end
+% 
+%             valid = ~isnan(trialIdx);    % Find valid spikes
+%             imagesAtSpikes = NaN(nSpikes, nSizeStimSide, nSizeStimSide);    % Preallocate
+% 
+%             % Convert valid indices to linear indices
+%             if any(valid)
+%                 ind                         = sub2ind([size(imageMatrix_shuf,1), size(imageMatrix_shuf,2)], trialIdx(valid), frameIdx(valid));    % Compute linear indices into imageMatrix_shuf
+%                 frames                      = reshape(imageMatrix_shuf, [], nSizeStimSide, nSizeStimSide);    % Extract all frames at once
+%                 imagesAtSpikes(valid,:,:)   = frames(ind, :, :);
+%             end
+% 
+%             averageImageAtSpike                         = squeeze(nanmean(imagesAtSpikes, 1));
+%             averageImagesAll_shuffled(ib,ic,it,:,:)  = averageImageAtSpike;
+%         end
+%     end
+% end
+% toc
+% delete(gcp("nocreate"));
 
-parpool("Threads", nThreads)   % Start parallel pool processing
+%% NEW bootstrap script
+
+% --- ONCE, before the boot loop ---
 tic
-for ib = 1:nboots
-    fprintf(['boot ' num2str(ib) '/' num2str(nboots) '\n'])
-    trialOrder          = randperm(size(imageMatrix,1));     % Random permutation of the integers from 1 to number of total trials without repeating elements
-    frameOrder          = randperm(size(imageMatrix,2)); 
-    imageMatrix_shuf    = imageMatrix(trialOrder, frameOrder, :, :);   % Resample with the random permutation and then reshape into expected matrix size
-    parfor iCell = 170:179
-        exCellSpikeTimes = spikeTimesCell{iCell}; 
-        for it = timeOffsets
-            timeBeforeSpike = beforeSpike(it);
-            shiftedSpikes   = exCellSpikeTimes - timeBeforeSpike;
-            nSpikes         = length(shiftedSpikes);
-            trialIdx = NaN(1, nSpikes);                                 
-            frameIdx = NaN(1, nSpikes);
-    
-            % Expand dims
-            frameStartsExp      = reshape(frameStarts, [nTrials, nFrames, 1]);
-            frameEndsExp        = reshape(frameEnds,   [nTrials, nFrames, 1]);
-            shiftedSpikesExp    = reshape(shiftedSpikes, [1, 1, nSpikes]);
-
-            % Get frame for each spike
-            isInFrame = (shiftedSpikesExp >= frameStartsExp) & (shiftedSpikesExp < frameEndsExp);
-    
-            % Collapse trials & frames
-            isInFrame2D             = reshape(isInFrame, nTrials * nFrames, nSpikes);
-            [linearIdx, spikeIdx]   = find(isInFrame2D);
-    
-            if ~isempty(linearIdx)
-                [trialInds, frameInds]      = ind2sub([nTrials, nFrames], linearIdx);
-                [uniqueSpikes, firstIdx]    = unique(spikeIdx, 'first');   % Keep only the first match if multiple
-                trialIdx(uniqueSpikes)      = trialInds(firstIdx);
-                frameIdx(uniqueSpikes)      = frameInds(firstIdx);
-            end
-    
-            valid = ~isnan(trialIdx);    % Find valid spikes
-            imagesAtSpikes = NaN(nSpikes, nSizeStimSide, nSizeStimSide);    % Preallocate
-                
-            % Convert valid indices to linear indices
-            if any(valid)
-                ind                         = sub2ind([size(imageMatrix_shuf,1), size(imageMatrix_shuf,2)], trialIdx(valid), frameIdx(valid));    % Compute linear indices into imageMatrix_shuf
-                frames                      = reshape(imageMatrix_shuf, [], nSizeStimSide, nSizeStimSide);    % Extract all frames at once
-                imagesAtSpikes(valid,:,:)   = frames(ind, :, :);
-            end
-
-            averageImageAtSpike                         = squeeze(nanmean(imagesAtSpikes, 1));
-            averageImagesAll_shuffled(ib,iCell,it,:,:)  = averageImageAtSpike;
+parpool("Threads", nThreads)
+trialIdxAll = cell(nCells, numel(beforeSpike));
+frameIdxAll = cell(nCells, numel(beforeSpike));
+for ic = 1:nCells
+    fprintf(['cell ' num2str(ic) '/' num2str(nCells) '\n'])
+    iCell = cellsIdx(ic);
+    exCellSpikeTimes = spikeTimesCell{iCell};
+    nSpikes = length(exCellSpikeTimes);
+    spike_list = 1:nSpikes;
+    for it = 1:numel(beforeSpike)
+        timeBeforeSpike = beforeSpike(it);
+        tIdx = NaN(1,nSpikes); fIdx = NaN(1,nSpikes);
+        parfor is = spike_list
+            [tIdx(is), fIdx(is)] = findNoiseStimAtSpike_marmoset(exCellSpikeTimes(is), timestamps, timeBeforeSpike);
         end
+        trialIdxAll{ic,it} = tIdx;
+        frameIdxAll{ic,it} = fIdx;
     end
 end
 toc
 delete(gcp("nocreate"));
 
+% --- inside the boot loop ---
 
+frames_flat = reshape(imageMatrix, [], nSizeStimSide, nSizeStimSide);  % compute once, before boot loop
+averageImagesAll_shuffled = NaN(nboots, nCells, numel(beforeSpike), nSizeStimSide, nSizeStimSide, 'single');
+[nTrials, nFrames] = size(timestamps);
+
+parpool("Threads", nThreads)
+tic
+boot_list = 1:nboots;
+cells_list = 1:nCells;
+spike_list = 1:numel(beforeSpike);
+for ib = boot_list
+    fprintf(['boot ' num2str(ib) '/' num2str(nboots) '\n'])
+    trialOrder = randperm(nTrials);
+    frameOrder = randperm(nFrames);
+    parfor ic = cells_list
+        for it = spike_list
+            trialIdx = trialIdxAll{ic,it};
+            frameIdx = frameIdxAll{ic,it};
+            valid = ~isnan(trialIdx);
+
+            imagesAtSpikes = NaN(numel(trialIdx), nSizeStimSide, nSizeStimSide);
+            shufTrial = trialOrder(trialIdx(valid));   % apply permutation to indices, not to imageMatrix
+            shufFrame = frameOrder(frameIdx(valid));
+            ind = sub2ind([nTrials, nFrames], shufTrial, shufFrame);
+
+            imagesAtSpikes(valid,:,:) = frames_flat(ind,:,:);
+
+            averageImagesAll_shuffled(ib,ic,it,:,:) = squeeze(nanmean(imagesAtSpikes,1));
+        end
+    end
+end
+toc
+delete(gcp("nocreate"));
 
 %% save data
 
@@ -206,7 +278,8 @@ save( ...
         'Neuropixel', ...
         'marmosetFromNicholas', ...
         'spatialRFs', ...
-        ['elf1_spatialRFs_Wiesel_' res '.mat']), ...
+        ['elf3_spatialRFs_Wiesel_' res '.mat']), ...
+    'cellsIdx', ...
     'totalSpikesUsed', ...
     'averageImagesAll', ...
     'averageImagesAll_shuffled', ...
@@ -214,6 +287,8 @@ save( ...
     'nboots', ...
     'beforeSpike');
 
+
+stop
 
 
 

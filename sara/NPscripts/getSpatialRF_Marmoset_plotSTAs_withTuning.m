@@ -2,7 +2,7 @@
 clear all; clc; close all
 
 runloc = 1;   % Where is this script being run? 1 == Hubel, 2 == Wiesel
-res = 'LR';
+% res = 'LR';
 
 
 %%
@@ -16,30 +16,55 @@ end
 
 %%
 
-load(fullfile(dirBase, 'sara', 'Analysis', 'Neuropixel', 'marmosetFromNicholas', 'spatialRFs', ['elf3_spatialRFs_Wiesel_' res '.mat']))
+res = 'LR'; 
+    load(fullfile(dirBase, 'sara', 'Analysis', 'Neuropixel', 'marmosetFromNicholas', 'spatialRFs', ['elf3_spatialRFs_Wiesel_' res '.mat']))
+    
+    nTrials             = size(imageMatrix,1);
+    nFramesPerTrials    = size(imageMatrix,2);
+    nSizeStimSide       = size(imageMatrix,3);
+    
+    % Subtract the mean white noise stimulus, because it is nonzero
+    wnMean          = mean(mean(imageMatrix,1),2);
+    wnMeanAvg       = mean(wnMean(:));
+    wnMeanDiffMat   = wnMean-wnMeanAvg;
+    
+    averageImagesAll_shuffledMinusMean  = averageImagesAll_shuffled - reshape(reshape(reshape(wnMeanDiffMat,[],nSizeStimSide,nSizeStimSide),[],1,nSizeStimSide,nSizeStimSide),[],1,1,nSizeStimSide,nSizeStimSide);
+    averageImagesAll_MinusMean          = averageImagesAll - reshape(reshape(wnMeanDiffMat,[],nSizeStimSide,nSizeStimSide),[],1,nSizeStimSide,nSizeStimSide);
+    
+    shuffledMean                        = squeeze(mean(averageImagesAll_shuffledMinusMean,1));
+    shuffledStd                         = squeeze(std(averageImagesAll_shuffledMinusMean,0,1));
+    
+    averageImageZscoreLR = (averageImagesAll_MinusMean-shuffledMean)./shuffledStd;   % z-score: subtract mean from the raw value and then divide all by standard deviation
 
-nTrials             = size(imageMatrix,1);
-nFramesPerTrials    = size(imageMatrix,2);
-nSizeStimSide       = size(imageMatrix,3);
+    clear averageImagesAll averageImagesAll_shuffled averageImagesAll_MinusMean shuffledMean shuffledStd
 
-% Subtract the mean white noise stimulus, because it is nonzero
-wnMean          = mean(mean(imageMatrix,1),2);
-wnMeanAvg       = mean(wnMean(:));
-wnMeanDiffMat   = wnMean-wnMeanAvg;
 
-averageImagesAll_shuffledMinusMean  = averageImagesAll_shuffled - reshape(reshape(reshape(wnMeanDiffMat,[],nSizeStimSide,nSizeStimSide),[],1,nSizeStimSide,nSizeStimSide),[],1,1,nSizeStimSide,nSizeStimSide);
-averageImagesAll_MinusMean          = averageImagesAll - reshape(reshape(wnMeanDiffMat,[],nSizeStimSide,nSizeStimSide),[],1,nSizeStimSide,nSizeStimSide);
+res = 'HR'; 
+    load(fullfile(dirBase, 'sara', 'Analysis', 'Neuropixel', 'marmosetFromNicholas', 'spatialRFs', ['elf3_spatialRFs_Wiesel_' res '.mat']))
+    
+    nTrials             = size(imageMatrix,1);
+    nFramesPerTrials    = size(imageMatrix,2);
+    nSizeStimSide       = size(imageMatrix,3);
+    
+    % Subtract the mean white noise stimulus, because it is nonzero
+    wnMean          = mean(mean(imageMatrix,1),2);
+    wnMeanAvg       = mean(wnMean(:));
+    wnMeanDiffMat   = wnMean-wnMeanAvg;
+    
+    averageImagesAll_shuffledMinusMean  = averageImagesAll_shuffled - reshape(reshape(reshape(wnMeanDiffMat,[],nSizeStimSide,nSizeStimSide),[],1,nSizeStimSide,nSizeStimSide),[],1,1,nSizeStimSide,nSizeStimSide);
+    averageImagesAll_MinusMean          = averageImagesAll - reshape(reshape(wnMeanDiffMat,[],nSizeStimSide,nSizeStimSide),[],1,nSizeStimSide,nSizeStimSide);
+    shuffledMean                        = squeeze(mean(averageImagesAll_shuffledMinusMean,1));
+    shuffledStd                         = squeeze(std(averageImagesAll_shuffledMinusMean,0,1));
+    
+    averageImageZscoreHR                = (averageImagesAll_MinusMean-shuffledMean)./shuffledStd;   % z-score: subtract mean from the raw value and then divide all by standard deviation
 
-shuffledMean    = squeeze(mean(averageImagesAll_shuffledMinusMean,1));
-shuffledStd     = squeeze(std(averageImagesAll_shuffledMinusMean,0,1));
+    clear averageImagesAll averageImagesAll_shuffled averageImagesAll_MinusMean shuffledMean shuffledStd
 
-averageImageZscoreLR = (averageImagesAll_MinusMean-shuffledMean)./shuffledStd;   % z-score: subtract mean from the raw value and then divide all by standard deviation
-averageImagesAllLR = averageImagesAll;
-clear averageImagesAll averageImagesAll_shuffled averageImagesAll_MinusMean shuffledMean shuffledStd
+
 
 %% zscore thresh for low res
 
-nCells = size(averageImagesAllLR,1);
+nCells = size(averageImageZscoreLR,1);
 nSizeStimSide = 16;
 zthreshold = 2.5;
 
@@ -106,9 +131,10 @@ for ic = 1:length(cellsIdx)
             jtempz(:,:) = rangefilt(xtempz(:,:),ones(5));
             j = squeeze(jtempz(:,:));
             q(it) = prctile(j(:),99);
-            % if it ==5
-            %     q(it) = 1;   % set 5th timepoint (0.01s) to 1 to make sure if there is a peak at 4th timepoint, it can be detected
-            % end
+            c(ic,it) = q(it);
+            if it ==5
+                 q(6) = 1;   % set extra 6th timepoint (0.01s) to 1 to make sure if there is a peak at 5th timepoint, it can be detected
+            end
             localConMap_data(ic,it,:,:) = xtempz;
             localConMap_map(ic,it,:,:) = jtempz;
             is=is+3;        
@@ -124,6 +150,7 @@ for ic = 1:length(cellsIdx)
         els(ic) = el;
     clear xtempz jtempz q m i
 end
+
 
 %% load tuning of cells
 
@@ -222,7 +249,7 @@ dog_fits_all(:,:,:)    = cat(3,results.models{2}{:});
 
 
 %% plot
-%%%%%%%%%%%%%%%%%%%%%%%%%55
+%%%%%%%%%%%%%%%%%%%%%%%%%
 maxSTAlr = max(abs(averageImagesAllLR(:)));
 maxZSTAlr = max(abs(averageImageZscoreLR(:)));
 maxDoG = max(abs(dog_fits_all(:)));
@@ -233,7 +260,7 @@ nCells = size(averageImagesAllLR,1);
 % Print STA time point choices
 pdfDir = fullfile(dirBase, 'sara', 'Analysis', 'Neuropixel','marmosetFromNicholas','spatialRFs');
 
-pdfFile = fullfile(pdfDir, 'elf3-STAs_withTuning.pdf');
+pdfFile = fullfile(pdfDir, ['elf3-STAs_withTuning.pdf']);
 if isfile(pdfFile); delete(pdfFile); end
 
 ic_use=1;
@@ -292,7 +319,7 @@ for ic = 1:nCells
             imagesc(squeeze(gaus_fits_all(:,:,ic_use))); hold on
             axis square
             colormap(gray)
-            set(gca,'clim',[-maxGaus maxGaus]); 
+            set(gca,'clim',[-5 5]); 
             box off; axis off
             set(gca,'xtick',[]); set(gca,'xticklabel',[])
             set(gca,'ytick',[]); set(gca,'yticklabel',[])
@@ -301,46 +328,28 @@ for ic = 1:nCells
             imagesc(squeeze(dog_fits_all(:,:,ic_use))); hold on
             axis square
             colormap(gray)
-            set(gca,'clim',[-maxDoG maxDoG]); 
+            set(gca,'clim',[-5 5]); 
             box off; axis off
             set(gca,'xtick',[]); set(gca,'xticklabel',[])
             set(gca,'ytick',[]); set(gca,'yticklabel',[])
             subtitle('noncon dog fit')
 
     for it = 1:5
-        data = squeeze(averageImagesAllLR(ic,it,:,:));
+
+        data = squeeze(averageImageZscoreLR(ic,it,:,:));
         subplot(5,5,it+10)
             imagesc(data); hold on
             axis square
             colormap(gray)
-            set(gca,'clim',[-maxSTAlr maxSTAlr]); 
-            box off; axis off
-            set(gca,'xtick',[]); set(gca,'xticklabel',[])
-            set(gca,'ytick',[]); set(gca,'yticklabel',[])
-            subtitle(['-' num2str(beforeSpike(it))])
-            if it == 1
-                text(0.02, 0.98, 'STA low res', ...
-                    'Units','normalized', ...
-                    'Color','w', ...
-                    'FontSize',5, ...
-                    'HorizontalAlignment','left', ...
-                    'VerticalAlignment','top');
-            end   
-
-        data = squeeze(averageImageZscoreLR(ic,it,:,:));
-        subplot(5,5,it+15)
-            imagesc(data); hold on
-            axis square
-            colormap(gray)
-            set(gca,'clim',[-maxZSTAlr maxZSTAlr]); 
+            set(gca,'clim',[-5 5]); 
             box off; axis off
             set(gca,'xtick',[]); set(gca,'xticklabel',[])
             set(gca,'ytick',[]); set(gca,'yticklabel',[])
             if it == 1
-                text(0.02, 0.98, 'zscore STA', ...
+                text(0.02, 0.98, 'zscore STA, LR', ...
                     'Units','normalized', ...
                     'Color','w', ...
-                    'FontSize',5, ...
+                    'FontSize',3, ...
                     'HorizontalAlignment','left', ...
                     'VerticalAlignment','top');
             end
@@ -349,8 +358,9 @@ for ic = 1:nCells
                 subtitle('pass, best time point')
             end
 
+
         data = squeeze(averageImageZscoreThresh(ic,it,:,:));
-        subplot(5,5,it+20)
+        subplot(5,5,it+15)
             imagesc(data); hold on
             axis square
             colormap(gray)
@@ -362,12 +372,190 @@ for ic = 1:nCells
                 text(0.02, 0.98, 'zscore thresh = 2.5', ...
                     'Units','normalized', ...
                     'Color','w', ...
-                    'FontSize',5, ... 
+                    'FontSize',3, ... 
                     'HorizontalAlignment','left', ...
                     'VerticalAlignment','top');
             end
             if it == 5
                 subtitle([num2str(totalSpikesUsed(ic)) ' spikes'])
+            end
+
+        data = squeeze(averageImageZscoreHR(ic,it,:,:));
+        subplot(5,5,it+20)
+            imagesc(data); hold on
+            axis square
+            colormap(gray)
+            set(gca,'clim',[-5 5]); 
+            box off; axis off
+            set(gca,'xtick',[]); set(gca,'xticklabel',[])
+            set(gca,'ytick',[]); set(gca,'yticklabel',[])
+            if it == 1
+                text(0.02, 0.98, 'zscore STA, HR', ...
+                    'Units','normalized', ...
+                    'Color','w', ...
+                    'FontSize',3, ...
+                    'HorizontalAlignment','left', ...
+                    'VerticalAlignment','top');
+            end
+      
+    end
+
+    % Append current figure as a new page in the PDF
+    exportgraphics(gcf, pdfFile,'ContentType', 'vector','Append', true);
+    close(gcf)
+
+    ic_use=ic_use+1;
+end
+
+
+%% plot not included cells
+%%%%%%%%%%%%%%%%%%%%%%%%%55
+% maxSTAlr = max(abs(averageImagesAllLR(:)));
+% maxZSTAlr = max(abs(averageImageZscoreLR(:)));
+% maxDoG = max(abs(dog_fits_all(:)));
+% maxGaus = max(abs(gaus_fits_all(:)));
+
+nCells = size(averageImageZscoreLR,1);
+
+% Print STA time point choices
+pdfDir = fullfile(dirBase, 'sara', 'Analysis', 'Neuropixel','marmosetFromNicholas','spatialRFs');
+
+pdfFile = fullfile(pdfDir, ['elf3-STAs_withTuning_notIncluded.pdf']);
+if isfile(pdfFile); delete(pdfFile); end
+
+ic_use=1;
+for ic = 1:nCells
+    if ismember(ic, cellsIdx_RFsInc); continue; end
+
+    iCell = cellsIdx(ic);
+
+    figure();
+    sgtitle(sprintf('cell %d (idx %d)', iCell, ic), 'FontSize', 10); 
+
+    subplot(5,5,1)
+        plot(x, avg_resp_grat(iCell,:))
+        subtitle('grating tuning','FontSize', 6)
+        xlabel('direction','FontSize', 6)
+        ylabel('Hz (bl subtracted)','FontSize', 6)
+        set(gca,'FontSize',5,'TickDir','out'); box off
+    subplot(5,5,2)
+        data = avg_resp_grat(iCell,:);
+        [minVal, ~] = min(data);
+            if minVal < 0
+                resp = data-minVal;
+            else
+                resp = data;
+            end
+        plot(x, resp)
+        subtitle(['gDSI=' num2str(round(g_dsi(iCell),2)) ', DSI=' num2str(round(DSI(iCell),2))],'FontSize', 6)
+        xlabel('direction','FontSize', 6)
+        ylabel('Hz (bl subtracted)','FontSize', 6)
+        set(gca,'FontSize',5,'TickDir','out'); box off
+    subplot(5,5,3)
+        for im = 1:4
+            polarplot([x_rad x_rad(1)], [avg_resp_plaid(iCell,:,im) avg_resp_plaid(iCell,1,im)],'Color', colors(im,:))
+            hold on
+        end
+        polarplot([x_rad x_rad(1)], [avg_resp_grat(iCell,:) avg_resp_grat(iCell,1)],'k', 'LineWidth',2) 
+        set(gca,'FontSize',5)
+    subplot(5,5,4)
+        for im = 1:4
+            scatter(Zc(im,iCell), Zp(im,iCell),8,colors(im,:),'filled')
+            hold on
+        end
+        ylabel('Zp'); ylim([-4 8]);
+        xlabel('Zc'); xlim([-4 8]);
+        plotZcZpBorders; axis square; set(gca,'TickDir','out')
+    subplot(5,5,5)
+        scatter(phase,PCI(:,iCell),8,'filled'); hold on
+        [b_hat_all(iCell,1), amp_hat_all(iCell,1), per_hat_all(iCell,1),pha_hat_all(iCell,1),sse_all(iCell,1),R_square_all(iCell,1)] = sinefit_PCI(deg2rad(phase),PCI(:,iCell));
+        yfit_all(iCell,:,1) = b_hat_all(iCell,1)+amp_hat_all(iCell,1).*(sin(2*pi*deg2rad(phase_range)./per_hat_all(iCell,1) + 2.*pi/pha_hat_all(iCell,1)));
+        plot(phase_range, yfit_all(iCell,:,1),'k:');
+        ylabel('Zp-Zc'); xlabel('Mask phase'); ylim([-7 7])
+        xlim([0 360]); xticks([0 180 360]); set(gca,'TickDir','out')
+        text(0.05,0.9,sprintf('R^2 = %.2f',R_square_all(iCell,1)),'Units','normalized','FontSize',5) 
+
+
+    for it = 1:5
+        subplot(5,5,6)
+            axis off
+            if it == 1
+                txtOpts = {'Units','normalized','Color','k','FontSize',5,'HorizontalAlignment','left','VerticalAlignment','top'};
+                txtOptsBold = {'Units','normalized','Color','k','FontSize',5,'FontWeight','bold','HorizontalAlignment','left','VerticalAlignment','top'};
+                text(0.02, 0.98, 'pass Vis Resp criteria', txtOptsBold{:});
+                text(0.02, 0.78, 'pass DS criteria', txtOptsBold{:});
+                if ismember(cellsIdx(ic),ind_FR)
+                    text(0.02, 0.58, 'pass FR criteria', txtOptsBold{:});
+                else
+                    text(0.02, 0.58, 'pass FR criteria', txtOpts{:});
+                end
+                if ind_sigRF(ic)>0
+                    text(0.02, 0.38, 'pass RF criteria', txtOptsBold{:});
+                else
+                    text(0.02, 0.38, 'pass RF criteria', txtOpts{:});
+                end
+            end
+
+        data = squeeze(averageImageZscoreLR(ic,it,:,:));
+        subplot(5,5,it+10)
+            imagesc(data); hold on
+            axis square
+            colormap(gray)
+            set(gca,'clim',[-5 5]); 
+            box off; axis off
+            set(gca,'xtick',[]); set(gca,'xticklabel',[])
+            set(gca,'ytick',[]); set(gca,'yticklabel',[])
+            if it == 1
+                text(0.02, 0.98, 'zscore STA, LR', ...
+                    'Units','normalized', ...
+                    'Color','w', ...
+                    'FontSize',3, ...
+                    'HorizontalAlignment','left', ...
+                    'VerticalAlignment','top');
+            end
+            bestit_ic = bestTimePoint(ic,1);
+            if it == bestit_ic && ind_sigRF(ic) > 0
+                subtitle('pass, best time point')
+            end
+
+        data = squeeze(averageImageZscoreThresh(ic,it,:,:));
+        subplot(5,5,it+15)
+            imagesc(data); hold on
+            axis square
+            colormap(gray)
+            set(gca,'clim',[-1 1]); 
+            box off; axis off
+            set(gca,'xtick',[]); set(gca,'xticklabel',[])
+            set(gca,'ytick',[]); set(gca,'yticklabel',[])
+            if it == 1
+                text(0.02, 0.98, 'zscore thresh = 2.5', ...
+                    'Units','normalized', ...
+                    'Color','w', ...
+                    'FontSize',3, ... 
+                    'HorizontalAlignment','left', ...
+                    'VerticalAlignment','top');
+            end
+            if it == 5
+                subtitle([num2str(totalSpikesUsed(ic)) ' spikes'])
+            end
+
+        
+        data = squeeze(averageImageZscoreHR(ic,it,:,:));
+        subplot(5,5,it+20)
+            imagesc(data); hold on
+            axis square
+            colormap(gray)
+            set(gca,'clim',[-5 5]); 
+            box off; axis off
+            set(gca,'xtick',[]); set(gca,'xticklabel',[])
+            set(gca,'ytick',[]); set(gca,'yticklabel',[])
+            if it == 1
+                text(0.02, 0.98, 'zscore STA, HR', ...
+                    'Units','normalized', ...
+                    'Color','w', ...
+                    'FontSize',3, ...
+                    'HorizontalAlignment','left', ...
+                    'VerticalAlignment','top');
             end
 
     end

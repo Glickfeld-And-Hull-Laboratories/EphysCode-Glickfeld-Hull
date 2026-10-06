@@ -428,12 +428,13 @@ for ic = 1:nCells
                 scatter(x, y, 3, 'm', 'filled')
                 hold off
             end
-
             if it == 1
                 subtitle(['cell ' num2str(ic) ', FR = ' num2str(round(FRs(ic),1)) ' Hz'])
             end
             if it == 5 
                 subtitle([num2str(totalSpikesUsed(ic)) ' spikes'])
+            end
+            if 
             end
             hold off
     end
