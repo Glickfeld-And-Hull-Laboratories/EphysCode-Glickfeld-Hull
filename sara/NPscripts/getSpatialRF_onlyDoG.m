@@ -326,6 +326,17 @@ amplitude = amp_all(cellsIdx_final)';
 indDoG = ~ismember(cellsIdx,omitCells);
 
 
+stimDirs = 0:30:330;
+y_fits = zeros(360,length(cellsToPlot));
+dirs = deg2rad(0:1:359);
+for ic = 1:length(cellsToPlot)
+    iCell = exCells(ic);
+    [b_hat_all(ic,1), k1_hat_all(ic,1), R1_hat_all(ic,1), R2_hat_all(ic,1), u1_hat_all(ic,1), u2_hat_all(ic,1), sse_all(ic,1),R_square_all(ic,1)] = miaovonmisesfit_dir(deg2rad(stimDirs),avg_resp_dir_all(iCell,:,1,1,1));
+    dir_yfit_all(:,ic) = b_hat_all(ic,1)+R1_hat_all(ic,1).*exp(k1_hat_all(ic,1).*(cos(dirs-u1_hat_all(ic,1))-1))+R2_hat_all(ic,1).*exp(k1_hat_all(ic,1).*(cos(dirs-u1_hat_all(ic,1))-1));
+end
+[~, PO_vmfit] = max(dir_yfit_all,[],1);  
+PO_vm = mod(PO_vmfit, 180); PO_vm
+
 [DSIstruct] = getDSIstruct_new(avg_resp_dir_all);
     gOSI_all = [DSIstruct.gOSI];
     gOSI_toplot = gOSI_all(cellsIdx_final);
@@ -338,12 +349,12 @@ beta        = 60; % half the angle between the two plaid components
 
 for ic = 1:size(data_all,1)
     prefDir     = dirs(indDir(ic));    % actual direction in degrees, 0-330
-    RF          = squeeze(data_all(ic,:,:));
+    RF          = medfilt2(imgaussfilt(squeeze(data_all(ic,:,:)),1));
     RF_dog      = squeeze(data_DoG_all(ic,:,:));
     PO(ic)      = mod(prefDir, 180);   % preferred orientation
     [PO_fftAll(ic), OSI_fftAll(ic), prefSF(ic)] = estimatePOfromFFT(RF, xgrid, ygrid);
     [PO_fft(ic), OSI_fft(ic), ~] = estimatePOfromFFT(RF, xgrid, ygrid, SF);
-    phaseCoh(ic) = estimatePhaseCoherence(RF, xgrid, ygrid, PO(ic), SF, beta);
+    phaseCoh(ic) = estimatePhaseCoherence(RF, xgrid, ygrid, PO_vm(ic), SF, beta);
     phaseCoh_fft(ic) = estimatePhaseCoherence(RF, xgrid, ygrid, PO_fft(ic), SF, beta);
 
     [PO_dog_fftAll(ic), OSI_dog_fftAll(ic), prefSF_dog(ic)] = estimatePOfromFFT(RF_dog, xgrid, ygrid);
@@ -383,14 +394,6 @@ exCells = [232 622 1855];
 cellsToPlot = find(ismember(cellsIdx, exCells));  
 
 
-stimDirs = 0:30:330;
-y_fits = zeros(360,length(cellsToPlot));
-dirs = deg2rad(0:1:359);
-for ic = 1:length(cellsToPlot)
-    iCell = exCells(ic);
-    [b_hat_all(ic,1), k1_hat_all(ic,1), R1_hat_all(ic,1), R2_hat_all(ic,1), u1_hat_all(ic,1), u2_hat_all(ic,1), sse_all(ic,1),R_square_all(ic,1)] = miaovonmisesfit_dir(deg2rad(stimDirs),avg_resp_dir_all(iCell,:,1,1,1));
-    dir_yfit_all(:,ic) = b_hat_all(ic,1)+R1_hat_all(ic,1).*exp(k1_hat_all(ic,1).*(cos(dirs-u1_hat_all(ic,1))-1))+R2_hat_all(ic,1).*exp(k1_hat_all(ic,1).*(cos(dirs-u1_hat_all(ic,1))-1));
-end
 
 
 figure
@@ -829,29 +832,30 @@ print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\'
 %% STA FFT plots
 
 
-% 
-% 
-% figure;
-%     subplot(4,4,1)
-%         scatter_reg(phaseCoh(indDoG),baseline,12)
-%         set(gca,'TickDir','out'); box off
-%         ylabel('baseline'); 
-%         xlabel('phaseCoh')
-%     subplot(4,4,2)
-%         scatter_reg(phaseCoh(indDoG),amplitude,12)
-%         set(gca,'TickDir','out'); box off
-%         ylabel('amplitude'); 
-%         xlabel('phaseCoh')
-%     subplot(4,4,3)
-%         scatter_reg(phaseCoh_fft(indDoG),baseline,12)
-%         set(gca,'TickDir','out'); box off
-%         ylabel('baseline'); 
-%         xlabel('phaseCoh POfft')
-%     subplot(4,4,4)
-%         scatter_reg(phaseCoh_fft(indDoG),amplitude,12)
-%         set(gca,'TickDir','out'); box off
-%         ylabel('amplitude'); 
-%         xlabel('phaseCoh POfft')
+
+
+figure;
+    subplot(4,4,1)
+        scatter_reg(phaseCoh(indDoG),baseline,12)
+        set(gca,'TickDir','out'); box off
+        ylabel('baseline'); 
+        xlabel('phaseCoh')
+    subplot(4,4,2)
+        scatter_reg(phaseCoh(indDoG),amplitude,12)
+        set(gca,'TickDir','out'); box off
+        ylabel('amplitude'); 
+        xlabel('phaseCoh')
+    subplot(4,4,3)
+        scatter_reg(phaseCoh_fft(indDoG),baseline,12)
+        set(gca,'TickDir','out'); box off
+        ylabel('baseline'); 
+        xlabel('phaseCoh POfft')
+    subplot(4,4,4)
+        scatter_reg(phaseCoh_fft(indDoG),amplitude,12)
+        set(gca,'TickDir','out'); box off
+        ylabel('amplitude'); 
+        xlabel('phaseCoh POfft')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary_phaseCoh.pdf'), '-dpdf', '-bestfit')
 
 
 
