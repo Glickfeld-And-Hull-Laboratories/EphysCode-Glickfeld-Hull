@@ -13,7 +13,7 @@ runloc  = 1;    % Where is this script being run? 1 == Hubel, 2 == Wiesel
 
 %%
 
-expts = {'elf3'};
+expts = {'g01'};
 %expts = {'g01','g06','g12','g17','tss2','tss4','tss6','tss7','elf1','elf3'};
 
 if runloc == 1    % Hubel
@@ -37,7 +37,7 @@ end
     %
     %   stim conditions:
     %       1 - stim on time
-    %       2 - type (0, gratings,� 1, plaids)
+    %       2 - type (0, gratings, 1, plaids)
     %       3 - direction
     %       4 - phase
     %       5 - SF
@@ -58,14 +58,19 @@ end
         clear gspikes4ph
     end
  
+%
+
+
 
 % Turn into variable, 'resp'
-    baseWin = 0.05;
-    onWin = 1.0;
+    baseWinStart = -0.15;   % baseline start (s, relative to stim on)
+    latency      = 0.05;    % response latency (s); baseline ends / stim window starts here
+    onWinEnd     = 1.05;    % end of stim window (s, relative to stim on)
     fs_spike   = 30000;     % sampling rate
     binSize    = 0.01;      % 10 ms bins
-    win        = [-baseWin onWin];   % e.g. [-0.25 0.25]
-    
+    win        = [baseWinStart onWinEnd];
+        
+
     edges      = win(1):binSize:win(2);
     tCenters   = edges(1:end-1) + binSize/2;
     
@@ -100,7 +105,6 @@ end
         end
     end
 
-
     
     % Preallocate
     resp = nan(nCells, nDir, nPhase, 2, nTrialsPerCond, nBins);
@@ -128,8 +132,6 @@ end
     end
 
 
-    
-%%
 
     save( ...
     fullfile( ...
@@ -146,12 +148,12 @@ end
 %% plot grating rasters
     
     % Windows
-    stimWin = [0 onWin];
-    baseWin = [-baseWin 0];
-    
+    stimWin = [latency onWinEnd];      % [0.05 1.05]
+    baseWin = [baseWinStart latency];  % [-0.15 0.05]
+
     % Initialize
     gratingRespMatrix     = cell(nCells, nDir);
-    gratingOFFRespMatrix  = cell(nCells, nDir);
+    gratingRespOFFMatrix  = cell(nCells, nDir);
     
     for iCell = 1:nCells
         

@@ -7,8 +7,9 @@
 %%
 clear all; close all; clc
 
+expt = 'elf3';
 runloc = 1;   % Where is this script being run? 1 == Hubel, 2 == Wiesel
-res = 'LR';
+res = 'HR';
 
 nboots = 100;
 beforeSpike = [0.15 0.12 0.09 0.07 0.04]; % Look 40 ms before the spike
@@ -26,7 +27,7 @@ end
 
 %% load RF experiment data
 
-load(fullfile(dirBase,'sara','Data','fromNicholas','CrossOri_randDirFourPhase_V1_marmoset_LFP', 'elf1' ,'elfrfdatapart1.mat'))
+load(fullfile(dirBase,'sara','Data','fromNicholas','CrossOri_randDirFourPhase_V1_marmoset_LFP', expt ,[expt 'rfdata.mat']))
 % Variables loaded:
 %   dgspikes        nCells x nBins (matrix) - 1ms bins with spike counts (0/1)
 %   onstimmatlr     1 x nTrials (cell array) containing [nPixels x nFrames]  - "on" stim image for low resolution experiment
@@ -93,7 +94,7 @@ end
 
 %% choose idx
 
-load(fullfile(dirBase,'sara','Analysis','Neuropixel','marmosetFromNicholas','marmosetV1_elf1','randDirFourPhase_CrossOri_marmosetV1_elf1_fitsSG.mat'))
+load(fullfile(dirBase,'sara','Analysis','Neuropixel','marmosetFromNicholas',['marmosetV1_' expt], ['randDirFourPhase_CrossOri_marmosetV1_' expt '_fitsSG.mat']))
 
 ind_DS = intersect(find(DSI>0.25),find(g_dsi>0.2));
 
@@ -278,7 +279,7 @@ save( ...
         'Neuropixel', ...
         'marmosetFromNicholas', ...
         'spatialRFs', ...
-        ['elf3_spatialRFs_Wiesel_' res '.mat']), ...
+        [expt '_spatialRFs_Wiesel_' res '.mat']), ...
     'cellsIdx', ...
     'totalSpikesUsed', ...
     'averageImagesAll', ...

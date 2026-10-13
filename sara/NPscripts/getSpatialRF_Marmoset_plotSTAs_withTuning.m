@@ -1,6 +1,7 @@
 
 clear all; clc; close all
 
+expt = 'elf1';
 runloc = 1;   % Where is this script being run? 1 == Hubel, 2 == Wiesel
 % res = 'LR';
 
@@ -17,7 +18,7 @@ end
 %%
 
 res = 'LR'; 
-    load(fullfile(dirBase, 'sara', 'Analysis', 'Neuropixel', 'marmosetFromNicholas', 'spatialRFs', ['elf3_spatialRFs_Wiesel_' res '.mat']))
+    load(fullfile(dirBase, 'sara', 'Analysis', 'Neuropixel', 'marmosetFromNicholas', 'spatialRFs', [expt '_spatialRFs_Wiesel_' res '.mat']))
     
     nTrials             = size(imageMatrix,1);
     nFramesPerTrials    = size(imageMatrix,2);
@@ -40,7 +41,8 @@ res = 'LR';
 
 
 res = 'HR'; 
-    load(fullfile(dirBase, 'sara', 'Analysis', 'Neuropixel', 'marmosetFromNicholas', 'spatialRFs', ['elf3_spatialRFs_Wiesel_' res '.mat']))
+if isfile(fullfile(dirBase, 'sara', 'Analysis', 'Neuropixel', 'marmosetFromNicholas', 'spatialRFs', [expt '_spatialRFs_Wiesel_' res '.mat']))
+    load(fullfile(dirBase, 'sara', 'Analysis', 'Neuropixel', 'marmosetFromNicholas', 'spatialRFs', [expt '_spatialRFs_Wiesel_' res '.mat']))
     
     nTrials             = size(imageMatrix,1);
     nFramesPerTrials    = size(imageMatrix,2);
@@ -59,13 +61,13 @@ res = 'HR';
     averageImageZscoreHR                = (averageImagesAll_MinusMean-shuffledMean)./shuffledStd;   % z-score: subtract mean from the raw value and then divide all by standard deviation
 
     clear averageImagesAll averageImagesAll_shuffled averageImagesAll_MinusMean shuffledMean shuffledStd
-
+end
 
 
 %% zscore thresh for low res
 
 nCells = size(averageImageZscoreLR,1);
-nSizeStimSide = 16;
+nSizeStimSide = size(averageImageZscoreLR,3);
 zthreshold = 2.5;
 
 averageImageZscoreThresh = [];
@@ -124,16 +126,22 @@ ind_sigRF = sum(cells_sigRFbyTime_On,2)+sum(cells_sigRFbyTime_Off,2);
 for ic = 1:length(cellsIdx)
     is=1;
         for it = [1 2 3 4 5]
-            xtempz(:,:) = medfilt2(imgaussfilt(squeeze(averageImageZscoreLR(ic,it,:,:)),1)); %3:27,12:36
-            if isnan(xtempz(1,1))
-                xtempz(:,:) = ones(size(xtempz,1),size(xtempz,2));
+            iCell = cellsIdx(ic);
+            A = squeeze(averageImageZscoreLR(ic,it,:,:));
+
+            if all(isnan(A(:)))
+                xtempz = zeros(size(A));            % no data: flat map -> zero local contrast
+            else
+                A(isnan(A)) = 0;                    % z-score of 0 = mean level; neutral fill
+                xtempz = medfilt2(imgaussfilt(A,1));
             end
-            jtempz(:,:) = rangefilt(xtempz(:,:),ones(5));
+            
+            jtempz = rangefilt(xtempz, ones(5));
             j = squeeze(jtempz(:,:));
             q(it) = prctile(j(:),99);
             c(ic,it) = q(it);
             if it ==5
-                 q(6) = 1;   % set extra 6th timepoint (0.01s) to 1 to make sure if there is a peak at 5th timepoint, it can be detected
+                 q(6) = 0;   % set extra 6th timepoint (0.01s) to 1 to make sure if there is a peak at 5th timepoint, it can be detected
             end
             localConMap_data(ic,it,:,:) = xtempz;
             localConMap_map(ic,it,:,:) = jtempz;
@@ -154,7 +162,7 @@ end
 
 %% load tuning of cells
 
-load(fullfile(dirBase,'sara','Analysis','Neuropixel','marmosetFromNicholas','marmosetV1_elf3','randDirFourPhase_CrossOri_marmosetV1_elf3_fitsSG.mat'))
+load(fullfile(dirBase,'sara','Analysis','Neuropixel','marmosetFromNicholas',['marmosetV1_' expt],['randDirFourPhase_CrossOri_marmosetV1_' expt '_fitsSG.mat']))
 
 ind_DS = intersect(find(DSI>0.25),find(g_dsi>0.2));
     [DSIstruct_new] = getDSIstruct_new(avg_resp_dir);
@@ -163,10 +171,13 @@ ind_DS = intersect(find(DSI>0.25),find(g_dsi>0.2));
     minGratResp     = min(gratResp,[],2);
 ind_peakFRmin   = find(maxGratResp>1);
 ind_rangeFRmin  = find(maxGratResp > (abs(minGratResp)*2));
-ind_FR = intersect(ind_peakFRmin,ind_rangeFRmin);
+% ind_FR = intersect(ind_peakFRmin,ind_rangeFRmin);
+ind_FR = ind_peakFRmin;
+
 
 cellsIdx_new = intersect(intersect(ind_DS,resp_ind_dir),ind_FR);
-cellsToPlot = ismember(cellsIdx,cellsIdx_new);
+cellsToPlot = ismember(cellsIdx, cellsIdx_new);   % length(cellsIdx), indexed by position in cellsIdx
+
 
 nCells  = length(cellsIdx);
 
@@ -177,6 +188,8 @@ dirs                = 0:30:330;
 
 % get aligned tuning curves
 [avg_resp_grat, avg_resp_plaid, sem_resp_grat, sem_resp_plaid] = getAlignedGratPlaidTuning(avg_resp_dir);
+[avg_resp_grat_f1dc, avg_resp_plaid_f1dc, ~, ~] = getAlignedGratPlaidTuning(avg_resp_dir_f1dc,'','avgonly');
+
 x       = [-150:30:180];
 x_rad   = deg2rad(x);
 
@@ -250,17 +263,17 @@ dog_fits_all(:,:,:)    = cat(3,results.models{2}{:});
 
 %% plot
 %%%%%%%%%%%%%%%%%%%%%%%%%
-maxSTAlr = max(abs(averageImagesAllLR(:)));
-maxZSTAlr = max(abs(averageImageZscoreLR(:)));
-maxDoG = max(abs(dog_fits_all(:)));
-maxGaus = max(abs(gaus_fits_all(:)));
+% maxSTAlr = max(abs(averageImagesAllLR(:)));
+% maxZSTAlr = max(abs(averageImageZscoreLR(:)));
+% maxDoG = max(abs(dog_fits_all(:)));
+% maxGaus = max(abs(gaus_fits_all(:)));
 
-nCells = size(averageImagesAllLR,1);
+nCells = size(averageImageZscoreLR,1);
 
 % Print STA time point choices
 pdfDir = fullfile(dirBase, 'sara', 'Analysis', 'Neuropixel','marmosetFromNicholas','spatialRFs');
 
-pdfFile = fullfile(pdfDir, ['elf3-STAs_withTuning.pdf']);
+pdfFile = fullfile(pdfDir, [expt '-STAs_withTuning.pdf']);
 if isfile(pdfFile); delete(pdfFile); end
 
 ic_use=1;
@@ -273,7 +286,7 @@ for ic = 1:nCells
     sgtitle(sprintf('cell %d (idx %d)', iCell, ic), 'FontSize', 10); 
 
     subplot(5,5,1)
-        plot(x, avg_resp_grat(iCell,:))
+        plot(x, avg_resp_grat_f1dc(iCell,:))
         subtitle('grating tuning','FontSize', 6)
         xlabel('direction','FontSize', 6)
         ylabel('Hz (bl subtracted)','FontSize', 6)
@@ -293,10 +306,10 @@ for ic = 1:nCells
         set(gca,'FontSize',5,'TickDir','out'); box off
     subplot(5,5,3)
         for im = 1:4
-            polarplot([x_rad x_rad(1)], [avg_resp_plaid(iCell,:,im) avg_resp_plaid(iCell,1,im)],'Color', colors(im,:))
+            polarplot([x_rad x_rad(1)], [avg_resp_plaid_f1dc(iCell,:,im) avg_resp_plaid_f1dc(iCell,1,im)],'Color', colors(im,:))
             hold on
         end
-        polarplot([x_rad x_rad(1)], [avg_resp_grat(iCell,:) avg_resp_grat(iCell,1)],'k', 'LineWidth',2) 
+        polarplot([x_rad x_rad(1)], [avg_resp_grat_f1dc(iCell,:) avg_resp_grat_f1dc(iCell,1)],'k', 'LineWidth',2) 
         set(gca,'FontSize',5)
     subplot(5,5,4)
         for im = 1:4
@@ -379,24 +392,25 @@ for ic = 1:nCells
             if it == 5
                 subtitle([num2str(totalSpikesUsed(ic)) ' spikes'])
             end
-
-        data = squeeze(averageImageZscoreHR(ic,it,:,:));
-        subplot(5,5,it+20)
-            imagesc(data); hold on
-            axis square
-            colormap(gray)
-            set(gca,'clim',[-5 5]); 
-            box off; axis off
-            set(gca,'xtick',[]); set(gca,'xticklabel',[])
-            set(gca,'ytick',[]); set(gca,'yticklabel',[])
-            if it == 1
-                text(0.02, 0.98, 'zscore STA, HR', ...
-                    'Units','normalized', ...
-                    'Color','w', ...
-                    'FontSize',3, ...
-                    'HorizontalAlignment','left', ...
-                    'VerticalAlignment','top');
-            end
+        if exist('averageImageZscoreHR','var')
+            data = squeeze(averageImageZscoreHR(ic,it,:,:));
+            subplot(5,5,it+20)
+                imagesc(data); hold on
+                axis square
+                colormap(gray)
+                set(gca,'clim',[-5 5]); 
+                box off; axis off
+                set(gca,'xtick',[]); set(gca,'xticklabel',[])
+                set(gca,'ytick',[]); set(gca,'yticklabel',[])
+                if it == 1
+                    text(0.02, 0.98, 'zscore STA, HR', ...
+                        'Units','normalized', ...
+                        'Color','w', ...
+                        'FontSize',3, ...
+                        'HorizontalAlignment','left', ...
+                        'VerticalAlignment','top');
+                end
+        end
       
     end
 
@@ -420,7 +434,7 @@ nCells = size(averageImageZscoreLR,1);
 % Print STA time point choices
 pdfDir = fullfile(dirBase, 'sara', 'Analysis', 'Neuropixel','marmosetFromNicholas','spatialRFs');
 
-pdfFile = fullfile(pdfDir, ['elf3-STAs_withTuning_notIncluded.pdf']);
+pdfFile = fullfile(pdfDir, [expt '-STAs_withTuning_notIncluded.pdf']);
 if isfile(pdfFile); delete(pdfFile); end
 
 ic_use=1;
@@ -433,7 +447,7 @@ for ic = 1:nCells
     sgtitle(sprintf('cell %d (idx %d)', iCell, ic), 'FontSize', 10); 
 
     subplot(5,5,1)
-        plot(x, avg_resp_grat(iCell,:))
+        plot(x, avg_resp_grat_f1dc(iCell,:))
         subtitle('grating tuning','FontSize', 6)
         xlabel('direction','FontSize', 6)
         ylabel('Hz (bl subtracted)','FontSize', 6)
@@ -453,10 +467,10 @@ for ic = 1:nCells
         set(gca,'FontSize',5,'TickDir','out'); box off
     subplot(5,5,3)
         for im = 1:4
-            polarplot([x_rad x_rad(1)], [avg_resp_plaid(iCell,:,im) avg_resp_plaid(iCell,1,im)],'Color', colors(im,:))
+            polarplot([x_rad x_rad(1)], [avg_resp_plaid_f1dc(iCell,:,im) avg_resp_plaid_f1dc(iCell,1,im)],'Color', colors(im,:))
             hold on
         end
-        polarplot([x_rad x_rad(1)], [avg_resp_grat(iCell,:) avg_resp_grat(iCell,1)],'k', 'LineWidth',2) 
+        polarplot([x_rad x_rad(1)], [avg_resp_grat_f1dc(iCell,:) avg_resp_grat_f1dc(iCell,1)],'k', 'LineWidth',2) 
         set(gca,'FontSize',5)
     subplot(5,5,4)
         for im = 1:4
@@ -539,24 +553,25 @@ for ic = 1:nCells
                 subtitle([num2str(totalSpikesUsed(ic)) ' spikes'])
             end
 
-        
-        data = squeeze(averageImageZscoreHR(ic,it,:,:));
-        subplot(5,5,it+20)
-            imagesc(data); hold on
-            axis square
-            colormap(gray)
-            set(gca,'clim',[-5 5]); 
-            box off; axis off
-            set(gca,'xtick',[]); set(gca,'xticklabel',[])
-            set(gca,'ytick',[]); set(gca,'yticklabel',[])
-            if it == 1
-                text(0.02, 0.98, 'zscore STA, HR', ...
-                    'Units','normalized', ...
-                    'Color','w', ...
-                    'FontSize',3, ...
-                    'HorizontalAlignment','left', ...
-                    'VerticalAlignment','top');
-            end
+        if exist('averageImageZscoreHR','var')
+            data = squeeze(averageImageZscoreHR(ic,it,:,:));
+            subplot(5,5,it+20)
+                imagesc(data); hold on
+                axis square
+                colormap(gray)
+                set(gca,'clim',[-5 5]); 
+                box off; axis off
+                set(gca,'xtick',[]); set(gca,'xticklabel',[])
+                set(gca,'ytick',[]); set(gca,'yticklabel',[])
+                if it == 1
+                    text(0.02, 0.98, 'zscore STA, HR', ...
+                        'Units','normalized', ...
+                        'Color','w', ...
+                        'FontSize',3, ...
+                        'HorizontalAlignment','left', ...
+                        'VerticalAlignment','top');
+                end
+        end
 
     end
 
@@ -565,4 +580,116 @@ for ic = 1:nCells
     close(gcf)
 
     ic_use=ic_use+1;
+end
+
+
+
+
+%% Summary tuning PDFs: included vs. discarded cells (all recorded cells)
+% Per cell: (1) grating + plaid tuning (f1dc), (2) grating tuning w/ DSI & gDSI
+% (avg_resp_dir), (3) polar grating + plaid (f1dc), (4) Zc vs Zp, (5) PCI (Zp-Zc) sine fit
+
+pdfDir = fullfile(dirBase, 'sara', 'Analysis', 'Neuropixel', 'marmosetFromNicholas', 'spatialRFs');
+
+allCells = (1:size(avg_resp_dir,1))';          % every cell, not just cellsIdx
+inclCells = intersect(allCells, cellsIdx_new); % pass vis resp + DS + FR
+discCells = setdiff(allCells, cellsIdx_new);   % fail at least one criterion
+
+groups(1).name  = 'included';
+groups(1).cells = inclCells;
+groups(1).file  = fullfile(pdfDir, [expt '-tuningSummary_includedAll.pdf']);
+
+groups(2).name  = 'discarded';
+groups(2).cells = discCells;
+groups(2).file  = fullfile(pdfDir, [expt '-tuningSummary_discardedAll.pdf']);
+
+for ig = 1:numel(groups)
+
+    if isfile(groups(ig).file); delete(groups(ig).file); end
+
+    for ic = 1:length(groups(ig).cells)
+        iCell = groups(ig).cells(ic);
+
+        fig = figure('Units','inches','Position',[1 1 11 6]);
+        tl  = tiledlayout(2,3,'TileSpacing','compact','Padding','compact');
+
+        % Title (for discarded cells, list failed criteria)
+        if strcmp(groups(ig).name,'included')
+            title(tl, sprintf('cell %d - included', iCell), 'FontSize', 10);
+        else
+            failed = {};
+            if ~ismember(iCell, resp_ind_dir); failed{end+1} = 'vis resp'; end
+            if ~ismember(iCell, ind_DS);       failed{end+1} = 'DS';       end
+            if ~ismember(iCell, ind_FR);       failed{end+1} = 'FR';       end
+            title(tl, sprintf('cell %d - discarded (failed: %s)', iCell, strjoin(failed,', ')), 'FontSize', 10);
+        end
+
+        % 1) Cartesian: grating + plaid, f1dc
+        nexttile(1)
+            hold on
+            for im = 1:4
+                plot(x, squeeze(avg_resp_plaid_f1dc(iCell,:,im)), 'Color', colors(im,:))
+            end
+            plot(x, avg_resp_grat_f1dc(iCell,:), 'k', 'LineWidth', 2)
+            xlabel('direction (deg from pref)'); ylabel('Hz')
+            xlim([x(1) x(end)]); set(gca,'TickDir','out'); box off
+            title('tuning (f1+dc)','FontSize',8)
+
+        % 2) Cartesian: grating tuning w/ DSI and gDSI (avg_resp_dir)
+        nexttile(2)
+            errorbar(x, avg_resp_grat(iCell,:), sem_resp_grat(iCell,:), 'k', 'LineWidth', 1)
+            xlabel('direction (deg from pref)'); ylabel('Hz (bl subtracted)')
+            xlim([x(1) x(end)]); set(gca,'TickDir','out'); box off
+            title(sprintf('grating tuning: gDSI = %.2f, DSI = %.2f', g_dsi(iCell), DSI(iCell)),'FontSize',8)
+
+        % 3) Polar: grating + plaid, f1dc
+        pax = polaraxes(tl); pax.Layout.Tile = 3; hold(pax,'on')   % no nexttile(3) first, avoids overlapping cartesian axes
+            for im = 1:4
+                polarplot(pax, [x_rad x_rad(1)], [squeeze(avg_resp_plaid_f1dc(iCell,:,im)) avg_resp_plaid_f1dc(iCell,1,im)], 'Color', colors(im,:))
+            end
+            polarplot(pax, [x_rad x_rad(1)], [avg_resp_grat_f1dc(iCell,:) avg_resp_grat_f1dc(iCell,1)], 'k', 'LineWidth', 2)
+            pax.FontSize = 6;
+            title(pax,'polar (f1+dc)','FontSize',8)
+
+        % 4) Zc vs Zp
+        nexttile(4)
+            hold on
+            for im = 1:4
+                scatter(Zc(im,iCell), Zp(im,iCell), 20, colors(im,:), 'filled')
+            end
+            xlabel('Zc'); xlim([-4 8]); ylabel('Zp'); ylim([-4 8])
+            plotZcZpBorders; axis square; set(gca,'TickDir','out')
+            title('Zc vs Zp','FontSize',8)
+
+        % 5) PCI (Zp-Zc) sine fit
+        nexttile(5)
+            hold on
+            scatter(phase, PCI(:,iCell), 20, 'filled')
+            try
+                [b_hat, amp_hat, per_hat, pha_hat, ~, R2] = sinefit_PCI(deg2rad(phase), PCI(:,iCell));
+                yfit = b_hat + amp_hat .* (sin(2*pi*deg2rad(phase_range)./per_hat + 2*pi/pha_hat));
+                plot(phase_range, yfit, 'k:')
+                text(0.05, 0.9, sprintf('R^2 = %.2f', R2), 'Units','normalized','FontSize',7)
+            catch
+                text(0.05, 0.9, 'fit failed', 'Units','normalized','FontSize',7)
+            end
+            xlabel('Mask phase'); ylabel('Zp-Zc')
+            xlim([0 360]); xticks([0 180 360]); ylim([-7 7]); set(gca,'TickDir','out')
+            title('PCI fit','FontSize',8)
+
+        % Legend in the empty 6th tile
+        nexttile(6)
+            axis off; hold on
+            for im = 1:4
+                plot(nan, nan, 'Color', colors(im,:), 'LineWidth', 1.5)
+            end
+            plot(nan, nan, 'k', 'LineWidth', 2)
+            legend({'plaid, phase 1','plaid, phase 2','plaid, phase 3','plaid, phase 4','grating'}, ...
+                'Location','west','Box','off','FontSize',7)
+
+        exportgraphics(fig, groups(ig).file, 'ContentType','vector', 'Append', true);
+        close(fig)
+    end
+
+    fprintf('Saved %d %s cells to %s\n', length(groups(ig).cells), groups(ig).name, groups(ig).file);
 end

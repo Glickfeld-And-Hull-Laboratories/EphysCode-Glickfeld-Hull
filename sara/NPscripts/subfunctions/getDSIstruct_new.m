@@ -50,7 +50,6 @@ function [DSIstruct] = getDSIstruct_new(avg_resp_dir)
             
             ang_dsi(iCell) = mod(rad2deg(atan2(ym_dsi, xm_dsi)), 360); %preferred direction, in degrees
             ang_osi(iCell) = mod(rad2deg(atan2(ym_osi, xm_osi))/2, 180);
-            ang_osi(iCell) = ang_osi(iCell)/2;
 
     end
 
