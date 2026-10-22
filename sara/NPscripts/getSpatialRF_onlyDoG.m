@@ -335,7 +335,7 @@ for ic = 1:length(cellsToPlot)
     dir_yfit_all(:,ic) = b_hat_all(ic,1)+R1_hat_all(ic,1).*exp(k1_hat_all(ic,1).*(cos(dirs-u1_hat_all(ic,1))-1))+R2_hat_all(ic,1).*exp(k1_hat_all(ic,1).*(cos(dirs-u1_hat_all(ic,1))-1));
 end
 [~, PO_vmfit] = max(dir_yfit_all,[],1);  
-PO_vm = mod(PO_vmfit, 180); PO_vm
+PO_vm = mod(PO_vmfit, 180);
 
 [DSIstruct] = getDSIstruct_new(avg_resp_dir_all);
     gOSI_all = [DSIstruct.gOSI];
@@ -394,8 +394,6 @@ exCells = [232 622 1855];
 cellsToPlot = find(ismember(cellsIdx, exCells));  
 
 
-
-
 figure
 for k = 1:numel(cellsToPlot)
     ic = cellsToPlot(k);    
@@ -423,6 +421,60 @@ for k = 1:numel(cellsToPlot)
 end
 
 print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_exampleCells_STAffts.pdf'), '-dpdf', '-bestfit')
+
+%% estimate plaid mod from FFT
+% In a purely linear F1 model, the depth of modulation over a full 360° 
+% phase sweep depends only on the balance of the two component amplitudes. 
+% The max is A1+A2, the min is |A1−A2|, so depth is min/max. The phase 
+% ∠G1−∠G2 only sets where the peak falls.
+% 
+% Unmodulated cells will mostly be cells where one component sits far down 
+% the orientation or SF tuning curve (dominant component, little 
+% interference) or cells weakly driven by both. Fig 4 and the printed table 
+% separate these.
+
+% Print STA time point choices
+pdfDir = fullfile(dirBase, 'sara', 'Analysis', 'Neuropixel','CrossOri','randDirFourPhase','mouse_RFs');
+if ~exist(pdfDir, 'dir'); mkdir(pdfDir); end
+
+pdfFile = fullfile(pdfDir, 'spatialRFs_FFTanalysis_plaidModulation.pdf');
+if isfile(pdfFile); delete(pdfFile); end
+
+modDepth_all=[];
+doPlot = 1;
+for ic = 1:size(data_all,1)
+    prefDir     = dirs(indDir(ic));    % actual direction in degrees, 0-330
+    RF          = medfilt2(imgaussfilt(squeeze(data_all(ic,:,:)),1));
+    RF_dog      = squeeze(data_DoG_all(ic,:,:));
+    prefOri     = PO_vm(cellsIdx(ic));
+    opts = struct('prefOri', prefOri);
+    [modDepth, peakPhase, A1, A2, dirs_fft, Fsamp_fft, S] = estimatePlaidModFromFFT(RF_dog, xgrid, ygrid, SF, [], [], [], doPlot, opts);
+    modDepth_all(ic,:) = modDepth;
+    % sgtitle(['cell ' num2str(cellsIdx(ic))', cellsIdx(' num2str(ic) ')']);
+    exportgraphics(gcf, pdfFile,'ContentType', 'vector','Append', true);
+    close(gcf)
+
+if ic==5; stop;end
+end
+
+
+
+stop
+
+figure;
+    subplot 121
+        scatter_reg(amp_all(cellsIdx),mean(modDepth_all,2))
+        axis square; set(gca,'TickDir','out','FontSize',8)
+        xlabel('Zp-Zc amplitude')
+        ylabel('linear amplitude (mean across dirs)')
+    subplot 122
+        scatter_reg(amp_all(cellsIdx),max(modDepth_all,[],2))
+        axis square; set(gca,'TickDir','out','FontSize',8)
+        xlabel('Zp-Zc amplitude')
+        ylabel('linear amplitude (max across dirs)')
+
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_linearAmplitude.pdf'), '-dpdf', '-bestfit')
+
 
 
 
@@ -835,27 +887,35 @@ print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\'
 
 
 figure;
-    subplot(4,4,1)
+    subplot(3,3,1)
         scatter_reg(phaseCoh(indDoG),baseline,12)
         set(gca,'TickDir','out'); box off
         ylabel('baseline'); 
         xlabel('phaseCoh')
-    subplot(4,4,2)
+    subplot(3,3,2)
         scatter_reg(phaseCoh(indDoG),amplitude,12)
         set(gca,'TickDir','out'); box off
         ylabel('amplitude'); 
         xlabel('phaseCoh')
-    subplot(4,4,3)
+    subplot(3,3,3)
         scatter_reg(phaseCoh_fft(indDoG),baseline,12)
         set(gca,'TickDir','out'); box off
         ylabel('baseline'); 
         xlabel('phaseCoh POfft')
-    subplot(4,4,4)
+    subplot(3,3,4)
         scatter_reg(phaseCoh_fft(indDoG),amplitude,12)
         set(gca,'TickDir','out'); box off
         ylabel('amplitude'); 
         xlabel('phaseCoh POfft')
 print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary_phaseCoh.pdf'), '-dpdf', '-bestfit')
+
+[pc_vals, pc_ind] = sort(phaseCoh_fft);
+
+
+
+
+
+
 
 
 
