@@ -1,4 +1,4 @@
-function [modDepth, peakPhase, A1, A2, dirs, Fsamp, S] = estimatePlaidModFromFFT(RF, xgrid, ygrid, SF, compAngle, phaseOffsets, dirs, doPlot, opts)
+function [peakPhase, A1, A2, dirs, Fsamp, AplaidPrefOri, S] = estimatePlaidModFromFFT(RF, xgrid, ygrid, SF, compAngle, phaseOffsets, dirs, doPlot, opts)
 % estimatePlaidModFromFFT  Linear prediction of how much a cell's response
 % to plaids is modulated by shifting the relative phase of ONE component,
 % from the Fourier transform of its spatial RF (amplitude AND phase).
@@ -45,24 +45,23 @@ function [modDepth, peakPhase, A1, A2, dirs, Fsamp, S] = estimatePlaidModFromFFT
 %                  PDF export needs MATLAB R2020a+ (exportgraphics).
 %
 % Outputs (1 x nDirs unless noted; indexed by dirs):
-%   modDepth  : (max-min)/(max+min) of the predicted F1 amplitude across the
-%               SAMPLED phaseOffsets. 0 = response independent of the phase
-%               of component 2; 1 = response goes to zero at some sampled phase.
-%   peakPhase : phase offset (deg, 0-360) at which the two components sum
-%               maximally = angle(G1) - angle(G2).
-%   A1, A2    : |G| of component 1 (dir - compAngle/2) and 2 (dir + compAngle/2),
-%               RF units * deg^2.
-%   dirs      : direction axis (deg) for the outputs.
-%   Fsamp     : nDirs x nPhases predicted F1 amplitude per phase condition.
-%   S         : struct with everything else: G1, G2 (complex), Gsingle,
-%               depthFull (=min/max, the CEILING: depth over a full 360-deg
-%               phase sweep; balance only), absRange (=2*min(A1,A2)),
-%               sampRange, sampDepth (=modDepth), refAmp (peak single-grating
-%               |G| at SF), ring/ringAng (|G| at 1-deg steps of wave-vector
-%               angle 0:179), prefOriSF (peak of that ring, stripe deg),
-%               prefOriInput (opts.prefOri, [] if not given), prefOri (the one
-%               used for the example direction: input if given, else SF),
-%               prefWaveAng, OSI, exampleIdx.
+%   peakPhase       : phase offset (deg, 0-360) at which the two components sum
+%                    maximally = angle(G1) - angle(G2).
+%   A1, A2          : |G| of component 1 (dir - compAngle/2) and 2 (dir + compAngle/2),
+%                       RF units * deg^2.
+%   dirs            : direction axis (deg) for the outputs.
+%   Fsamp           : nDirs x nPhases predicted F1 amplitude per phase condition.
+%   AplaidPrefOri   : normalized amplitudes for all phase conditions
+%                    at the FFT-derived preferred stripe orientation.
+%   S               : struct with everything else: G1, G2 (complex), Gsingle,
+%                   depthFull (=min/max, the CEILING: depth over a full 360-deg
+%                   phase sweep; balance only), absRange (=2*min(A1,A2)),
+%                   sampRange, sampDepth (=modDepth), refAmp (peak single-grating
+%                   |G| at SF), ring/ringAng (|G| at 1-deg steps of wave-vector
+%                   angle 0:179), prefOriSF (peak of that ring, stripe deg),
+%                   prefOriInput (opts.prefOri, [] if not given), prefOri (the one
+%                   used for the example direction: input if given, else SF),
+%                   prefWaveAng, OSI, exampleIdx.
 %
 % MODEL
 %   Grating  cos(2*pi*(k.x - f*t) + phi), k = SF*[cos(dir) sin(dir)] moves
@@ -120,46 +119,72 @@ end
 S.A1 = abs(S.G1);  S.A2 = abs(S.G2);
 S.peakPhase = mod(rad2deg(angle(S.G1) - angle(S.G2)), 360);
 
-% ---- predicted F1 at the sampled phases, and modulation depth ----
+% ---- predicted F1 at the sampled phases ----
 dph = deg2rad(P.phaseOffsets);
-S.Fsamp = abs(S.G1(:) + S.G2(:).*exp(1i*dph));          % nDirs x nPhases
-S.depthFull = min(S.A1,S.A2) ./ max(S.A1,S.A2);         % ceiling
-S.absRange  = 2*min(S.A1,S.A2);
-mx = max(S.Fsamp,[],2).';  mn = min(S.Fsamp,[],2).';
-S.sampRange = mx - mn;
-S.sampDepth = (mx - mn) ./ (mx + mn);
+S.Fsamp = abs(S.G1(:) + S.G2(:).*exp(1i*dph));
 
-% ---- orientation tuning at SF (1-deg steps, direct Fourier sum) ----
-S.ringAng = 0:179;                                       % wave-vector angle
-S.ring    = zeros(1,180);
-for k = 1:180, S.ring(k) = abs(gAt(c, P, S.ringAng(k))); end
+% ---- orientation tuning at SF (1-deg steps) ----
+S.ringAng = 0:179;
+S.ring = zeros(1,180);
+
+for k = 1:180
+    S.ring(k) = abs(gAt(c, P, S.ringAng(k)));
+end
+
 S.refAmp = max(S.ring);
 [~, kmax] = max(S.ring);
-S.prefOriRing = mod(S.ringAng(kmax) + 90, 180);          % peak of the 1-deg ring at SF
-S.prefOriSF   = S.prefOriRing;                           % 'prefOri (SF)': from the FFT of the RF at the stimulus SF
-S.prefOriInput = [];                                     % 'prefOri (input)': user-supplied, if any
-if ~isempty(opts.prefOri), S.prefOriInput = mod(opts.prefOri, 180); end
+
+S.prefOriRing = mod(S.ringAng(kmax) + 90, 180);
+S.prefOriSF = S.prefOriRing;
+S.prefOriInput = [];
+
 if ~isempty(opts.prefOri)
-    S.prefOri = mod(opts.prefOri, 180);                  % user-supplied STRIPE orientation (deg)
+    S.prefOriInput = mod(opts.prefOri, 180);
+end
+
+if ~isempty(opts.prefOri)
+    S.prefOri = mod(opts.prefOri, 180);
 else
     S.prefOri = S.prefOriRing;
 end
-S.prefWaveAng = mod(S.prefOri - 90, 180);                % wave-vector angle (motion direction mod 180)
-oriAxis = mod(S.ringAng + 90, 180);
-S.OSI = abs(sum(S.ring .* exp(2i*deg2rad(oriAxis)))) / sum(S.ring);
 
-% ---- example direction: plaid centred on preferred orientation ----
-if isfield(opts,'exampleDir')
-    dd = abs(mod(P.dirs - opts.exampleDir + 180, 360) - 180);
-else
-    dd = abs(mod(P.dirs - S.prefWaveAng + 90, 180) - 90);   % mod-180 distance
-end
+S.prefWaveAng = mod(S.prefOri - 90, 180);
+oriAxis = mod(S.ringAng + 90, 180);
+S.OSI = abs(sum(S.ring .* exp(2i*deg2rad(oriAxis)))) / max(sum(S.ring), eps);
+
+
+% ---- plaid amplitudes at FFT-derived preferred orientation ----
+% Preferred stripe orientation -> wave-vector direction.
+h = compAngle/2;
+dirPrefFFT = S.prefOriSF - 90;
+
+G1PrefFFT = gAt(c, P, dirPrefFFT - h);
+G2PrefFFT = gAt(c, P, dirPrefFFT + h);
+
+% One normalized amplitude for each phase offset.
+AplaidPrefOri = abs(G1PrefFFT + G2PrefFFT .* exp(1i*dph)) / max(S.refAmp, eps);
+
+% Store the results for convenient access.
+S.G1PrefFFT = G1PrefFFT;
+S.G2PrefFFT = G2PrefFFT;
+S.AplaidPrefOri = AplaidPrefOri;
+S.prefOriFFTAmp = S.refAmp;
+
+
+% ---- example direction: FFT preferred orientation at selected SF ----
+% Convert preferred stripe orientation to wave-vector direction.
+dirPrefFFT = mod(S.prefOriSF - 90, 180);
+
+% Select the closest available plaid direction in dirs.
+dd = abs(mod(P.dirs - dirPrefFFT + 180, 360) - 180);
 [~, S.exampleIdx] = min(dd);
 
 % ---- outputs ----
-modDepth  = S.sampDepth;
 peakPhase = S.peakPhase;
-A1 = S.A1;  A2 = S.A2;  dirs = P.dirs;  Fsamp = S.Fsamp;
+A1 = S.A1;
+A2 = S.A2;
+dirs = P.dirs;
+Fsamp = S.Fsamp;
 
 % ---- optional figure / PDF ----
 if doPlot
@@ -243,7 +268,7 @@ for j = 1:2
     showImg(ax,c.xgrid,c.ygrid,I_im,[]);
     title(sprintf('Comp %d: RF \\times sin,  Im G = %.2f',j,sum(I_im(:))*c.dA/nrm),'Color',cols(j,:));
 end
-title(t1,'Step 1: overlap of the RF with each component gives a complex number  G = Re + i Im  (normalised)', ...
+title(t1,'Overlap of the RF with each component gives a complex number  G = Re + i Im', ...
     'FontWeight','bold');
 
 %% ---- Step 2 (row 3, cols 1-2): Fourier plane + tuning -> amplitudes ----
@@ -267,11 +292,20 @@ for j = 1:2
 end
 legend([hRing hComp],{sprintf('SF = %.3g cpd',P.sf),'comp 1','comp 2'}, ...
     'Location','southoutside','FontSize',8,'NumColumns',3);
-title(sprintf('|FFT| of RF.  Balance min/max = %.2f',S.depthFull(iEx)));
+title(sprintf('|FFT| of RF at SF = %.3g cpd', P.sf));
 
 nexttile(t2,2); hold on;
-theta = 0:179;  Rori = circshift(S.ring,90)/nrm;          % stripe-orientation frame
-hTune = plot(theta,Rori,'k','LineWidth',2);
+theta = 0:179;
+Rori = zeros(size(theta));
+
+for k = 1:numel(theta)
+    waveAng = mod(theta(k) - 90, 180);
+    idx = mod(waveAng, 180) + 1;
+    Rori(k) = S.ring(idx) / nrm;
+end
+
+hTune = plot(theta, Rori, 'Color', [0.5 0.5 0.5], 'LineWidth', 2);
+
 hCo = gobjects(1,2);
 for j = 1:2
     oc = mod(angs(j)+90,180);
@@ -288,7 +322,7 @@ if ~isempty(S.prefOriInput)
 end
 xlabel('stripe orientation (deg)'); ylabel('|G| / peak'); xlim([0 180]); ylim([0 1.1]);
 legend(hl,ll,'Location','southoutside','FontSize',8,'NumColumns',3);
-title(sprintf('Step 2: amplitudes.  OSI (at SF) = %.2f',S.OSI));
+title(sprintf('Amplitudes.  OSI (at SF) = %.2f',S.OSI));
 
 %% ---- Step 3 (row 4, cols 1-2): phasor addition ----
 t3 = tiledlayout(outer,1,np,'TileSpacing','compact','Padding','compact');
@@ -307,66 +341,39 @@ for p = 1:np
     xlabel('Re'); if p == 1, ylabel('Im'); end
     title({sprintf('%d:  \\Delta\\phi = %d%s',p,P.phaseOffsets(p),deg), sprintf('|sum| = %.2f',Fs(p))});
 end
-title(t3,{'Step 3: G_1 (red) + G_2 (blue, rotated by \Delta\phi) = sum (black)', ...
+title(t3,{'G_1 (red) + G_2 (blue, rotated by \Delta\phi) = sum (black)', ...
     sprintf('G_1 = %.2f\\angle%d%s,   G_2 = %.2f\\angle%d%s',A1n,round(rad2deg(angle(Gn(1)))),deg, ...
     A2n,round(rad2deg(angle(Gn(2)))),deg)},'FontWeight','bold','FontSize',10);
 
-%% ---- Panel A (row 3, cols 3-4): example direction sweep -> modDepth ----
-axA = axes(outer);  axA.Layout.Tile = 14;  axA.Layout.TileSpan = [1 2];
-hold on;
-phs = 0:2:360;
-fsw = abs(Gn(1) + Gn(2)*exp(1i*deg2rad(phs)));
-mxS = max(Fs);  mnS = min(Fs);  md = (mxS - mnS)/(mxS + mnS);
-yTop = 1.15*(A1n + A2n);  if yTop == 0, yTop = 1; end
-hCeil = yline(A1n+A2n,'--','Color',[.6 .6 .6]);  yline(abs(A1n-A2n),'--','Color',[.6 .6 .6]);
-hSw   = plot(phs,fsw,'k','LineWidth',2);
-hPk   = xline(S.peakPhase(iEx),':','Color',[.3 .3 .3]);
-hSR   = yline(mxS,'-','Color',[.8 0 .8]);  yline(mnS,'-','Color',[.8 0 .8]);
-hSm   = plot(P.phaseOffsets,Fs,'o','Color','k','MarkerFaceColor',[.8 0 .8],'MarkerSize',9);
-for p = 1:np
-    text(P.phaseOffsets(p),Fs(p),sprintf(' %d',p),'VerticalAlignment','bottom','FontWeight','bold');
-end
-plot([352 352],[mnS mxS],'-','Color',[.8 0 .8],'LineWidth',4);
-text(346,(mxS+mnS)/2,sprintf('modDepth = %.2f',md),'HorizontalAlignment','right', ...
-    'Color',[.8 0 .8],'FontWeight','bold');
-xlim([0 360]); xticks(0:90:360); ylim([0 yTop]);
-xlabel('relative phase of component 2, \Delta\phi (deg)'); ylabel('predicted F1 (normalised)');
-legend([hSw hSm hSR hCeil hPk],{'full phase sweep','sampled phases', ...
-    'sampled max / min','full-sweep max / min (ceiling)','peak phase'}, ...
-    'Location','southoutside','FontSize',8,'NumColumns',3);
-title(sprintf('Panel A: dir %d%s.  modDepth = (max-min)/(max+min) = %.2f  (ceiling %.2f)', ...
-    dirEx,deg,md,S.depthFull(iEx)));
 
 %% ---- Panel B (row 4, cols 4-5): predicted F1 tuning curves ----
-% Plaid direction on x (0:15:150). Black-to-yellow curves = plaid F1,
-% |G1 + G2 e^{i dphi}|, one per sampled phase of component 2. Dashed red =
-% component 1 of that plaid on its own, |G1| (the plaid with component 2 removed).
 axB = axes(outer);  axB.Layout.Tile = 19;  axB.Layout.TileSpan = [1 2];
 hold on;
-dirsT = 0:15:150;
-[~, idxT] = min(abs(mod(P.dirs(:) - dirsT + 180, 360) - 180), [], 1);   % nearest entry of dirs
-dirsT = P.dirs(idxT);
-pc = parula(np+1);  pc = pc(1:np,:);                                   % one color per phase
-Y1 = S.A1(idxT)/nrm;
-YP = S.Fsamp(idxT,:)/nrm;                                              % nDirsT x nPhases
-hC1 = plot(dirsT,Y1,'--o','Color',cols(1,:),'MarkerFaceColor',cols(1,:),'LineWidth',1.5);
+dirsT = 0:1:179;                                          % fine grid, not limited to P.dirs
+G1f = arrayfun(@(d) gAt(c,P,d - h), dirsT);               % component 1 at each plaid direction
+G2f = arrayfun(@(d) gAt(c,P,d + h), dirsT);               % component 2
+pc = parula(np+1);  pc = pc(1:np,:);                      % one color per phase
+Y1 = abs(G1f)/nrm;                                        % comp 1 alone
+YP = abs(G1f(:) + G2f(:).*exp(1i*deg2rad(P.phaseOffsets)))/nrm;   % nDirs x nPhases
+%hC1 = plot(dirsT,Y1,'--','Color',cols(1,:),'LineWidth',1.5);
 hPl = gobjects(1,np);
 for p = 1:np
-    hPl(p) = plot(dirsT,YP(:,p),'-o','Color',pc(p,:),'MarkerFaceColor',pc(p,:),'LineWidth',1.5);
+    hPl(p) = plot(dirsT,YP(:,p),'-','Color',pc(p,:),'LineWidth',1.5);
 end
-hEx = xline(mod(dirEx,180),':','Color',[.8 .2 .2],'LineWidth',1.5);
+
+hEx = xline(axB, S.prefOriSF, 'r-', 'LineWidth', 1.5);
 ymax = max([Y1(:); YP(:)]);  if ymax == 0, ymax = 1; end
-ylim([0 1.1*ymax]);  xticks(dirsT);  xlim([min(dirsT)-15 max(dirsT)+15]);
+ylim([0 1.1*ymax]);  xticks(0:30:180);  xlim([0 180]);
 xlabel('plaid direction (deg)'); ylabel('predicted F1 (normalised)');
-labs = [{'comp 1 alone'}, arrayfun(@(a) sprintf('plaid, \\Delta\\phi = %d%s',a,deg), P.phaseOffsets, 'UniformOutput',false), {'example (Panel A)'}];
-legend([hC1 hPl hEx],labs,'Location','southoutside','FontSize',8,'NumColumns',3);
-title('Panel B: predicted F1 tuning, component 1 alone vs plaids');
+labs = [arrayfun(@(a) sprintf('plaid, \\Delta\\phi = %d%s',a,deg), P.phaseOffsets, 'UniformOutput',false)];
+legend([hPl hEx], [labs,  {sprintf('Example direction = %d%s', round(mod(dirEx,180)), deg)}], 'Location','southoutside','FontSize',8,'NumColumns',3);
+title('Panel B: predicted F1 tuning to plaids');
 
 %% ---- global title ----
-head = sprintf('SF %.3g cpd, components %d%s apart.  Example: preferred orientation %d%s -> plaid direction %d%s', ...
-    P.sf,P.compAngle,deg,round(S.prefOri),deg,dirEx,deg);
+head = sprintf('SF %.3g cpd, components %d%s apart.  Example: preferred orientation %d%s', ...
+    P.sf,P.compAngle,deg,round(S.prefOri),deg);
 if ~isempty(opts.label), head = [strrep(opts.label,'_','\_') '  |  ' head]; end
-title(outer,{head, 'F1(\Delta\phi) = |G_1 + G_2 e^{i\Delta\phi}|,    modDepth = (max - min)/(max + min) over the sampled \Delta\phi'}, ...
+title(outer,{head, 'F1(\Delta\phi) = |G_1 + G_2 e^{i\Delta\phi}|'}, ...
     'FontWeight','bold');
 end
 
