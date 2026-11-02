@@ -13,8 +13,8 @@
 function runTPrimeRet_TH(date,mouse)
 
 % Set base directories
-    dataDir     = fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\jerry\data\neuropixel\',mouse);
-    analysisDir = fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\jerry\analysis\neuropixel\',mouse);
+    dataDir     = fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\Xinyu\Data\neuropixel\',mouse);
+    analysisDir = fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\Xinyu\Analysis\neuropixel\',mouse);
 
 % Construct full data path
     mkdir(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\jerry\analysis\neuropixel\' mouse '\' date '\retinotopy'])
@@ -56,7 +56,7 @@ function runTPrimeRet_TH(date,mouse)
     cmd = sprintf(['TPrime -syncperiod=1.000000 ' '-tostream=%s ' '-fromstream=1,%s ' '-events=1,%s,%s ' '-events=1,%s,%s'], spikeSyncFile, nidaqSync, nidaqMWevents, mworksStimOnSync, nidaqPDevents, photodiodeSync);
 
 % Execute the command in the Windows terminal
-    cd('C:\Users\th352\Desktop\TPrime-win');
+    cd('C:\Users\xt71\Desktop\TPrime-win');
     system(cmd);
 
 end
