@@ -231,6 +231,8 @@ load(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStru
 
  % A common way to identify cell types is through waveform analyses, such
  % as the peak-to-trough distance and ratio as well as slope.
+ % See Niell & Stryker (2008)
+
     waveformBaseline        = mean(waveformAvg(1:2*(dataLengthPreSpike*sampRate)/3));  % Estimate baseline using the first ~2/3 of the pre-spike window. This assumes the early part of the waveform represents noise baseline
     
     PtTratio                = (waveformMax-waveformBaseline)/abs(waveformMin-waveformBaseline);  % Ratio of peak amplitude to trough amplitude (relative to baseline)
@@ -282,9 +284,11 @@ parfor ic  = cellIdx
     channel     = goodUnitStruct(ic).channel;
     rank        = goodUnitStruct(ic).rank;
 
-    if length(timestamps) > 10000
-        spikeTimesForISI = timestamps(randsample(length(timestamps),10000));
-        spikeTimesForISI = sort(spikeTimesForISI);   % sort into ascending order
+    if length(timestamps) > 10000  % if more than 10,000 spikes
+        midIdx = floor(length(timestamps)/2);  % index of middle spike
+        startIdx = midIdx - 5000;
+        endIdx   = midIdx + 4999;
+        spikeTimesForISI = timestamps(startIdx:endIdx);  
     else
         spikeTimesForISI = timestamps;
     end
