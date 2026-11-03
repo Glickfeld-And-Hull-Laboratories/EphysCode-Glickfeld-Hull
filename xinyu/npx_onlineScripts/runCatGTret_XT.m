@@ -14,8 +14,8 @@
 function runCatGTret_TH(date,mouse)
 
 % Set base directories
-    dataDir     = fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\jerry\data\neuropixel\',mouse);
-    analysisDir = fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\jerry\analysis\neuropixel\',mouse);
+    dataDir     = fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\Xinyu\Data\neuropixel\',mouse);
+    analysisDir = fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\Xinyu\Analysis\neuropixel\',mouse);
 
 % Construct full data path
     fullDataPath = fullfile(dataDir, date);
@@ -77,8 +77,11 @@ function runCatGTret_TH(date,mouse)
         % We expect it to be 500 ms long, on the last (i.e., -1) channel and on bit 6 (7th input) of that channel
 
 % Execute commands
-    cd('C:\Users\th352\Desktop\CatGTWinApp4.3\CatGT-win');
+    cd('C:\Users\xt71\Desktop\CatGTWinApp4.3\CatGT-win');
     system(cmd1);
     system(cmd2);
 
+% Delete duplicated .bin file to save space on Isilon
+    deleteDuplicateDataFromCatGTOutput(fullfile(analysisDir, date))
+    
 end

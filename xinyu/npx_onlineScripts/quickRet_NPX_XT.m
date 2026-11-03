@@ -2,18 +2,18 @@ clear all
 clear all global
 close all
 
-date = '260424';
-mouse = 'i3347';
-mwtime = '1543';   
+date = '260717';
+mouse = 'i4105';
+mwtime = '1658';   
 chnls = 1:2:200;
 
 fprintf([date ' ' mouse ' \n'])
 
 %% Get stimulus on timestamps
 % Sync signals
-    mkdir(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\jerry\analysis\neuropixel\' mouse '\' date])
-    runCatGTret_TH(date,mouse)
-    runTPrimeRet_TH(date,mouse)
+    mkdir(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\Xinyu\Analysis\neuropixel\' mouse '\' date '\retinotopy'])
+    runCatGTret_XT(date,mouse)
+    runTPrimeRet_XT(date,mouse)
 
 % Load MW files
     rc = behavConstsAV;
@@ -37,7 +37,7 @@ fprintf([date ' ' mouse ' \n'])
     % stimAzimuth     = cell2mat(input.tGratingAzimuthDeg);
 
 % Load stim on information (both MWorks signal and photodiode)
-    cd (['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\jerry\analysis\neuropixel\' mouse '\' date '\retinotopy' ])
+    cd (['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_staff\home\Xinyu\Analysis\neuropixel\' mouse '\' date '\retinotopy' ])
     stimOnTimestampsMW  = table2array(readtable([date '_mworksStimOnSync.txt']));
     stimOnTimestampsPD  = table2array(readtable([date '_photodiodeSync.txt']));
 
@@ -60,7 +60,7 @@ fprintf([date ' ' mouse ' \n'])
 
 %% Load LFP data
 % Choose LFP files
-    CD = ['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\jerry\data\neuropixel\' mouse '\' date '\'];
+    CD = ['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\Xinyu\Data\neuropixel\' mouse '\' date '\'];
     cd(CD);
     [LFPbinName,LFPpath] = uigetfile('*.lf.bin', 'Select LFP File');
     cd(LFPpath)
@@ -159,7 +159,7 @@ LFPdata = (LFPdata-LFPdata(300,:));
         title(num2str(stims(is,:)))
    end
    movegui('center')
-   print(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\jerry\analysis\neuropixel\' mouse '\' date '\' date '_' mouse '_retinotopy_waterfall_HighFiltNormAfter.pdf'], '-dpdf','-bestfit')
+   print(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\Xinyu\Analysis\neuropixel\' mouse '\' date '\' date '_' mouse '_retinotopy_waterfall_HighFiltNormAfter.pdf'], '-dpdf','-bestfit')
  
 
    figure; % Heat map of first 200 ms
@@ -175,7 +175,7 @@ LFPdata = (LFPdata-LFPdata(300,:));
    end
    sgtitle('Heat map of first 200 ms after stimulus onset')
    movegui('center')
-   print(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\jerry\analysis\neuropixel\' mouse '\' date '\' date '_' mouse '_retinotopy_imagesc_HighFiltNormAfter.pdf'], '-dpdf','-bestfit')
+   print(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\Xinyu\Analysis\neuropixel\' mouse '\' date '\' date '_' mouse '_retinotopy_imagesc_HighFiltNormAfter.pdf'], '-dpdf','-bestfit')
 
    
    figure; % Line plots of absolute deflection, averaged across channels
@@ -194,7 +194,7 @@ LFPdata = (LFPdata-LFPdata(300,:));
    [bAUC iAUC] = sort(AUC, 'descend');
    sgtitle(['Based on absolute deflection in first 200ms: ' num2str(stims(iAUC(1),:))])
    movegui('center')
-   print(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\jerry\analysis\neuropixel\' mouse '\' date '\' date '_' mouse '_retinotopy_lineplot_HighFiltNormAfter.pdf'], '-dpdf','-bestfit')
+   print(['\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\Xinyu\Analysis\neuropixel\' mouse '\' date '\' date '_' mouse '_retinotopy_lineplot_HighFiltNormAfter.pdf'], '-dpdf','-bestfit')
 
 
  
