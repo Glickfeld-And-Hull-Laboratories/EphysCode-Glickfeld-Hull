@@ -35,13 +35,14 @@ load(fullfile(baseDir, '\sara\Analysis\Neuropixel', [exptStruct.date], [exptStru
     refractoryViolationThresh   = 0.002;     % 2 ms
 
 % Initialize and extract meta file info for waveform analysis
-    fullDataPath    = fullfile(baseDir, exptStruct.loc, 'Analysis', 'Neuropixel', exptStruct.date); % Navigate to experiment directory
+    fullDataPath    = fullfile(baseDir, exptStruct.loc, 'Data', 'neuropixel', exptStruct.date); % Navigate to experiment directory
     dirContents     = dir(fullDataPath); % Get names of all files and folders in the experiment directory
     runFolders      = {dirContents([dirContents.isdir] & ~ismember({dirContents.name}, {'.', '..'})).name}; % Get the names of all folders in experiment directory
-    metaMask        = startsWith(runFolders, 'catgt', 'IgnoreCase', false) & ~contains(runFolders, 'ret', 'IgnoreCase', true);   % Logical mask for folders starting with 'catgt' and not containing 'ret'
-    % ^ Choose catgt folder for the experimental run (not retinotopy run).
-    % The catgt folder is created as an output of syncing stimulus
-    % information to neural data.    
+    metaMask        = startsWith(runFolders, exptStruct.mouse, 'IgnoreCase', false) & ~contains(runFolders, 'ret', 'IgnoreCase', true);   % Logical mask for folders starting with 'catgt' and not containing 'ret'
+    % ^ Choose an experimental run folder for the experimental run (not retinotopy run).
+    % Here, we are going to pull the waveforms from the original spiking
+    % ap.bin data file saved by SpikeGLX
+
     metaFolder      = runFolders(metaMask); % Get the name of the folder that matches the above criteria
 
 % Change currenty directory to the 
