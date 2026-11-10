@@ -1,4 +1,4 @@
-function [prefOri, OSI, prefSF, R, theta] = estimatePOfromFFT(RF, xgrid, ygrid, SF, pad, doPlot)
+function [prefOri, OSI, prefSF, R, theta, Rc, thetaC] = estimatePOfromFFT(RF, xgrid, ygrid, SF, pad, doPlot)
 % estimatePOfromFFT  Preferred orientation, OSI, and orientation tuning
 % curve from the 2D FFT of an RF map.
 %
@@ -22,6 +22,11 @@ function [prefOri, OSI, prefSF, R, theta] = estimatePOfromFFT(RF, xgrid, ygrid, 
 %             orientation frame as prefOri (R(k) is the response at
 %             theta(k)).
 %   theta   : 0:179, orientation axis (deg) for R.
+%   Rc      : 1 x 180 orientation tuning curve at the SF (ring of radius
+%             SF, or prefSF if SF not given), stripe-orientation frame,
+%             circularly shifted so the preferred orientation is at 0 deg.
+%   thetaC  : -90:89, orientation axis (deg) relative to prefOri for Rc.
+
 
 if nargin < 4, SF = []; end
 if nargin < 5 || isempty(pad), pad = 1; end
@@ -38,15 +43,13 @@ fy = (-floor(My/2):ceil(My/2)-1) / (My*dy);
 [FX, FY] = meshgrid(fx, fy);
 FY = -FY;       % screen elevation is up, rows go down
 
-  
-
 mag = abs(F);
 mag(FX==0 & FY==0) = 0;           % remove DC
 
 theta    = 0:179;                 % 1-deg bins, mod 180
 thetaRad = deg2rad(theta);
 
-if isempty(SF)          
+if isempty(SF)
     % ---- peak-based preferred orientation, whole spectrum ----
     [~, idx] = max(mag(:));
     prefOri = mod(atan2d(FY(idx), FX(idx)), 180);   % wave-vector angle
@@ -55,26 +58,33 @@ if isempty(SF)
     ang    = mod(atan2d(FY, FX), 180);
     binIdx = mod(round(ang), 180) + 1;
     R      = accumarray(binIdx(:), mag(:), [180, 1], @sum)';
+    ringSF = prefSF;
 else
     % ---- grating tuning curve: ring at radius SF ----
-    R = zeros(size(theta));
-    for k = 1:numel(theta)
-        R(k) = interp2(FX, FY, mag, SF*cosd(theta(k)), SF*sind(theta(k)), 'linear', 0);
-    end
+    R = interp2(FX, FY, mag, SF*cosd(theta), SF*sind(theta), 'linear', 0);
     [~, kmax] = max(R);
     prefOri = theta(kmax);                          % wave-vector angle
     prefSF  = SF;
+    ringSF  = SF;
 end
 
-prefOri = mod(prefOri, 180);
-prefOri_plot = mod(prefOri + 90, 180); 
-R       = circshift(R, 90);       % keep the curve in the same frame as prefOri
+% ---- ring tuning curve at the SF (wave-vector frame) ----
+Rring = interp2(FX, FY, mag, ringSF*cosd(theta), ringSF*sind(theta), 'linear', 0);
+
+% ---- convert everything to the stripe-orientation frame ----
+prefOri = mod(prefOri + 90, 180);   % stripe orientation (fixes header/return mismatch)
+R       = circshift(R, 90);
+Rring   = circshift(Rring, 90);
 
 OSI = abs(sum(R .* exp(2i * thetaRad))) / sum(R);
 
+% ---- ring tuning curve centered on preferred orientation ----
+thetaC = -90:89;
+Rc = circshift(Rring, 90 - mod(round(prefOri), 180));   % PO -> index 91 (0 deg)
+
 % ===== optional diagnostic plot (delete this block + local function below) =====
 if doPlot
-    localPlotDiag(RF, xgrid, ygrid, SF, pad, prefOri_plot, prefSF);
+    localPlotDiag(RF, xgrid, ygrid, SF, pad, prefOri, prefSF);
 end
 % ===============================================================================
 

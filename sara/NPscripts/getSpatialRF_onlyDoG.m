@@ -377,8 +377,8 @@ for ic = 1:size(data_all,1)
     [PO_fft(ic), OSI_fft(ic), ~] = estimatePOfromFFT(RF, xgrid, ygrid, SF, pad, []);
     phaseCoh(ic) = estimatePhaseCoherence(RF, xgrid, ygrid, PO_vm(ic), SF, beta);
     phaseCoh_fft(ic) = estimatePhaseCoherence(RF, xgrid, ygrid, PO_fft(ic), SF, beta);
-    [PO_dog_fftAll(ic), OSI_dog_fftAll(ic), prefSF_dog(ic)] = estimatePOfromFFT(RF_dog, xgrid, ygrid);
-    [PO_dog_fft(ic), OSI_dog_fft(ic), ~, dog_fft_tuning(ic,:)] = estimatePOfromFFT(RF_dog, xgrid, ygrid, SF);
+    [PO_dog_fftAll(ic), OSI_dog_fftAll(ic), prefSF_dog(ic), ~, ~, dog_fft_tuningPref(ic,:)] = estimatePOfromFFT(RF_dog, xgrid, ygrid);
+    [PO_dog_fft(ic), OSI_dog_fft(ic), ~, ~, ~, dog_fft_tuning(ic,:)] = estimatePOfromFFT(RF_dog, xgrid, ygrid, SF);
     %print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', ['FFT_prefOri_cell' num2str(ic) '_pad' num2str(pad) '.pdf']), '-dpdf', '-bestfit')
 
     %if ic==3; stop; end;
@@ -388,34 +388,38 @@ end
 
 figure;
 movegui('center')
-    subplot 231
-        scatter(PO(indDoG),PO_fftAll(indDoG),10,'filled'); 
-        refline(1); axis square; box off
+    subplot 331
+        scatter_reg_circ(PO(indDoG), PO_fftAll(indDoG), 10, [], 'XPeriod',180,'YPeriod',180);
         xlim([0 180]); ylim([0 180]); xticks(0:45:180); yticks(0:45:180)
         xlabel('pref ori, max')
         ylabel('pref ori, FFT of STA')
-    subplot 232
-        scatter(PO_vm(cellsIdx(indDoG)),PO_fftAll(indDoG),10,'filled'); 
-        refline(1); axis square; box off
+    subplot 332
+        scatter_reg_circ(PO_vm(cellsIdx(indDoG)), PO_fftAll(indDoG), 10, [], 'XPeriod',180,'YPeriod',180);
         xlim([0 180]); ylim([0 180]); xticks(0:45:180); yticks(0:45:180)
         xlabel('pref ori, von mises of spiking')
         ylabel('pref ori, FFT of STA')
         subtitle('FFT at pref SF')
-    subplot 233
-        scatter(PO_vm(cellsIdx(indDoG)),PO_fft(indDoG),10,'filled'); 
-        refline(1); axis square; box off
+    subplot 333
+        scatter_reg_circ(PO_vm(cellsIdx(indDoG)), PO_fft(indDoG), 10, gOSI_toplot, 'XPeriod',180,'YPeriod',180);
         xlim([0 180]); ylim([0 180]); xticks(0:45:180); yticks(0:45:180)
         xlabel('pref ori, von mises of spiking')
         ylabel('pref ori, FFT of STA')
-        subtitle('FFT at 0.05 SF')
-    subplot 234
+        subtitle('FFT at 0.05 SF, color spkOSI')
+    subplot 336
+        scatter_reg_circ(PO_vm(cellsIdx(indDoG)), PO_fft(indDoG), 10, OSI_dog_fft(indDoG), 'XPeriod',180,'YPeriod',180);
+        xlim([0 180]); ylim([0 180]); xticks(0:45:180); yticks(0:45:180)
+        xlabel('pref ori, von mises of spiking')
+        ylabel('pref ori, FFT of STA')
+        subtitle('FFT at 0.05 SF, color fftOSI')
+
+    subplot 338
         scatter_reg(OSI_dog_fft(indDoG),gOSI_toplot,20)
         set(gca,'TickDir','out'); axis square; box off
         ylabel('Spiking gOSI')
         xlabel('STA gOSI (0.05)')
         xlim([0 1])
         ylim([0 1])
-    subplot 235
+    subplot 339
         scatter_reg(OSI_dog_fft(indDoG),OSI_dog_fftAll(indDoG),20)
         set(gca,'TickDir','out'); axis square; box off
         ylabel('STA gOSI (pref)')
@@ -424,16 +428,21 @@ movegui('center')
         ylim([0 1])
 print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary_gOSISpikeVSTA.pdf'), '-dpdf', '-bestfit')
     
+
+
+
+
+
  figure; 
     scatter(PO_fftAll,PO_fft)
     refline(1)
     xlabel('pref ori at pref SF')
     ylabel('pref ori at 0.05 SF')
-    set(gca,'FontSize',12)
+    set(gca,'FontSize',12)example cell
 
 %% plot FFT for example cells
 
-exCells = [232 622 1855];
+exCells = [232 1590 1855];
 cellsToPlot = find(ismember(cellsIdx, exCells));  
 
 
@@ -446,21 +455,23 @@ for k = 1:numel(cellsToPlot)
     subplot(6,3,k)
         imagesc(RF_dog); colormap(gca, 'gray'); clim([-5 5]); pbaspect([16 9 1]); axis off; box off
     subplot(6,3,k+length(cellsToPlot))
-        plotRF_FFT(RF_dog, xgrid, ygrid, 'SF', SF, 'prefOri', PO_dog_fft(ic), 'title', sprintf('cell %d', cellsIdx(ic))); colormap(gca, 'parula'); axis off; axis square
+        plotRF_FFT(RF_dog, xgrid, ygrid, 'SF', SF, 'prefOri', PO_dog_fft(ic), 'title', sprintf('cell %d', cellsIdx(ic))); colormap(gca, 'parula'); axis off; 
     subplot(6,3,k+(length(cellsToPlot)*2))
         imagesc(RF); colormap(gca, 'gray'); clim([-5 5]); pbaspect([16 9 1]); axis off; box off
     subplot(6,3,k+(length(cellsToPlot)*3))
-        plotRF_FFT(RF, xgrid, ygrid, 'SF', SF, 'prefOri', PO_dog_fft(ic), 'title', sprintf('cell %d', cellsIdx(ic))); colormap(gca, 'parula'); axis off; axis square
-    subplot(6,3,k+(length(cellsToPlot)*4))
-        plot(1:360,dir_yfit_all(:,k)); hold on
-        plot(stimDirs,avg_resp_dir_all(exCells(k),:,1,1,1)) 
-        subtitle('blue - VM fit, orange - spk data')
-        set(gca,'TickDir','out'); box off; axis square
+        plotRF_FFT(RF, xgrid, ygrid, 'SF', SF, 'prefOri', PO_dog_fft(ic), 'title', sprintf('cell %d', cellsIdx(ic))); colormap(gca, 'parula'); axis off; 
+    % subplot(6,3,k+(length(cellsToPlot)*4))
+    %     plot(1:360,dir_yfit_all(:,k)); hold on
+    %     plot(stimDirs,avg_resp_dir_all(exCells(k),:,1,1,1)) 
+    %     subtitle('blue - VM fit, orange - spk data')
+    %     set(gca,'TickDir','out'); box off; axis square
     subplot(6,3,k+(length(cellsToPlot)*5))
-        plot(1:180,dog_fft_tuning(ic,:))
+        plot(1:180,dog_fft_tuning(ic,:)); hold on
+        plot(1:180,dog_fft_tuningPref(ic,:)) %dog_fft_tuningPref
         set(gca,'TickDir','out'); box off; axis square
         subtitle(['Pref ori spk ' num2str(PO_vm(cellsIdx(ic))) ', Pref ori fft ' num2str(PO_fftAll(ic))])
-        xlim([0 400])
+        xlim([0 180])
+        ylim([0 150])
 end
 
 print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_exampleCells_STAffts.pdf'), '-dpdf', '-bestfit')
@@ -476,93 +487,133 @@ print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\'
 % interference) or cells weakly driven by both. Fig 4 and the printed table 
 % separate these.
 
-% Print STA time point choices
-pdfDir = fullfile(dirBase, 'sara', 'Analysis', 'Neuropixel','CrossOri','randDirFourPhase','mouse_RFs');
-if ~exist(pdfDir, 'dir'); mkdir(pdfDir); end
-
-pdfFile = fullfile(pdfDir, 'spatialRFs_FFTanalysis_plaidModulation.pdf');
-if isfile(pdfFile); delete(pdfFile); end
-
-modDepth_all=[];
-plaidAmp_all=[];
-doPlot = 1;
-for ic = 1:size(data_all,1)
-    prefDir     = dirs(indDir(ic));    % actual direction in degrees, 0-330
-    RF          = medfilt2(imgaussfilt(squeeze(data_all(ic,:,:)),1));
-    RF_dog      = squeeze(data_DoG_all(ic,:,:));
-    prefOri     = PO_vm(cellsIdx(ic));
-    opts = struct('prefOri', prefOri);
-    [peakPhase, A1, A2, dirs, Fsamp, AplaidPrefOri, S] = estimatePlaidModFromFFT(RF_dog, xgrid, ygrid, SF, [], [], [], doPlot, opts);
-    modDepth_all(ic,:) = modDepth;
-    plaidAmp_all(ic,:) = AplaidPrefOri;
-    % sgtitle(['cell ' num2str(cellsIdx(ic))', cellsIdx(' num2str(ic) ')']);
-    exportgraphics(gcf, pdfFile,'ContentType', 'vector','Append', true);
-    close(gcf)
-end
-
-
-stimDirs = 0:30:330;
-y_fits = zeros(360,length(cellsToPlot));
-dirs = deg2rad(0:1:359);
-for ic = 1:length(cellsToPlot)
-    iCell = exCells(ic);
-    [b_hat_all(ic,1), k1_hat_all(ic,1), R1_hat_all(ic,1), R2_hat_all(ic,1), u1_hat_all(ic,1), u2_hat_all(ic,1), sse_all(ic,1),R_square_all(ic,1)] = miaovonmisesfit_dir(deg2rad(stimDirs),avg_resp_dir_all(iCell,:,1,1,1));
-    dir_yfit_all(:,ic) = b_hat_all(ic,1)+R1_hat_all(ic,1).*exp(k1_hat_all(ic,1).*(cos(dirs-u1_hat_all(ic,1))-1))+R2_hat_all(ic,1).*exp(k1_hat_all(ic,1).*(cos(dirs-u1_hat_all(ic,1))-1));
-end
-
-
-
-% Fit plaid amplitude as a function of phase
-    phaseOffsets = [0 90 180 270];
-    phaseRad = deg2rad(phaseOffsets);
+% Setup
+    doPlot = 1;
     
-    nCells = length(cellsIdx);
-    phaseFine = deg2rad(0:1:359);
+    if doPlot
+        pdfDir = fullfile(dirBase, 'sara', 'Analysis', 'Neuropixel','CrossOri','randDirFourPhase','mouse_RFs');
+        if ~exist(pdfDir, 'dir'); mkdir(pdfDir); end
+        
+        pdfFile = fullfile(pdfDir, 'spatialRFs_FFTanalysis_plaidModulation.pdf');
+        if isfile(pdfFile); delete(pdfFile); end
+    end
     
-    plaidAmp_fit_all = nan(360, nCells);
-    b_plaid_all  = nan(nCells,1);
-    R_plaid_all  = nan(nCells,1);
-    phi_plaid_all = nan(nCells,1);
-    sse_plaid_all = nan(nCells,1);
-    R2_plaid_all  = nan(nCells,1);
+ 
+% Predicted plaid amplitudes from the RF FFT, at PO, PO+60, and PO-60
+    nCells = size(data_all,1);
+    plaidAmp_all       = nan(nCells,4);   % at PO
+    plaidAmp_plus_all  = nan(nCells,4);   % at PO + compAngle/2 (circular)
+    plaidAmp_minus_all = nan(nCells,4);   % at PO - compAngle/2 (circular)
+    nonprefAmp_plus_all  = nan(nCells,1);   % nonpref comp amp, plaid with pref comp (PO+60 plaid)
+    nonprefAmp_minus_all = nan(nCells,1);   % nonpref comp amp, plaid with pref comp (PO-60 plaid)
     
     for ic = 1:nCells
-        iCell = ic;
-        y = plaidAmp_all(iCell,:);
-        % Fit a sinusoid: baseline + cosine modulation.
-        X = [ones(numel(phaseRad),1), cos(phaseRad(:)), sin(phaseRad(:))];
-        beta = X \ y(:);
-        b_plaid_all(ic) = beta(1);
-    
-        % Amplitude and preferred phase of the fitted sinusoid.
-        R_plaid_all(ic) = hypot(beta(2), beta(3));
-        phi_plaid_all(ic) = mod(atan2(-beta(3), beta(2)), 2*pi);
-    
-        % Fitted curve.
-        plaidAmp_fit_all(:,ic) = beta(1) + beta(2)*cos(phaseFine(:)) + beta(3)*sin(phaseFine(:));
-    
-        % Goodness of fit.
-        yhat = X*beta;
-        sse_plaid_all(ic) = sum((y(:)-yhat).^2);
-        sst = sum((y(:)-mean(y)).^2);
-        if sst > 0
-            R2_plaid_all(ic) = 1 - sse_plaid_all(ic)/sst;
+        prefDir     = dirs(indDir(ic));    % actual direction in degrees, 0-330
+        RF          = medfilt2(imgaussfilt(squeeze(data_all(ic,:,:)),1));
+        RF_dog      = squeeze(data_DoG_all(ic,:,:));
+        prefOri     = PO_vm(cellsIdx(ic));
+        opts = struct('prefOri', prefOri, 'insetYLim', 2);
+
+        if doPlot
+            figure;
+                sgtitle(['cell ' num2str(cellsIdx(ic)) ', ' num2str(ic)]);
+                subplot 211
+                    imagesc(RF);  clim([-5 5]); colormap('gray'); pbaspect([16 9 1])
+                    box off; axis off
+                subplot 212
+                    imagesc(RF_dog); clim([-5 5]); colormap('gray'); pbaspect([16 9 1])
+                    box off; axis off
+            exportgraphics(gcf, pdfFile,'ContentType', 'vector','Append', true);
+            close(gcf)
         end
+
+        [peakPhase, A1, A2, dirs, Fsamp, AplaidPrefOri, AplaidPrefOriPlus, AplaidPrefOriMinus, S] = estimatePlaidModFromFFT(RF_dog, xgrid, ygrid, SF, [], [], [], doPlot, opts);
+        plaidAmp_all(ic,:)       = AplaidPrefOri;
+        plaidAmp_plus_all(ic,:)  = AplaidPrefOriPlus; 
+        plaidAmp_minus_all(ic,:) = AplaidPrefOriMinus;
+        nonprefAmp_plus_all(ic)  = S.AnonPrefPlus; % S.AnonPrefPlus = abs(G2Plus)/refAmp is the linear response to the grating at PO+120 alone (the nonpreferred component of the plaid centred at PO+60)
+        nonprefAmp_minus_all(ic) = S.AnonPrefMinus;
+        % sgtitle(['cell ' num2str(cellsIdx(ic))', cellsIdx(' num2str(ic) ')']);
+        if doPlot
+            exportgraphics(gcf, pdfFile,'ContentType', 'vector','Append', true);
+            close(gcf)
+        end
+        %if ic==2; stop ; end
+    end
+    fft_plaidAmp_range = range(plaidAmp_all,2);
+
+% Jayden value
+    nonPrefAmps = [nonprefAmp_plus_all, nonprefAmp_minus_all];
+    jay = min(nonPrefAmps,[],2);
+    jayinv = max(nonPrefAmps,[],2);
+
+% Direction tuning fits (von Mises)
+    stimDirs = 0:30:330;
+    y_fits = zeros(360,length(cellsToPlot));
+    dirs = deg2rad(0:1:359);
+    for ic = 1:length(cellsToPlot)
+        iCell = exCells(ic);
+        [b_hat_all(ic,1), k1_hat_all(ic,1), R1_hat_all(ic,1), R2_hat_all(ic,1), u1_hat_all(ic,1), u2_hat_all(ic,1), sse_all(ic,1),R_square_all(ic,1)] = miaovonmisesfit_dir(deg2rad(stimDirs),avg_resp_dir_all(iCell,:,1,1,1));
+        dir_yfit_all(:,ic) = b_hat_all(ic,1)+R1_hat_all(ic,1).*exp(k1_hat_all(ic,1).*(cos(dirs-u1_hat_all(ic,1))-1))+R2_hat_all(ic,1).*exp(k1_hat_all(ic,1).*(cos(dirs-u1_hat_all(ic,1))-1));
     end
 
-
-
-% Find preferred grating direction and extract plaid responses
+% Fit plaid amplitude as a function of phase (baseline + cosine modulation) for the PO, PO+60, and PO-60 predictions
     phaseOffsets = [0 90 180 270];
-    phaseRad = deg2rad(phaseOffsets);
+    phaseRad  = deg2rad(phaseOffsets);
+    phaseFine = deg2rad(0:1:359);
+    nCells    = length(cellsIdx);
+
+    % Design matrices: baseline + cos + sin (sampled phases and fine phases)
+        X     = [ones(4,1),   cos(phaseRad(:)),  sin(phaseRad(:))];
+        Xfine = [ones(360,1), cos(phaseFine(:)), sin(phaseFine(:))];
+        
+        ampSets = {plaidAmp_all, plaidAmp_plus_all, plaidAmp_minus_all};   % PO, PO+60, PO-60
+        fits = cell(1,3);
+        
+        for k = 1:3
+            Y    = ampSets{k}(1:nCells,:).';      % 4 x nCells, one column per cell
+            beta = X \ Y;                         % 3 x nCells least-squares fit, all cells at once
+            
+            fits{k}.b   = beta(1,:).';                                 % baseline
+            fits{k}.R   = hypot(beta(2,:), beta(3,:)).';               % modulation amplitude
+            fits{k}.phi = mod(atan2(-beta(3,:), beta(2,:)), 2*pi).';   % preferred phase (rad)
+            fits{k}.fit = Xfine * beta;                                % 360 x nCells fitted curves
+            
+            % Goodness of fit
+            res = Y - X*beta;
+            fits{k}.sse = sum(res.^2, 1).';
+            sst = sum((Y - mean(Y,1)).^2, 1).';
+            fits{k}.R2 = 1 - fits{k}.sse ./ sst;
+            fits{k}.R2(sst == 0) = nan;
+        end
+        
+        % Unpack into named variables
+        plaidAmp_fit_all   = fits{1}.fit;  b_plaid_all   = fits{1}.b;  R_plaid_all   = fits{1}.R;  phi_plaid_all   = fits{1}.phi;  sse_plaid_all   = fits{1}.sse;  R2_plaid_all   = fits{1}.R2;
+        plaidAmp_fit_plus  = fits{2}.fit;  b_plaid_plus  = fits{2}.b;  R_plaid_plus  = fits{2}.R;  phi_plaid_plus  = fits{2}.phi;  sse_plaid_plus  = fits{2}.sse;  R2_plaid_plus  = fits{2}.R2;
+        plaidAmp_fit_minus = fits{3}.fit;  b_plaid_minus = fits{3}.b;  R_plaid_minus = fits{3}.R;  phi_plaid_minus = fits{3}.phi;  sse_plaid_minus = fits{3}.sse;  R2_plaid_minus = fits{3}.R2;
+        
+        R_plaid_both    = [R_plaid_plus, R_plaid_minus];
+        R_plaid_60_avg  = mean(R_plaid_both,2);
+        R_plaid_60_max  = max(R_plaid_both,[],2);
+        b_plaid_both    = [b_plaid_plus, b_plaid_minus];
+        b_plaid_60_avg  = mean(b_plaid_both,2);
+        b_plaid_60_max  = max(b_plaid_both,[],2);
+
+
+% Find preferred grating direction and extract plaid responses (spikes)
+    phaseOffsets = [0 90 180 270];
+    phaseRad  = deg2rad(phaseOffsets);
+    phaseFine = deg2rad(0:1:359);
     
     nCells = size(avg_resp_dir_all, 1);
     nDirs  = size(avg_resp_dir_all, 2);
-    
+
+
+
     % Dimension 4: 1 = grating, 2 = plaid
     % Dimension 5: 1 = mean,  2 = std
-    gratingRespDir = squeeze(avg_resp_dir_all(:,:,1,1,1));
-    
+    [gratingRespDir, plaidRespDir, ~, ~] = getAlignedGratPlaidTuning(avg_resp_dir_all);
+
     % Peak grating direction for each cell
     [peakGratingResp, prefDirIdx] = max(gratingRespDir, [], 2);
     
@@ -573,77 +624,178 @@ end
     % Extract the four plaid phase responses at that preferred direction
     spk_plaidAmp_all = nan(nCells, 4);
     for ic = 1:nCells
-        spk_plaidAmp_all(ic,:) = squeeze(avg_resp_dir_all(ic, prefDirIdx(ic), :, 2, 1));
+        spk_plaidAmp_all(ic,:) = squeeze(plaidRespDir(ic, prefDirIdx(ic), :));
     end
+
     
     % Normalize plaid responses by each cell's peak grating response
     spk_plaidAmp_norm_all = spk_plaidAmp_all ./ peakGratingResp;
 
-    % Fit plaid amplitude as a function of phase
-        phaseFine = deg2rad(0:1:359);
-        plaidAmp_fit_spk = nan(360, nCells);
-        b_plaid_spk      = nan(nCells,1);
-        R_plaid_spk      = nan(nCells,1);
-        phi_plaid_spk    = nan(nCells,1);
-        sse_plaid_spk    = nan(nCells,1);
-        R2_plaid_spk     = nan(nCells,1);
-        
-        X = [ones(4,1), cos(phaseRad(:)), sin(phaseRad(:))];
-        
-        for ic = 1:nCells
-            y = spk_plaidAmp_norm_all(ic,:).';
-            % Fit baseline + first-harmonic cosine modulation
-            beta = X \ y;
-            b_plaid_spk(ic)   = beta(1);
-            R_plaid_spk(ic)   = hypot(beta(2), beta(3));
-            phi_plaid_spk(ic) = mod(atan2(-beta(3), beta(2)), 2*pi);
-            % Fitted curve over 0-359 degrees
-            plaidAmp_fit_spk(:,ic) = beta(1) + beta(2)*cos(phaseFine(:)) + beta(3)*sin(phaseFine(:));
-            % Goodness of fit
-            yhat = X * beta;
-            sse_plaid_spk(ic) = sum((y-yhat).^2);
-            sst = sum((y-mean(y)).^2);
-            if sst > 0
-                R2_plaid_spk(ic) = 1 - sse_plaid_spk(ic)/sst;
-            end
-        end
+    % Fit plaid amplitude as a function of phase (baseline + first-harmonic cosine)
+    X     = [ones(4,1),   cos(phaseRad(:)),  sin(phaseRad(:))];
+    Xfine = [ones(360,1), cos(phaseFine(:)), sin(phaseFine(:))];
+
+    Y    = spk_plaidAmp_norm_all.';           % 4 x nCells
+    beta = X \ Y;
+    
+    b_plaid_spk      = beta(1,:).';
+    R_plaid_spk      = hypot(beta(2,:), beta(3,:)).';
+    phi_plaid_spk    = mod(atan2(-beta(3,:), beta(2,:)), 2*pi).';
+    plaidAmp_fit_spk = Xfine * beta;          % 360 x nCells
+    
+    % Goodness of fit
+    sse_plaid_spk = sum((Y - X*beta).^2, 1).';
+    sst           = sum((Y - mean(Y,1)).^2, 1).';
+    R2_plaid_spk  = 1 - sse_plaid_spk ./ sst;
+    R2_plaid_spk(sst == 0) = nan;
+
+
+Plaid_spk_range = range(spk_plaidAmp_norm_all,2);
+PCI_all = Zp_all - Zc_all;
+PCI_range = range(PCI_all,1);
 
 
 
-
-
-
-
-
-
-stop
 
 figure;
-    subplot 221
-        scatter_reg(amp_all(cellsIdx),R_plaid_all)
+    subplot 331
+        scatter_reg(fft_plaidAmp_range,PCI_range(cellsIdx)',10)
+        axis square; set(gca,'TickDir','out','FontSize',8)
+        xlabel('plaid amp range (PO FFT)')
+        ylabel('Zp-Zc range')
+     subplot 332
+        scatter_reg(fft_plaidAmp_range,Plaid_spk_range(cellsIdx),10)
+        axis square; set(gca,'TickDir','out','FontSize',8)
+        xlabel('plaid amp range (PO FFT)')
+        ylabel('plaid resp range (PO spk)')       
+
+    subplot 333
+        scatter_reg(b_plaid_all,b_all(cellsIdx),10)
+        axis square; set(gca,'TickDir','out','FontSize',8)
+        ylabel('Zp-Zc baseline')
+        xlabel('plaid amp baseline(PO FFT)')
+    subplot 334
+        scatter_reg(b_plaid_all,b_plaid_spk(cellsIdx),10)
+        axis square; set(gca,'TickDir','out','FontSize',8)
+        ylabel('plaid spk amp baseline (PO spk)')
+        xlabel('plaid amp baseline (PO FFT)')
+        subtitle('baseline')
+    subplot 335
+        scatter_reg(R_plaid_spk(cellsIdx),amp_all(cellsIdx),10)
+        axis square; set(gca,'TickDir','out','FontSize',8)
+        ylabel('Zp-Zc amplitude')
+        xlabel('mod in plaid spk amp (PO spk)')
+    subplot 336
+        scatter_reg(R_plaid_spk(cellsIdx),PCI_range(cellsIdx)',10)
+        axis square; set(gca,'TickDir','out','FontSize',8)
+        ylabel('Zp-Zc range')
+        xlabel('mod in plaid spk amp (PO spk)')
+    subplot 337
+        scatter_reg(b_plaid_spk(cellsIdx),b_all(cellsIdx),10)
+        axis square; set(gca,'TickDir','out','FontSize',8)
+        ylabel('Zp-Zc baseline')
+        xlabel('plaid spk amp baseline (PO spk)')
+    subplot 338
+        scatter_reg(amp_all(cellsIdx),R_plaid_60_avg,10)
         axis square; set(gca,'TickDir','out','FontSize',8)
         xlabel('Zp-Zc amplitude')
-        ylabel('mod in plaid amp (PO FFT)')
-        subtitle('modulation amplitude')
-    subplot 222
-        scatter_reg(R_plaid_spk(cellsIdx),R_plaid_all)
+        ylabel('mod in plaid amp mean(PO+60)')
+    subplot 339
+        scatter_reg(amp_all(cellsIdx),R_plaid_60_max,10)
         axis square; set(gca,'TickDir','out','FontSize',8)
-        xlabel('mod in plaid spk amp (PO spk)')
-        ylabel('mod in plaid amp (PO FFT)')
-        subtitle('modulation amplitude')
-    subplot 223
-        scatter_reg(b_all(cellsIdx),b_plaid_all)
+        xlabel('Zp-Zc amplitude')
+        ylabel('mod in plaid amp max(PO+60)')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_linearAmplitude.pdf'), '-dpdf', '-bestfit')
+
+
+figure; subplot 211
+        scatter(PCI_range(cellsIdx)',amp_all(cellsIdx),7,'filled'); hold on
+        refline(1)
+        xlabel('range')
+        ylabel('fit amp')
+
+
+figure;
+    subplot 331
+        scatter_reg(amp_all(cellsIdx),jayinv,10)
+        axis square; set(gca,'TickDir','out','FontSize',8)
+        xlabel('Zp-Zc amplitude')
+        ylabel('max(c1,c2)/A')
+    subplot 332
+        scatter_reg(amp_all(cellsIdx),jay,10)
+        axis square; set(gca,'TickDir','out','FontSize',8)
+        xlabel('Zp-Zc amplitude')
+        ylabel('min(c1,c2)/A')
+    subplot 333
+        scatter_reg(R_plaid_all,jay,10)
+        axis square; set(gca,'TickDir','out','FontSize',8)
+        xlabel('mod in plaid amp (PO FFT)')
+        ylabel('min(c1,c2)/A')
+    subplot 334
+        scatter_reg(b_all(cellsIdx),jayinv,10)
         axis square; set(gca,'TickDir','out','FontSize',8)
         xlabel('Zp-Zc baseline')
-        ylabel('plaid amp baseline(PO FFT)')
-        subtitle('baseline')
-    subplot 224
-        scatter_reg(b_plaid_spk(cellsIdx),b_plaid_all)
+        ylabel('max(c1,c2)/A')
+    subplot 335
+        scatter_reg(b_all(cellsIdx),jay,10)
+        axis square; set(gca,'TickDir','out','FontSize',8)
+        xlabel('Zp-Zc baseline')
+        ylabel('min(c1,c2)/A')
+    subplot 336
+        scatter_reg(R_plaid_spk(cellsIdx),jay,10)
+        axis square; set(gca,'TickDir','out','FontSize',8)
+        xlabel('mod in plaid spk amp (PO spk)')
+        ylabel('min(c1,c2)/A')
+    subplot 337
+        scatter_reg(b_plaid_spk(cellsIdx),jay,10)
         axis square; set(gca,'TickDir','out','FontSize',8)
         xlabel('plaid spk amp baseline (PO spk)')
-        ylabel('plaid amp baseline (PO FFT)')
-        subtitle('baseline')
-print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_linearAmplitude.pdf'), '-dpdf', '-bestfit')
+        ylabel('min(c1,c2)/A')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_linearAmplitude_OSI.pdf'), '-dpdf', '-bestfit')
+
+
+
+figure;
+    subplot 331
+        scatter_reg(OSI_dog_fft(indDoG),PCI_range(cellsIdx(indDoG)),20)
+        set(gca,'TickDir','out'); axis square; box off
+        ylabel('Zp-Zc range')
+        xlabel('STA gOSI (0.05)')
+        % xlim([0 1])
+        % ylim([0 1])
+    subplot 332
+        scatter_reg(OSI_dog_fft(indDoG),b_all(cellsIdx(indDoG))',20)
+        set(gca,'TickDir','out'); axis square; box off
+        ylabel('Zp-Zc baseline')
+        xlabel('STA gOSI (0.05)')
+        % xlim([0 1])
+        % ylim([0 1])    
+   subplot 333
+        scatter_reg(OSI_dog_fftAll(indDoG),PCI_range(cellsIdx(indDoG)),20)
+        set(gca,'TickDir','out'); axis square; box off
+        ylabel('Zp-Zc range')
+        xlabel('STA gOSI (pref SF)')
+        % xlim([0 1])
+        % ylim([0 1])
+    subplot 334
+        scatter_reg(OSI_dog_fftAll(indDoG),b_all(cellsIdx(indDoG))',20)
+        set(gca,'TickDir','out'); axis square; box off
+        ylabel('Zp-Zc baseline')
+        xlabel('STA gOSI (pref SF)')
+        % xlim([0 1])
+        % ylim([0 1])
+    subplot 338
+        scatter_reg(gOSI_all(cellsIdx(indDoG)),PCI_range(cellsIdx(indDoG)),20)
+        set(gca,'TickDir','out'); axis square; box off
+        ylabel('Zp-Zc range')
+        xlabel('STA gOSI spiking')
+    subplot 339
+        scatter_reg(gOSI_all(cellsIdx(indDoG)),b_all(cellsIdx(indDoG))',20)
+        set(gca,'TickDir','out'); axis square; box off
+        ylabel('Zp-Zc baseline')
+        xlabel('STA gOSI spiking')
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary_gOSIFFT_ZmeanZmod.pdf'), '-dpdf', '-bestfit')
+    
 
 
 
@@ -691,6 +843,11 @@ figure;
         set(gca,'TickDir','out'); box off
         ylabel('mean Zp'); ylim([-2 6])
         xlabel('size surround')
+    subplot(3,3,9)
+        scatter_reg(dog_sizeS(indDoG)',PCI_range(cellsIdx(indDoG)),12)
+        set(gca,'TickDir','out'); box off
+        ylabel('Zp-Zc range'); %ylim([-2 6])
+        xlabel('size surround')        
 print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary1.pdf'), '-dpdf', '-bestfit')
 
 figure;
@@ -730,7 +887,7 @@ figure;
         ylabel('max Zc'); ylim([-1 7])
         xlabel('size surround')
     subplot(4,3,8)
-        scatter_reg(dog_sizeS(indDoG)',Zp_max,12)
+        scatter_reg(dog_sizeC(indDoG)',Zp_max,12)
         set(gca,'TickDir','out'); box off
         ylabel('max Zp'); ylim([-1 7])
         xlabel('size surround')
@@ -779,6 +936,40 @@ figure;
         xlabel('size surround')
 print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary3.pdf'), '-dpdf', '-bestfit')
 
+
+
+figure;
+    subplot(3,3,1)
+        scatter_reg(dog_sizeC(indDoG)',baseline,12)
+        set(gca,'TickDir','out'); box off
+        ylabel('Zp-Zc baseline'); 
+        xlabel('size center')
+    subplot(3,3,2)
+        scatter_reg(dog_sizeC(indDoG)',PCI_range(cellsIdx(indDoG)),12)
+        set(gca,'TickDir','out'); box off
+        ylabel('Zp-Zc range'); 
+        xlabel('size center')
+     subplot(3,3,3)
+        scatter_reg(dog_AR(indDoG)',PCI_range(cellsIdx(indDoG)),12)
+        set(gca,'TickDir','out'); box off
+        ylabel('Zp-Zc range'); 
+        xlabel('aspect ratio')  
+     subplot(3,3,4)
+        scatter_reg(dog_AR(indDoG)',baseline,12)
+        set(gca,'TickDir','out'); box off
+        ylabel('baseline'); 
+        xlabel('aspect ratio')  
+      subplot(3,3,5)
+        scatter_reg(offsetMag(indDoG)',PCI_range(cellsIdx(indDoG)),12)
+        set(gca,'TickDir','out'); box off
+        ylabel('Zp-Zc range'); 
+        xlabel('offset mag')    
+       subplot(3,3,6)
+        scatter_reg(dog_AR(indDoG)',baseline,12)
+        set(gca,'TickDir','out'); box off
+        ylabel('baseline'); 
+        xlabel('offset mag')        
+print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_RFmeasures_PCIrange.pdf'), '-dpdf', '-bestfit')
 
 
 % COLOR CODE by STA FFT OSI at 0.05 SF
@@ -1077,6 +1268,8 @@ figure;
         set(gca,'TickDir','out'); box off
         ylabel('amplitude'); 
         xlabel('phaseCoh POfft')
+
+
 print(fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Analysis', 'Neuropixel','CrossOri', 'randDirFourPhase','mouse_RFs', 'spatialRFs_zscore_DoGfits_summary_phaseCoh.pdf'), '-dpdf', '-bestfit')
 
 [pc_vals, pc_ind] = sort(phaseCoh_fft);

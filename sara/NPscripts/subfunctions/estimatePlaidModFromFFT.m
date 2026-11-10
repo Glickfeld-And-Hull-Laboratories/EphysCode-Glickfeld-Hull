@@ -1,4 +1,4 @@
-function [peakPhase, A1, A2, dirs, Fsamp, AplaidPrefOri, S] = estimatePlaidModFromFFT(RF, xgrid, ygrid, SF, compAngle, phaseOffsets, dirs, doPlot, opts)
+function [peakPhase, A1, A2, dirs, Fsamp, AplaidPrefOri, AplaidPrefOriPlus, AplaidPrefOriMinus, S] = estimatePlaidModFromFFT(RF, xgrid, ygrid, SF, compAngle, phaseOffsets, dirs, doPlot, opts)
 % estimatePlaidModFromFFT  Linear prediction of how much a cell's response
 % to plaids is modulated by shifting the relative phase of ONE component,
 % from the Fourier transform of its spatial RF (amplitude AND phase).
@@ -53,6 +53,10 @@ function [peakPhase, A1, A2, dirs, Fsamp, AplaidPrefOri, S] = estimatePlaidModFr
 %   Fsamp           : nDirs x nPhases predicted F1 amplitude per phase condition.
 %   AplaidPrefOri   : normalized amplitudes for all phase conditions
 %                    at the FFT-derived preferred stripe orientation.
+%   AplaidPrefOriPlus  : same as AplaidPrefOri, but the plaid is centred on
+%                    prefOri + compAngle/2 (stripe orientation, circular mod 180;
+%                    +60 deg for the default 120-deg plaid).
+%   AplaidPrefOriMinus : same, centred on prefOri - compAngle/2 (circular).
 %   S               : struct with everything else: G1, G2 (complex), Gsingle,
 %                   depthFull (=min/max, the CEILING: depth over a full 360-deg
 %                   phase sweep; balance only), absRange (=2*min(A1,A2)),
@@ -62,6 +66,10 @@ function [peakPhase, A1, A2, dirs, Fsamp, AplaidPrefOri, S] = estimatePlaidModFr
 %                   prefOriInput (opts.prefOri, [] if not given), prefOri (the one
 %                   used for the example direction: input if given, else SF),
 %                   prefWaveAng, OSI, exampleIdx.
+%   S.AnonPrefPlus / S.AnonPrefMinus : |G| of the nonpreferred component (PO+compAngle
+%                    or PO-compAngle) alone, normalized by refAmp, i.e. the linear
+%                    response to that grating in the plaid that has the preferred
+%                    component as its other component.
 %
 % MODEL
 %   Grating  cos(2*pi*(k.x - f*t) + phi), k = SF*[cos(dir) sin(dir)] moves
@@ -99,6 +107,8 @@ if ~isfield(opts,'label'),      opts.label = '';         end
 if ~isfield(opts,'pdfFile'),    opts.pdfFile = '';       end
 if ~isfield(opts,'pdfAppend'),  opts.pdfAppend = false;  end
 if ~isfield(opts,'closeFig'),   opts.closeFig = false;   end
+if ~isfield(opts,'insetNorm'),  opts.insetNorm = [];     end  % [] = per-cell refAmp; scalar = common norm (RF units*deg^2)
+if ~isfield(opts,'insetYLim'),  opts.insetYLim = 2;      end  % inset half-height, in units of the normalizer
 doPlot = doPlot || ~isempty(opts.pdfFile);
 
 xgrid = xgrid(:).';  ygrid = ygrid(:).';
@@ -169,6 +179,56 @@ S.G1PrefFFT = G1PrefFFT;
 S.G2PrefFFT = G2PrefFFT;
 S.AplaidPrefOri = AplaidPrefOri;
 S.prefOriFFTAmp = S.refAmp;
+
+% ---- sinusoid fit to plaid F1 at preferred orientation: y = m + a*cos(dphi - phi0) ----
+phv = deg2rad(P.phaseOffsets(:));
+Yp  = AplaidPrefOri(:);
+S.fitMean = NaN; S.fitAmp = NaN; S.fitPhase = NaN; S.fitModDepth = NaN; S.fitR2 = NaN;
+if numel(phv) >= 3
+    B    = [ones(size(phv)) cos(phv) sin(phv)];
+    beta = B \ Yp;                                   % [m; a*cos(phi0); a*sin(phi0)]
+    S.fitMean    = beta(1);
+    S.fitAmp     = hypot(beta(2), beta(3));
+    S.fitPhase   = mod(rad2deg(atan2(beta(3), beta(2))), 360);   % phase of fitted peak
+    S.fitModDepth = S.fitAmp / max(S.fitMean, eps);              % relative modulation a/m
+    res = Yp - B*beta;
+    S.fitR2 = 1 - sum(res.^2) / max(sum((Yp - mean(Yp)).^2), eps);
+end
+
+
+
+% ---- same as AplaidPrefOri, but at prefOri +/- compAngle/2 (circular) ----
+shiftOri = compAngle/2;                           % 60 deg for compAngle = 120
+
+oriPlus  = mod(S.prefOriSF + shiftOri, 180);      % stripe orientation, circular
+oriMinus = mod(S.prefOriSF - shiftOri, 180);
+
+dirPlusFFT  = oriPlus  - 90;                      % wave-vector direction, same convention
+dirMinusFFT = oriMinus - 90;                      % as dirPrefFFT = prefOriSF - 90
+
+G1Plus  = gAt(c, P, dirPlusFFT  - h);
+G2Plus  = gAt(c, P, dirPlusFFT  + h);
+G1Minus = gAt(c, P, dirMinusFFT - h);
+G2Minus = gAt(c, P, dirMinusFFT + h);
+
+AplaidPrefOriPlus  = abs(G1Plus  + G2Plus  .* exp(1i*dph)) / max(S.refAmp, eps);
+AplaidPrefOriMinus = abs(G1Minus + G2Minus .* exp(1i*dph)) / max(S.refAmp, eps);
+
+S.oriPlus = oriPlus;            S.oriMinus = oriMinus;
+S.G1PrefOriPlus  = G1Plus;      S.G2PrefOriPlus  = G2Plus;
+S.G1PrefOriMinus = G1Minus;     S.G2PrefOriMinus = G2Minus;
+S.AplaidPrefOriPlus  = AplaidPrefOriPlus;
+S.AplaidPrefOriMinus = AplaidPrefOriMinus;
+
+
+% ---- nonpreferred component's single-grating amplitude, in the plaids that
+% contain the preferred component (normalized by refAmp) ----
+% Plus plaid  (centred PO+60): comp 1 = PO (preferred), comp 2 = PO+120 (nonpref)
+% Minus plaid (centred PO-60): comp 1 = PO-120 (nonpref), comp 2 = PO (preferred)
+S.AprefComp         = abs(gAt(c, P, dirPrefFFT)) / max(S.refAmp, eps);   % = 1
+S.AnonPrefPlus      = abs(G2Plus)  / max(S.refAmp, eps);
+S.AnonPrefMinus     = abs(G1Minus) / max(S.refAmp, eps);
+
 
 
 % ---- example direction: FFT preferred orientation at selected SF ----
@@ -360,14 +420,94 @@ hPl = gobjects(1,np);
 for p = 1:np
     hPl(p) = plot(dirsT,YP(:,p),'-','Color',pc(p,:),'LineWidth',1.5);
 end
-
-hEx = xline(axB, S.prefOriSF, 'r-', 'LineWidth', 1.5);
+dirPref = mod(S.prefOriSF - 90, 180);        % PO as a wave-vector direction
+hEx   = xline(axB, dirPref, 'r-',  'LineWidth', 1.5);   % plaid centered on PO
 ymax = max([Y1(:); YP(:)]);  if ymax == 0, ymax = 1; end
-ylim([0 1.1*ymax]);  xticks(0:30:180);  xlim([0 180]);
+ylim([0 2]);  xticks(0:30:180);  xlim([0 180]);
 xlabel('plaid direction (deg)'); ylabel('predicted F1 (normalised)');
 labs = [arrayfun(@(a) sprintf('plaid, \\Delta\\phi = %d%s',a,deg), P.phaseOffsets, 'UniformOutput',false)];
-legend([hPl hEx], [labs,  {sprintf('Example direction = %d%s', round(mod(dirEx,180)), deg)}], 'Location','southoutside','FontSize',8,'NumColumns',3);
+legend([hPl hEx], [labs,  {sprintf('Example direction = %d%s', round(dirPref), deg)}], 'Location','southoutside','FontSize',8,'NumColumns',3);
 title('Panel B: predicted F1 tuning to plaids');
+set(axB,'TickDir','out')
+
+%% ---- Panel A (row 3, cols 4-5): plaid F1 at PO vs phase + sinusoid fit ----
+axA = axes(outer);  axA.Layout.Tile = 14;  axA.Layout.TileSpan = [1 2];
+pbaspect(axA,[1.3 1 1])
+hold(axA,'on');
+phFine = 0:1:360;
+Ydat   = S.AplaidPrefOri(:);
+
+% exact vector-sum prediction over the full sweep (reference)
+G1p = S.G1PrefFFT;  G2p = S.G2PrefFFT;
+hTrue = plot(axA, phFine, abs(G1p + G2p.*exp(1i*deg2rad(phFine)))/nrm, ...
+    '--','Color',[.7 .7 .7],'LineWidth',1.2);
+
+hl = hTrue;  ll = {'|G_1 + G_2 e^{i\Delta\phi}|'};
+if ~isnan(S.fitAmp)
+    yfit = S.fitMean + S.fitAmp*cos(deg2rad(phFine - S.fitPhase));
+    hFit = plot(axA, phFine, yfit, 'k-', 'LineWidth', 2);
+    hl(end+1) = hFit;
+    ll{end+1} = sprintf('sinusoid fit: m = %.2f, a = %.2f, peak %d%s', ...
+        S.fitMean, S.fitAmp, round(S.fitPhase), deg);
+end
+
+% connector lines from each sampled point up to its inset (drawn under the points)
+insYLo = 1.35;  insYHi = 1.97;  insW = 70;      % inset extent in Panel A data units
+for p = 1:np
+    plot(axA, P.phaseOffsets(p)*[1 1], [Ydat(p) insYLo], ':', 'Color',[.6 .6 .6]);
+end
+
+hDat = gobjects(1,1);
+for p = 1:np
+    hDat = plot(axA, P.phaseOffsets(p), Ydat(p), 'o', 'Color', pc(p,:), ...
+        'MarkerFaceColor', pc(p,:), 'MarkerSize', 9);
+    text(axA, P.phaseOffsets(p), Ydat(p), sprintf('  %d',p), 'FontWeight','bold');
+end
+hl(end+1) = hDat;  ll{end+1} = 'sampled phases';
+
+% legend entries explaining the insets
+hl(end+1) = plot(axA, nan, nan, '-', 'Color', cols(1,:), 'LineWidth', 1.2);
+ll{end+1} = 'inset: comp 1 response';
+hl(end+1) = plot(axA, nan, nan, '-', 'Color', cols(2,:), 'LineWidth', 1.2);
+ll{end+1} = 'inset: comp 2 response';
+hl(end+1) = plot(axA, nan, nan, '-', 'Color', 'k', 'LineWidth', 1.5);
+ll{end+1} = 'inset: sum (amp = F1)';
+
+xlim(axA,[0 360]);  xticks(axA,0:90:360);
+ylim(axA,[0 2]);
+xlabel(axA,'relative phase \Delta\phi (deg)');
+ylabel(axA,'plaid F1 at PO (normalised)');
+legend(axA, hl, ll, 'Location','southoutside','FontSize',8,'NumColumns',2);
+title(axA, sprintf('Panel A: plaid F1 at PO vs phase.  a/m = %.2f,  R^2 = %.2f', ...
+    S.fitModDepth, S.fitR2));
+set(axA,'TickDir','out')
+
+% ---- insets: response time courses of comp 1, comp 2 and their sum ----
+% r_j(theta) = Re{ G_j e^{i*phi_j} e^{-i*theta} },  theta = temporal phase (one cycle)
+% sum amplitude = |G1 + G2 e^{i dphi}| = F1 at that sampled phase.
+thT = linspace(0, 2*pi, 120);
+% inset normalizer: per-cell refAmp by default, or a common value across cells
+if isempty(opts.insetNorm), insNorm = nrm; else, insNorm = opts.insetNorm; end
+G1n = G1p/insNorm;  G2n = G2p/insNorm;
+yl  = opts.insetYLim;                                         % identical y-range for every cell
+insAx = gobjects(1,np);
+for p = 1:np
+    g2 = G2n*exp(1i*deg2rad(P.phaseOffsets(p)));
+    r1 = real(G1n*exp(-1i*thT));
+    r2 = real(g2 *exp(-1i*thT));
+    insAx(p) = axes('Parent',fig,'Color','w','Box','on','XTick',[],'YTick',[], ...
+        'LineWidth',0.5,'XColor',[.5 .5 .5],'YColor',[.5 .5 .5]);
+    hold(insAx(p),'on');
+    plot(insAx(p), [0 2*pi], [0 0], '-', 'Color',[.85 .85 .85]);
+    plot(insAx(p), thT, r1,    '-', 'Color',cols(1,:), 'LineWidth',1);
+    plot(insAx(p), thT, r2,    '-', 'Color',cols(2,:), 'LineWidth',1);
+    plot(insAx(p), thT, r1+r2, '-', 'Color','k',       'LineWidth',1.6);
+    xlim(insAx(p),[0 2*pi]);  ylim(insAx(p),[-yl yl]);
+    text(insAx(p), 0.04, 0.92, sprintf('%d',p), 'Units','normalized', ...
+        'FontSize',8,'FontWeight','bold','VerticalAlignment','top');
+end
+placeInsets(fig, axA, insAx, P.phaseOffsets, insW, insYLo, insYHi);
+fig.SizeChangedFcn = @(~,~) placeInsets(fig, axA, insAx, P.phaseOffsets, insW, insYLo, insYHi);
 
 %% ---- global title ----
 head = sprintf('SF %.3g cpd, components %d%s apart.  Example: preferred orientation %d%s', ...
@@ -375,6 +515,36 @@ head = sprintf('SF %.3g cpd, components %d%s apart.  Example: preferred orientat
 if ~isempty(opts.label), head = [strrep(opts.label,'_','\_') '  |  ' head]; end
 title(outer,{head, 'F1(\Delta\phi) = |G_1 + G_2 e^{i\Delta\phi}|'}, ...
     'FontWeight','bold');
+end
+
+function placeInsets(fig, axA, insAx, phases, wDeg, yLo, yHi)
+% Position inset axes (parented to the figure) over Panel A, in Panel A data
+% coordinates. Accounts for the 1.3:1 plot-box aspect that pbaspect imposes
+% inside the tile, so the insets sit exactly above their sampled phase.
+drawnow;
+if ~isvalid(fig) || ~all(isvalid(insAx)), return; end
+oldU = fig.Units;  fig.Units = 'pixels';  figWH = fig.Position(3:4);  fig.Units = oldU;
+oldA = axA.Units;  axA.Units = 'normalized';
+ip = axA.InnerPosition;  axA.Units = oldA;
+bx = ip(1)*figWH(1);  by = ip(2)*figWH(2);       % tile inner box in pixels
+bw = ip(3)*figWH(1);  bh = ip(4)*figWH(2);
+pba = axA.PlotBoxAspectRatio;  asp = pba(1)/pba(2);
+if bw/bh > asp                                    % box limited by height
+    w = bh*asp;  h = bh;
+else                                              % box limited by width
+    w = bw;      h = bw/asp;
+end
+x0 = bx + (bw - w)/2;  y0 = by + (bh - h)/2;      % plot box origin (pixels)
+xl = xlim(axA);  yl = ylim(axA);
+for p = 1:numel(insAx)
+    xL = min(max(phases(p) - wDeg/2, xl(1)), xl(2) - wDeg);   % clamp inside axes
+    px = x0 + w*(xL - xl(1))/diff(xl);
+    py = y0 + h*(yLo - yl(1))/diff(yl);
+    pw = w*wDeg/diff(xl);
+    ph = h*(yHi - yLo)/diff(yl);
+    insAx(p).Units = 'pixels';
+    insAx(p).Position = [px py pw ph];
+end
 end
 
 function showImg(ax, xg, yg, M, clims)
@@ -396,7 +566,8 @@ end
 
 function styleImg(ax, clims)
 % Common style for all image tiles: no ticks, box or axis labels.
-axis(ax,'xy'); axis(ax,'image');
+% 'ij' = image coordinates (row 1 at top), matching imagesc(RF).
+axis(ax,'ij'); axis(ax,'image');
 colormap(ax, redblue());  caxis(ax, clims);
 axis(ax,'off');
 end
@@ -407,6 +578,7 @@ caxis([-m m]);
 end
 
 function cm = redblue()
+% blue (negative / OFF) -> white (0) -> red (positive / ON)
 x = linspace(0,1,64)';
-cm = flipud([min(1,2*x), 1-abs(2*x-1), min(1,2*(1-x))]);   % red = positive
+cm = [min(1,2*x), 1-abs(2*x-1), min(1,2*(1-x))];
 end
