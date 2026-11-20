@@ -1,4 +1,4 @@
-function fig = rfSingleCycleStaticFigure4PhasePolarThreshold(offset, wv, sx, sy, lag, thresh, compSide)
+function fig = rfSingleCycleStaticFigure4PhasePolarThreshold(offset, wv, sx, sy, lag, thresh, compSide, tryBlobSF, apShift)
 % rfSingleCycleStaticFigure4PhasePolarThreshold  Same as
 % rfSingleCycleStaticFigure4PhaseCartesianThreshold.m (spike-threshold LN
 % model; see that file for the full threshold explanation), but the
@@ -29,6 +29,11 @@ function fig = rfSingleCycleStaticFigure4PhasePolarThreshold(offset, wv, sx, sy,
 %   prefDir-60 (components at prefDir-120 and prefDir; the reference
 %   component sits on the preferred direction).
 %
+% tryBlobSF (optional, 0 or 1, default 0): if 1, the gratings/plaids are
+%   presented as in the experiment: a 30 deg diameter disc with Gaussian
+%   edge blur (sigma = 5 deg) centered on the RF, instead of full field.
+%   W is then computed by numerical integration of RF .* aperture .* grating.
+%
 % Usage:
 %   fig = rfSingleCycleStaticFigure4PhasePolarThreshold(2, 20, 3, 8);
 %   fig = rfSingleCycleStaticFigure4PhasePolarThreshold(2, 20, 3, 8, 90, 0.08);
@@ -38,6 +43,8 @@ if nargin < 5 || isempty(lag), lag = 90; end
 if nargin < 6 || isempty(thresh), thresh = 0; end
 if nargin < 7 || isempty(compSide), compSide = 1; end
 compSide = sign(compSide); if compSide == 0, compSide = 1; end
+if nargin < 8 || isempty(tryBlobSF), tryBlobSF = 0; end
+if nargin < 9 || isempty(apShift), apShift = [0 0]; end
 
 colShift = 1300;                 % x distance between the pattern and component column pairs
 FW = 1740 + colShift; FH = 1300;
@@ -50,6 +57,36 @@ k = 2*pi/wv;
 wGauss = @(x0_,y0_,sx_,sy_,theta) exp(1i*k*(x0_*cosd(theta)+y0_*sind(theta)) ...
     - 0.5*k^2*(sx_^2*cosd(theta).^2 + sy_^2*sind(theta).^2));
 Wat = @(theta) 0.5*(wGauss(0,0,sx,sy,theta) - wGauss(offset,0,sx,sy,theta)*exp(-1i*deg2rad(lag)));
+
+% == just added from Claude ==
+apCx = offset/2 + apShift(1);
+apCy = apShift(2);
+
+apDiam = 30; apSig = 5;                      % stimulus aperture (deg)
+if tryBlobSF
+    dxg = 0.25;                               % integration grid step (deg)
+    E   = max(4*max(sx,sy) + abs(offset) + 2, apDiam/2 + abs(offset)/2 + 2);
+    gB  = -E:dxg:E;  [XB,YB] = meshgrid(gB,gB);
+
+    % unit-area Gaussians, so W matches the analytic version when A == 1
+    Gon  = exp(-(XB.^2/(2*sx^2) + YB.^2/(2*sy^2))) / (2*pi*sx*sy);
+    Goff = exp(-((XB-offset).^2/(2*sx^2) + YB.^2/(2*sy^2))) / (2*pi*sx*sy);
+    RFc  = 0.5*(Gon - Goff*exp(-1i*deg2rad(lag)));
+
+    % aperture: disc centered on the RF center (midpoint of ON and OFF),
+    % blurred by a separable Gaussian (no Image Processing Toolbox needed)
+    disc = ((XB - apCx).^2 + (YB - apCy).^2) <= (apDiam/2)^2;
+    kg   = -ceil(4*apSig/dxg)*dxg : dxg : ceil(4*apSig/dxg)*dxg;
+    ker  = exp(-kg.^2/(2*apSig^2));  ker = ker/sum(ker);
+    Aper = conv2(ker, ker, double(disc), 'same');
+
+    Pv = RFc(:) .* Aper(:);  Xv = XB(:);  Yv = YB(:);
+    Wat = @(theta) sum(Pv .* exp(1i*k*(Xv*cosd(theta) + Yv*sind(theta)))) * dxg^2;
+end
+
+
+% ============================
+
 
 % ---- fixed one-cycle time grids ----
 nT = 200; tdeg = linspace(0,360,nT);
@@ -129,7 +166,20 @@ imagesc(axRF, gx, gy, RFsigned, [-clim clim]); axis(axRF,'image'); set(axRF,'YDi
 colormap(axRF, divergingColormap(256)); hold(axRF,'on');
 quiver(axRF, 0,0, 0.4*extent*cosd(prefDir), 0.4*extent*sind(prefDir), 0, 'k','LineWidth',2.5,'MaxHeadSize',2);
 plot(axRF, [-0.4*extent*cosd(PO+90) 0.4*extent*cosd(PO+90)], [-0.4*extent*sind(PO+90) 0.4*extent*sind(PO+90)], 'k--','LineWidth',1.5);
+% == just added ==
+imagesc(axRF, gx, gy, RFsigned, [-clim clim]); axis(axRF,'image'); set(axRF,'YDir','normal');
+colormap(axRF, divergingColormap(256)); hold(axRF,'on');
+quiver(axRF, 0,0, 0.4*extent*cosd(prefDir), 0.4*extent*sind(prefDir), 0, 'k','LineWidth',2.5,'MaxHeadSize',2);
+plot(axRF, [-0.4*extent*cosd(PO+90) 0.4*extent*cosd(PO+90)], [-0.4*extent*sind(PO+90) 0.4*extent*sind(PO+90)], 'k--','LineWidth',1.5);
+if tryBlobSF
+    tt = linspace(0,2*pi,200);
+    plot(axRF, offset/2 + apDiam/2*cos(tt), apDiam/2*sin(tt), 'g-', 'LineWidth',2);
+end
 hold(axRF,'off');
+xlim(axRF,[-20 20]); ylim(axRF,[-20 20])
+% =================
+hold(axRF,'off');
+xlim(axRF,[-20 20]); ylim(axRF,[-20 20]);
 set(axRF,'TickDir','out'); box off
 title(axRF,'RF: red=ON, blue=OFF (arrow=preferred direction, dashed=orientation)');
 xlabel(axRF,'deg'); ylabel(axRF,'deg');

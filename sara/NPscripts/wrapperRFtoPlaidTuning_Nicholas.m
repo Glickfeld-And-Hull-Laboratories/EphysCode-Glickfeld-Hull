@@ -8,6 +8,9 @@
 %   5 - phase offset
 %   6 - threshold
 
+tryBlobSF = 1;
+apShift = [7 7];
+
 % patterny cell
     pdfDir = fullfile('\\duhs-user-nc1.dhe.duke.edu\dusom_glickfeldlab\All_Staff\home\', 'sara', 'Papers', 'CrossOri_FeedforwardV1','figures');
     if ~exist(pdfDir, 'dir'); mkdir(pdfDir); end
@@ -15,7 +18,7 @@
     pdfFile = fullfile(pdfDir, 'rfSingleCycleStaticFigure4PhasePolarThreshold_cell1.pdf');
     if isfile(pdfFile); delete(pdfFile); end
     
-    rfSingleCycleStaticFigure4PhasePolarThreshold_SG(2, 20, 3, 3.5, 36, 0.12)
+    rfSingleCycleStaticFigure4PhasePolarThreshold_SG(2, 20, 3, 3.5, 36, 0.12,[], tryBlobSF, apShift)
     
     exportgraphics(gcf, pdfFile,'ContentType', 'vector','Append', true);
     close(gcf)
@@ -27,7 +30,7 @@
     pdfFile = fullfile(pdfDir, 'rfSingleCycleStaticFigure4PhasePolarThreshold_cell2.pdf');
     if isfile(pdfFile); delete(pdfFile); end
 
-    rfSingleCycleStaticFigure4PhasePolarThreshold_SG(2, 20, 3, 5, 36, 0.12)
+    rfSingleCycleStaticFigure4PhasePolarThreshold_SG(2, 20, 3, 5, 36, 0.12, [], tryBlobSF)
     
     exportgraphics(gcf, pdfFile,'ContentType', 'vector','Append', true);
     close(gcf)
